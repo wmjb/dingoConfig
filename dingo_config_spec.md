@@ -10,6 +10,14 @@ Converting DingoConfigurator from WPF desktop application to modern web applicat
 ## Architecture Overview
 
 ```
+                       ┌──────────────────┐
+                       │   Catalog Files  |
+                       |   Local File     │
+                       │   Storage        │
+                       │   (.json files)  │
+                       └──────────────────┘
+                              │
+                              ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   React Frontend│    │  ASP.NET Core    │    │   PDM Hardware  │
 │   (localhost)   │◄──►│  Web API +       │◄──►│   (CAN Bus/USB) │
@@ -18,7 +26,8 @@ Converting DingoConfigurator from WPF desktop application to modern web applicat
                               │
                               ▼
                        ┌──────────────────┐
-                       │   Local File     │
+                       │   Config File    |
+                       |   Local File     │
                        │   Storage        │
                        │   (.json files)  │
                        └──────────────────┘
@@ -30,6 +39,7 @@ Converting DingoConfigurator from WPF desktop application to modern web applicat
 - File-based configuration storage (JSON)
 - Automatic browser launch to localhost
 - Embedded file picker for save/load operations
+- Serial communication for USB CDC devices or Peak PCAN-USB support
 
 ## Technology Stack
 
@@ -39,6 +49,7 @@ Converting DingoConfigurator from WPF desktop application to modern web applicat
 - **Storage**: File-based JSON configuration storage
 - **Hardware Communication**: Background hosted service for CAN bus/USB communication
 - **Hosting**: Kestrel server on localhost with automatic browser launch
+- **Configuration**: Device catalog files that define the available properties and their CAN DBC formats
 
 ### Frontend
 - **Framework**: React 18 with TypeScript
