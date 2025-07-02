@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace dingoConfig.Controllers;
+namespace dingoConfig.api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -8,7 +8,7 @@ public class CommsController(ILogger<CommsController> logger) : ControllerBase
 {
     private static readonly string[] CommTypes =
     [
-        "USB2CAN", "USB", "PEAK"
+        "SLCAN", "USB", "PEAK"
     ];
     
     private readonly ILogger<CommsController> _logger = logger;

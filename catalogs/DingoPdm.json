@@ -1,0 +1,157 @@
+{
+  "deviceType": "DingoPdm",
+  "version": "1.0.0",
+  "manufacturer": "Dingo Engineering",
+  "description": "Dingo Power Distribution Module with CAN interface",
+  "communication": {
+    "type": "CAN",
+    "baseId": "0x600",
+    "extendedFrames": true
+  },
+  "parameters": [
+    {
+      "name": "output1Current",
+      "displayName": "Output 1 Current Limit",
+      "type": "uint16",
+      "address": "0x601",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "scaling": {
+        "factor": 0.1,
+        "offset": 0,
+        "units": "A"
+      },
+      "limits": {
+        "min": 0,
+        "max": 30
+      },
+      "defaultValue": 10,
+      "category": "Output Configuration",
+      "description": "Current limit for output channel 1",
+      "isReadOnly": false
+    },
+    {
+      "name": "output1Enabled",
+      "displayName": "Output 1 Enabled",
+      "type": "bool",
+      "address": "0x601",
+      "subIndex": 2,
+      "byteOrder": "littleEndian",
+      "defaultValue": false,
+      "category": "Output Configuration",
+      "description": "Enable output channel 1",
+      "isReadOnly": false
+    },
+    {
+      "name": "batteryVoltage",
+      "displayName": "Battery Voltage",
+      "type": "uint16",
+      "address": "0x650",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "scaling": {
+        "factor": 0.01,
+        "offset": 0,
+        "units": "V"
+      },
+      "category": "Monitoring",
+      "description": "Main battery voltage",
+      "isReadOnly": true
+    },
+    {
+      "name": "deviceTemperature",
+      "displayName": "Device Temperature", 
+      "type": "int16",
+      "address": "0x650",
+      "subIndex": 2,
+      "byteOrder": "littleEndian",
+      "scaling": {
+        "factor": 0.1,
+        "offset": -40,
+        "units": "°C"
+      },
+      "limits": {
+        "min": -40,
+        "max": 125
+      },
+      "category": "Monitoring",
+      "description": "Internal device temperature",
+      "isReadOnly": true
+    }
+  ],
+  "cyclicData": [
+    {
+      "name": "statusFrame",
+      "id": "0x580",
+      "interval": 50,
+      "signals": [
+        {
+          "name": "output1Current",
+          "startBit": 0,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.1,
+            "units": "A"
+          }
+        },
+        {
+          "name": "output1Voltage",
+          "startBit": 16,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.01,
+            "units": "V"
+          }
+        },
+        {
+          "name": "output1State",
+          "startBit": 32,
+          "length": 1,
+          "byteOrder": "littleEndian",
+          "type": "bool"
+        },
+        {
+          "name": "output1Fault",
+          "startBit": 33,
+          "length": 1,
+          "byteOrder": "littleEndian",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "batteryFrame",
+      "id": "0x581",
+      "interval": 200,
+      "signals": [
+        {
+          "name": "batteryVoltage",
+          "startBit": 0,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.01,
+            "units": "V"
+          }
+        },
+        {
+          "name": "temperature",
+          "startBit": 16,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "int16",
+          "scaling": {
+            "factor": 0.1,
+            "offset": -40,
+            "units": "°C"
+          }
+        }
+      ]
+    }
+  ]
+}

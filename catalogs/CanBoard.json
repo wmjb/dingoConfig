@@ -1,0 +1,147 @@
+{
+  "deviceType": "CanBoard",
+  "version": "1.0.0",
+  "manufacturer": "Dingo Engineering",
+  "description": "CAN-enabled I/O board with analog and digital inputs/outputs",
+  "communication": {
+    "type": "CAN",
+    "baseId": "0x700",
+    "extendedFrames": true
+  },
+  "parameters": [
+    {
+      "name": "analogInput1Scaling",
+      "displayName": "Analog Input 1 Scaling",
+      "type": "float",
+      "address": "0x701",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "limits": {
+        "min": 0.001,
+        "max": 100.0
+      },
+      "defaultValue": 1.0,
+      "category": "Analog Inputs",
+      "description": "Scaling factor for analog input 1",
+      "isReadOnly": false
+    },
+    {
+      "name": "analogInput1Offset",
+      "displayName": "Analog Input 1 Offset",
+      "type": "float",
+      "address": "0x701",
+      "subIndex": 2,
+      "byteOrder": "littleEndian",
+      "limits": {
+        "min": -1000.0,
+        "max": 1000.0
+      },
+      "defaultValue": 0.0,
+      "category": "Analog Inputs",
+      "description": "Offset for analog input 1",
+      "isReadOnly": false
+    },
+    {
+      "name": "digitalOutput1Enabled",
+      "displayName": "Digital Output 1 Enabled",
+      "type": "bool",
+      "address": "0x702",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "defaultValue": false,
+      "category": "Digital Outputs",
+      "description": "Enable digital output 1",
+      "isReadOnly": false
+    },
+    {
+      "name": "canBitrate",
+      "displayName": "CAN Bitrate",
+      "type": "uint32",
+      "address": "0x710",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "limits": {
+        "min": 125000,
+        "max": 1000000
+      },
+      "defaultValue": 500000,
+      "category": "Communication",
+      "description": "CAN bus bitrate in bps",
+      "isReadOnly": false
+    }
+  ],
+  "cyclicData": [
+    {
+      "name": "analogFrame",
+      "id": "0x680",
+      "interval": 100,
+      "signals": [
+        {
+          "name": "analogInput1",
+          "startBit": 0,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.001,
+            "units": "V"
+          }
+        },
+        {
+          "name": "analogInput2",
+          "startBit": 16,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.001,
+            "units": "V"
+          }
+        },
+        {
+          "name": "analogInput3",
+          "startBit": 32,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.001,
+            "units": "V"
+          }
+        },
+        {
+          "name": "analogInput4",
+          "startBit": 48,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.001,
+            "units": "V"
+          }
+        }
+      ]
+    },
+    {
+      "name": "digitalFrame",
+      "id": "0x681",
+      "interval": 50,
+      "signals": [
+        {
+          "name": "digitalInputs",
+          "startBit": 0,
+          "length": 8,
+          "byteOrder": "littleEndian",
+          "type": "uint8"
+        },
+        {
+          "name": "digitalOutputs",
+          "startBit": 8,
+          "length": 8,
+          "byteOrder": "littleEndian",
+          "type": "uint8"
+        }
+      ]
+    }
+  ]
+}

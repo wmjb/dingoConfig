@@ -1,23 +1,114 @@
 @dingoConfig_HostAddress = http://localhost:5089
 
-GET {{dingoConfig_HostAddress}}/weatherforecast/
+# Milestone 1: Device Catalog Management API Tests
+
+### Get catalog loading status
+GET {{dingoConfig_HostAddress}}/api/catalogs/status
 Accept: application/json
 
-###
+### Get all available catalogs
+GET {{dingoConfig_HostAddress}}/api/catalogs
+Accept: application/json
 
-GET {{dingoConfig_HostAddress}}/comms/
+### Get available device types
+GET {{dingoConfig_HostAddress}}/api/catalogs/types
+Accept: application/json
 
-###
+### Get specific catalog - ExampleDevice
+GET {{dingoConfig_HostAddress}}/api/catalogs/ExampleDevice
+Accept: application/json
 
-GET {{dingoConfig_HostAddress}}/comms/status
-###
+### Get specific catalog - DingoPdm
+GET {{dingoConfig_HostAddress}}/api/catalogs/DingoPdm
+Accept: application/json
 
-POST {{dingoConfig_HostAddress}}/comms/connect
+### Get specific catalog - CanBoard
+GET {{dingoConfig_HostAddress}}/api/catalogs/CanBoard
+Accept: application/json
 
-###
+### Get non-existent catalog (should return 404)
+GET {{dingoConfig_HostAddress}}/api/catalogs/NonExistentDevice
+Accept: application/json
 
-POST {{dingoConfig_HostAddress}}/comms/disconnect
+### Validate catalog by file path
+POST {{dingoConfig_HostAddress}}/api/catalogs/validate
+Content-Type: application/json
 
-###
+{
+  "filePath": "../catalogs/ExampleDevice.json"
+}
 
-GET {{dingoConfig_HostAddress}}/
+### Validate catalog by JSON content - Valid catalog
+POST {{dingoConfig_HostAddress}}/api/catalogs/validate
+Content-Type: application/json
+
+{
+  "catalogJson": "{\n  \"deviceType\": \"TestDevice\",\n  \"version\": \"1.0.0\",\n  \"manufacturer\": \"Test Manufacturer\",\n  \"description\": \"Test device\",\n  \"communication\": {\n    \"type\": \"CAN\",\n    \"baseId\": \"0x600\",\n    \"extendedFrames\": true\n  },\n  \"parameters\": [\n    {\n      \"name\": \"testParam\",\n      \"displayName\": \"Test Parameter\",\n      \"type\": \"uint16\",\n      \"address\": \"0x601\",\n      \"subIndex\": 1,\n      \"byteOrder\": \"littleEndian\",\n      \"defaultValue\": 100,\n      \"category\": \"Test\",\n      \"description\": \"Test parameter\",\n      \"isReadOnly\": false\n    }\n  ],\n  \"cyclicData\": []\n}"
+}
+
+### Validate catalog by JSON content - Invalid catalog (missing required fields)
+POST {{dingoConfig_HostAddress}}/api/catalogs/validate
+Content-Type: application/json
+
+{
+  "catalogJson": "{\n  \"deviceType\": \"\",\n  \"version\": \"\",\n  \"communication\": {\n    \"type\": \"INVALID_TYPE\"\n  },\n  \"parameters\": [\n    {\n      \"name\": \"\",\n      \"type\": \"invalid_type\",\n      \"address\": \"invalid_address\"\n    }\n  ]\n}"
+}
+
+### Validate catalog - Missing request body (should return 400)
+POST {{dingoConfig_HostAddress}}/api/catalogs/validate
+Content-Type: application/json
+
+{
+}
+
+### Reload catalogs
+POST {{dingoConfig_HostAddress}}/api/catalogs/reload
+Content-Type: application/json
+
+### Test OpenAPI/Swagger documentation
+GET {{dingoConfig_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+### Test Swagger UI (Development only)
+GET {{dingoConfig_HostAddress}}/swagger/index.html
+Accept: text/html
+
+# Future Milestones - Device Management (Placeholder)
+
+### Get all devices (Not yet implemented)
+# GET {{dingoConfig_HostAddress}}/api/devices
+# Accept: application/json
+
+### Get device status (Not yet implemented)  
+# GET {{dingoConfig_HostAddress}}/api/devices/device_001/status
+# Accept: application/json
+
+### Connect to device (Not yet implemented)
+# POST {{dingoConfig_HostAddress}}/api/devices/device_001/connect
+# Content-Type: application/json
+
+### Disconnect from device (Not yet implemented)
+# POST {{dingoConfig_HostAddress}}/api/devices/device_001/disconnect
+# Content-Type: application/json
+
+# Configuration Management (Not yet implemented)
+
+### Get current configuration (Not yet implemented)
+# GET {{dingoConfig_HostAddress}}/api/configuration
+# Accept: application/json
+
+### Load configuration file (Not yet implemented)
+# POST {{dingoConfig_HostAddress}}/api/configuration/load
+# Content-Type: application/json
+# 
+# {
+#   "filePath": "config/project.json"
+# }
+
+### Save configuration file (Not yet implemented)
+# POST {{dingoConfig_HostAddress}}/api/configuration/save
+# Content-Type: application/json
+#
+# {
+#   "filePath": "config/project.json"
+# }

@@ -1,0 +1,100 @@
+{
+  "deviceType": "ExampleDevice",
+  "version": "1.0.0",
+  "manufacturer": "Example Manufacturer",
+  "description": "Example device for testing catalog functionality",
+  "communication": {
+    "type": "CAN",
+    "baseId": "0x600",
+    "extendedFrames": true
+  },
+  "parameters": [
+    {
+      "name": "motorSpeed",
+      "displayName": "Motor Speed",
+      "type": "uint16",
+      "address": "0x601",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "scaling": {
+        "factor": 0.1,
+        "offset": 0,
+        "units": "RPM"
+      },
+      "limits": {
+        "min": 0,
+        "max": 10000
+      },
+      "defaultValue": 1000,
+      "category": "Motor Control",
+      "description": "Target motor speed in RPM",
+      "isReadOnly": false
+    },
+    {
+      "name": "enableMotor",
+      "displayName": "Enable Motor",
+      "type": "bool",
+      "address": "0x601",
+      "subIndex": 2,
+      "byteOrder": "littleEndian",
+      "defaultValue": false,
+      "category": "Motor Control",
+      "description": "Enable or disable motor operation",
+      "isReadOnly": false
+    },
+    {
+      "name": "temperature",
+      "displayName": "Temperature",
+      "type": "int16",
+      "address": "0x602",
+      "subIndex": 1,
+      "byteOrder": "littleEndian",
+      "scaling": {
+        "factor": 0.1,
+        "offset": -40,
+        "units": "°C"
+      },
+      "limits": {
+        "min": -40,
+        "max": 150
+      },
+      "category": "Monitoring",
+      "description": "Device temperature in Celsius",
+      "isReadOnly": true
+    }
+  ],
+  "cyclicData": [
+    {
+      "name": "statusFrame",
+      "id": "0x580",
+      "interval": 100,
+      "signals": [
+        {
+          "name": "currentSpeed",
+          "startBit": 0,
+          "length": 16,
+          "byteOrder": "littleEndian",
+          "type": "uint16",
+          "scaling": {
+            "factor": 0.1,
+            "units": "RPM"
+          }
+        },
+        {
+          "name": "motorEnabled",
+          "startBit": 16,
+          "length": 1,
+          "byteOrder": "littleEndian",
+          "type": "bool"
+        },
+        {
+          "name": "errorCode",
+          "startBit": 24,
+          "length": 8,
+          "byteOrder": "littleEndian",
+          "type": "uint8"
+        }
+      ]
+    }
+  ]
+}

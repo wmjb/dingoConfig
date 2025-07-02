@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace dingoConfig.Controllers;
+namespace dingoConfig.api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
