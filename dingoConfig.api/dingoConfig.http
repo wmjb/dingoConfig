@@ -14,16 +14,8 @@ Accept: application/json
 GET {{dingoConfig_HostAddress}}/api/catalogs/types
 Accept: application/json
 
-### Get specific catalog - ExampleDevice
-GET {{dingoConfig_HostAddress}}/api/catalogs/ExampleDevice
-Accept: application/json
-
 ### Get specific catalog - DingoPdm
 GET {{dingoConfig_HostAddress}}/api/catalogs/DingoPdm
-Accept: application/json
-
-### Get specific catalog - CanBoard
-GET {{dingoConfig_HostAddress}}/api/catalogs/CanBoard
 Accept: application/json
 
 ### Get non-existent catalog (should return 404)

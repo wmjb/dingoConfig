@@ -3,153 +3,172 @@
   "version": "1.0.0",
   "manufacturer": "Dingo Engineering",
   "description": "Dingo Power Distribution Module with CAN interface",
-  "communication": {
-    "type": "CAN",
-    "baseId": "0x600",
-    "extendedFrames": true
-  },
-  "parameters": [
+  "settings": [
     {
       "name": "output1Current",
       "displayName": "Output 1 Current Limit",
-      "type": "uint16",
-      "address": "0x601",
-      "subIndex": 1,
-      "byteOrder": "littleEndian",
-      "scaling": {
-        "factor": 0.1,
+      "idOffset": "0x00",
+      "prefix": {
+        "name": "output1CurrentPrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
         "offset": 0,
-        "units": "A"
+        "unit": "",
+        "byteOrder": "littleEndian"
       },
-      "limits": {
-        "min": 0,
-        "max": 30
-      },
-      "defaultValue": 10,
-      "category": "Output Configuration",
-      "description": "Current limit for output channel 1",
-      "isReadOnly": false
+      "type": "uint16",
+      "signal": {
+        "name": "output1CurrentValue",
+        "startBit": 0,
+        "length": 16,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "A",
+        "byteOrder": "littleEndian",
+        "minValue": 0,
+        "maxValue": 100
+      }
     },
     {
       "name": "output1Enabled",
       "displayName": "Output 1 Enabled",
+      "idOffset": "0x01",
+      "prefix": {
+        "name": "output1EnabledPrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      },
       "type": "bool",
-      "address": "0x601",
-      "subIndex": 2,
-      "byteOrder": "littleEndian",
-      "defaultValue": false,
-      "category": "Output Configuration",
-      "description": "Enable output channel 1",
-      "isReadOnly": false
+      "signal": {
+        "name": "output1EnabledValue",
+        "startBit": 0,
+        "length": 1,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      }
     },
     {
       "name": "batteryVoltage",
       "displayName": "Battery Voltage",
-      "type": "uint16",
-      "address": "0x650",
-      "subIndex": 1,
-      "byteOrder": "littleEndian",
-      "scaling": {
-        "factor": 0.01,
+      "idOffset": "0x01",
+      "prefix": {
+        "name": "batteryVoltagePrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
         "offset": 0,
-        "units": "V"
+        "unit": "",
+        "byteOrder": "littleEndian"
       },
-      "category": "Monitoring",
-      "description": "Main battery voltage",
-      "isReadOnly": true
-    },
-    {
-      "name": "deviceTemperature",
-      "displayName": "Device Temperature", 
-      "type": "int16",
-      "address": "0x650",
-      "subIndex": 2,
-      "byteOrder": "littleEndian",
-      "scaling": {
-        "factor": 0.1,
-        "offset": -40,
-        "units": "°C"
-      },
-      "limits": {
-        "min": -40,
-        "max": 125
-      },
-      "category": "Monitoring",
-      "description": "Internal device temperature",
-      "isReadOnly": true
+      "type": "uint16",
+      "signal": {
+        "name": "batteryVoltageValue",
+        "startBit": 0,
+        "length": 16,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "A",
+        "byteOrder": "littleEndian",
+        "minValue": 0,
+        "maxValue": 20
+      }
     }
   ],
   "cyclicData": [
     {
       "name": "statusFrame",
-      "id": "0x580",
-      "interval": 50,
+      "idOffset": "0x580",
       "signals": [
+        {
+          "name": "output0Current",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        },
         {
           "name": "output1Current",
           "startBit": 0,
           "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
           "byteOrder": "littleEndian",
-          "type": "uint16",
-          "scaling": {
-            "factor": 0.1,
-            "units": "A"
-          }
-        },
-        {
-          "name": "output1Voltage",
-          "startBit": 16,
-          "length": 16,
-          "byteOrder": "littleEndian",
-          "type": "uint16",
-          "scaling": {
-            "factor": 0.01,
-            "units": "V"
-          }
+          "minValue": 0,
+          "maxValue": 20
         },
         {
           "name": "output1State",
-          "startBit": 32,
-          "length": 1,
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
           "byteOrder": "littleEndian",
-          "type": "bool"
+          "minValue": 0,
+          "maxValue": 20
         },
         {
           "name": "output1Fault",
-          "startBit": 33,
-          "length": 1,
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
           "byteOrder": "littleEndian",
-          "type": "bool"
+          "minValue": 0,
+          "maxValue": 20
         }
       ]
     },
     {
       "name": "batteryFrame",
-      "id": "0x581",
-      "interval": 200,
+      "idOffset": "0x581",
       "signals": [
         {
           "name": "batteryVoltage",
           "startBit": 0,
           "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
           "byteOrder": "littleEndian",
-          "type": "uint16",
-          "scaling": {
-            "factor": 0.01,
-            "units": "V"
-          }
+          "minValue": 0,
+          "maxValue": 20
         },
         {
           "name": "temperature",
-          "startBit": 16,
+          "startBit": 0,
           "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
           "byteOrder": "littleEndian",
-          "type": "int16",
-          "scaling": {
-            "factor": 0.1,
-            "offset": -40,
-            "units": "°C"
-          }
+          "minValue": 0,
+          "maxValue": 20
         }
       ]
     }

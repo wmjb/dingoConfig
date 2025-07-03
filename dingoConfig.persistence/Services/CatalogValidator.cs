@@ -3,15 +3,8 @@ using Microsoft.Extensions.Logging;
 
 namespace dingoConfig.Persistence.Services;
 
-public class CatalogValidator
+public class CatalogValidator(ILogger<CatalogValidator> logger)
 {
-    private readonly ILogger<CatalogValidator> _logger;
-
-    public CatalogValidator(ILogger<CatalogValidator> logger)
-    {
-        _logger = logger;
-    }
-
     public ValidationResult ValidateCatalog(DeviceCatalog catalog)
     {
         var errors = new List<ValidationError>();
@@ -26,17 +19,12 @@ public class CatalogValidator
         if (string.IsNullOrWhiteSpace(catalog.Manufacturer))
             errors.Add(new ValidationError("Manufacturer is required", nameof(catalog.Manufacturer)));
 
-        // Validate communication info
-        ValidateCommunicationInfo(catalog.Communication, errors);
+        ValidateSettings(catalog.Settings, errors);
 
-        // Validate parameters
-        ValidateParameters(catalog.Parameters, errors);
-
-        // Validate cyclic data definitions
-        ValidateCyclicData(catalog.CyclicData, errors);
+        ValidateCyclicMessage(catalog.CyclicData, errors);
 
         // Check for duplicate parameter names
-        var duplicateParams = catalog.Parameters
+        var duplicateParams = catalog.Settings
             .GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key);
@@ -50,85 +38,51 @@ public class CatalogValidator
         
         if (!result.IsValid)
         {
-            _logger.LogWarning("Catalog validation failed for {DeviceType}: {ErrorCount} errors", 
+            logger.LogWarning("Catalog validation failed for {DeviceType}: {ErrorCount} errors", 
                 catalog.DeviceType, errors.Count);
         }
 
         return result;
     }
 
-    private void ValidateCommunicationInfo(CommunicationInfo communication, List<ValidationError> errors)
+    private void ValidateSettings(List<SettingsMessage> settings, List<ValidationError> errors)
     {
-        if (string.IsNullOrWhiteSpace(communication.Type))
+        for (int i = 0; i < settings.Count; i++)
         {
-            errors.Add(new ValidationError("Communication type is required", "Communication.Type"));
-        }
-        else if (!IsValidCommunicationType(communication.Type))
-        {
-            errors.Add(new ValidationError($"Invalid communication type: {communication.Type}. Valid types: CAN, USB_CDC", "Communication.Type"));
-        }
+            var setting = settings[i];
+            var prefix = $"Settings[{i}]";
 
-        if (communication.Type == "CAN" && string.IsNullOrWhiteSpace(communication.BaseId))
-        {
-            errors.Add(new ValidationError("BaseId is required for CAN communication", "Communication.BaseId"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(communication.BaseId) && !IsValidHexId(communication.BaseId))
-        {
-            errors.Add(new ValidationError($"Invalid BaseId format: {communication.BaseId}. Expected hex format like '0x600'", "Communication.BaseId"));
+            if (string.IsNullOrWhiteSpace(setting.Name))
+                errors.Add(new ValidationError("Setting name is required", $"{prefix}.Name"));
+            if (string.IsNullOrWhiteSpace(setting.DisplayName))
+                errors.Add(new ValidationError("Setting display name is required", $"{prefix}.Name"));
+            if (IsValidHexId(setting.IdOffset) == false)
+                errors.Add(new ValidationError($"Invalid Setting ID format: {setting.IdOffset}", $"{prefix}.Id"));
+            if (string.IsNullOrWhiteSpace(setting.Type))
+                errors.Add(new ValidationError("Setting type is required", $"{prefix}.Type"));
+            else if (!IsValidType(setting.Type))
+                errors.Add(new ValidationError($"Invalid Setting type: {setting.Type}", $"{prefix}.Type"));
+            
+            ValidateSignal(setting.Signal, errors, prefix);
+            
         }
     }
 
-    private void ValidateParameters(List<DeviceParameter> parameters, List<ValidationError> errors)
+    private void ValidateCyclicMessage(List<CyclicMessage> cyclicMsg, List<ValidationError> errors)
     {
-        for (int i = 0; i < parameters.Count; i++)
+        for (int i = 0; i < cyclicMsg.Count; i++)
         {
-            var param = parameters[i];
-            var prefix = $"Parameters[{i}]";
-
-            if (string.IsNullOrWhiteSpace(param.Name))
-                errors.Add(new ValidationError("Parameter name is required", $"{prefix}.Name"));
-
-            if (string.IsNullOrWhiteSpace(param.Type))
-                errors.Add(new ValidationError("Parameter type is required", $"{prefix}.Type"));
-            else if (!IsValidParameterType(param.Type))
-                errors.Add(new ValidationError($"Invalid parameter type: {param.Type}", $"{prefix}.Type"));
-
-            if (string.IsNullOrWhiteSpace(param.Address))
-                errors.Add(new ValidationError("Parameter address is required", $"{prefix}.Address"));
-            else if (!IsValidHexId(param.Address))
-                errors.Add(new ValidationError($"Invalid address format: {param.Address}", $"{prefix}.Address"));
-
-            if (!IsValidByteOrder(param.ByteOrder))
-                errors.Add(new ValidationError($"Invalid byte order: {param.ByteOrder}. Valid: littleEndian, bigEndian", $"{prefix}.ByteOrder"));
-
-            // Validate limits if present
-            if (param.Limits != null)
-            {
-                ValidateParameterLimits(param, errors, prefix);
-            }
-        }
-    }
-
-    private void ValidateCyclicData(List<CyclicDataDefinition> cyclicData, List<ValidationError> errors)
-    {
-        for (int i = 0; i < cyclicData.Count; i++)
-        {
-            var cyclic = cyclicData[i];
-            var prefix = $"CyclicData[{i}]";
+            var cyclic = cyclicMsg[i];
+            var prefix = $"CyclicMsg[{i}]";
 
             if (string.IsNullOrWhiteSpace(cyclic.Name))
-                errors.Add(new ValidationError("Cyclic data name is required", $"{prefix}.Name"));
+                errors.Add(new ValidationError("Cyclic message name is required", $"{prefix}.Name"));
 
-            if (string.IsNullOrWhiteSpace(cyclic.Id))
-                errors.Add(new ValidationError("Cyclic data ID is required", $"{prefix}.Id"));
-            else if (!IsValidHexId(cyclic.Id))
-                errors.Add(new ValidationError($"Invalid cyclic data ID format: {cyclic.Id}", $"{prefix}.Id"));
+            if (string.IsNullOrWhiteSpace(cyclic.IdOffset))
+                errors.Add(new ValidationError("Cyclic message ID is required", $"{prefix}.Id"));
+            else if (!IsValidHexId(cyclic.IdOffset))
+                errors.Add(new ValidationError($"Invalid cyclic message ID format: {cyclic.IdOffset}", $"{prefix}.Id"));
 
-            if (cyclic.Interval <= 0)
-                errors.Add(new ValidationError("Cyclic data interval must be positive", $"{prefix}.Interval"));
-
-            // Validate signals
             ValidateSignals(cyclic.Signals, errors, prefix);
         }
     }
@@ -137,57 +91,39 @@ public class CatalogValidator
     {
         for (int i = 0; i < signals.Count; i++)
         {
-            var signal = signals[i];
-            var signalPrefix = $"{prefix}.Signals[{i}]";
-
-            if (string.IsNullOrWhiteSpace(signal.Name))
-                errors.Add(new ValidationError("Signal name is required", $"{signalPrefix}.Name"));
-
-            if (signal.StartBit < 0 || signal.StartBit > 63)
-                errors.Add(new ValidationError("Signal start bit must be between 0 and 63", $"{signalPrefix}.StartBit"));
-
-            if (signal.Length <= 0 || signal.Length > 64)
-                errors.Add(new ValidationError("Signal length must be between 1 and 64", $"{signalPrefix}.Length"));
-
-            if (signal.StartBit + signal.Length > 64)
-                errors.Add(new ValidationError("Signal extends beyond 64-bit boundary", $"{signalPrefix}"));
-
-            if (!IsValidByteOrder(signal.ByteOrder))
-                errors.Add(new ValidationError($"Invalid byte order: {signal.ByteOrder}", $"{signalPrefix}.ByteOrder"));
-
-            if (string.IsNullOrWhiteSpace(signal.Type))
-                errors.Add(new ValidationError("Signal type is required", $"{signalPrefix}.Type"));
-            else if (!IsValidParameterType(signal.Type))
-                errors.Add(new ValidationError($"Invalid signal type: {signal.Type}", $"{signalPrefix}.Type"));
+            ValidateSignal(signals[i], errors, $"{prefix}.Signals[{i}]");
         }
     }
 
-    private void ValidateParameterLimits(DeviceParameter param, List<ValidationError> errors, string prefix)
+    private void ValidateSignal(SignalDefinition signal, List<ValidationError> errors, string prefix)
     {
-        if (param.Limits!.Min != null && param.Limits.Max != null)
+
+        if (string.IsNullOrWhiteSpace(signal.Name))
+            errors.Add(new ValidationError("Signal name is required", $"{prefix}.Name"));
+        
+        if (signal.StartBit < 0 || signal.StartBit > 63)
+            errors.Add(new ValidationError("Signal start bit must be between 0 and 63", $"{prefix}.StartBit"));
+
+        if (signal.Length <= 0 || signal.Length > 64)
+            errors.Add(new ValidationError("Signal length must be between 1 and 64", $"{prefix}.Length"));
+
+        if (signal.StartBit + signal.Length > 64)
+            errors.Add(new ValidationError("Signal extends beyond 64-bit boundary", $"{prefix}"));
+        
+        if (!IsValidByteOrder(signal.ByteOrder))
+            errors.Add(new ValidationError($"Invalid byte order: {signal.ByteOrder}. Valid: littleEndian, bigEndian", $"{prefix}.ByteOrder"));
+        
+        ValidateSignalLimits(signal, errors, prefix);
+    }
+
+    private void ValidateSignalLimits(SignalDefinition signal, List<ValidationError> errors, string prefix)
+    {
+        if (signal.MinValue! != null && signal.MaxValue! != null)
         {
             try
             {
-                // Handle JSON number parsing - they come as JsonElement
-                double min, max;
-                
-                if (param.Limits.Min is System.Text.Json.JsonElement minElement)
-                {
-                    min = minElement.GetDouble();
-                }
-                else
-                {
-                    min = Convert.ToDouble(param.Limits.Min);
-                }
-                
-                if (param.Limits.Max is System.Text.Json.JsonElement maxElement)
-                {
-                    max = maxElement.GetDouble();
-                }
-                else
-                {
-                    max = Convert.ToDouble(param.Limits.Max);
-                }
+                var min = (double)signal.MinValue;
+                var max = (double)signal.MaxValue;
                 
                 if (min >= max)
                 {
@@ -201,12 +137,7 @@ public class CatalogValidator
         }
     }
 
-    private static bool IsValidCommunicationType(string type)
-    {
-        return type is "CAN" or "USB_CDC";
-    }
-
-    private static bool IsValidParameterType(string type)
+    private static bool IsValidType(string type)
     {
         return type is "uint8" or "uint16" or "uint32" or "int8" or "int16" or "int32" or "float" or "double" or "bool";
     }
