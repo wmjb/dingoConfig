@@ -1,8 +1,8 @@
 {
   "deviceType": "DingoPdm",
   "version": "1.0.0",
-  "manufacturer": "Dingo Engineering",
-  "description": "Dingo Power Distribution Module with CAN interface",
+  "manufacturer": "Dingo Electronics",
+  "description": "8 Channel Power Distribution Module",
   "settings": [
     {
       "name": "output1Current",

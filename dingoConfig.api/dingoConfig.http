@@ -53,10 +53,6 @@ Content-Type: application/json
 {
 }
 
-### Reload catalogs
-POST {{dingoConfig_HostAddress}}/api/catalogs/reload
-Content-Type: application/json
-
 ### Test OpenAPI/Swagger documentation
 GET {{dingoConfig_HostAddress}}/openapi/v1.json
 Accept: application/json
@@ -64,43 +60,3 @@ Accept: application/json
 ### Test Swagger UI (Development only)
 GET {{dingoConfig_HostAddress}}/swagger/index.html
 Accept: text/html
-
-# Future Milestones - Device Management (Placeholder)
-
-### Get all devices (Not yet implemented)
-# GET {{dingoConfig_HostAddress}}/api/devices
-# Accept: application/json
-
-### Get device status (Not yet implemented)  
-# GET {{dingoConfig_HostAddress}}/api/devices/device_001/status
-# Accept: application/json
-
-### Connect to device (Not yet implemented)
-# POST {{dingoConfig_HostAddress}}/api/devices/device_001/connect
-# Content-Type: application/json
-
-### Disconnect from device (Not yet implemented)
-# POST {{dingoConfig_HostAddress}}/api/devices/device_001/disconnect
-# Content-Type: application/json
-
-# Configuration Management (Not yet implemented)
-
-### Get current configuration (Not yet implemented)
-# GET {{dingoConfig_HostAddress}}/api/configuration
-# Accept: application/json
-
-### Load configuration file (Not yet implemented)
-# POST {{dingoConfig_HostAddress}}/api/configuration/load
-# Content-Type: application/json
-# 
-# {
-#   "filePath": "config/project.json"
-# }
-
-### Save configuration file (Not yet implemented)
-# POST {{dingoConfig_HostAddress}}/api/configuration/save
-# Content-Type: application/json
-#
-# {
-#   "filePath": "config/project.json"
-# }

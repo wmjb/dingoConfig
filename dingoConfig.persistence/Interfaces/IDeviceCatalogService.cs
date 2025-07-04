@@ -10,7 +10,6 @@ public interface IDeviceCatalogService
     Task<ValidationResult> ValidateCatalogAsync(string catalogPath);
     Task<ValidationResult> ValidateCatalogJsonAsync(string catalogJson);
     IEnumerable<DeviceCatalog> GetAllCatalogs();
-    Task ReloadCatalogsAsync();
     bool IsLoaded { get; }
     DateTime LastLoadTime { get; }
 }

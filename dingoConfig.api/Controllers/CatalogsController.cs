@@ -147,26 +147,6 @@ public class CatalogsController : ControllerBase
     }
 
     /// <summary>
-    /// Reload catalogs from the configured directory
-    /// </summary>
-    [HttpPost("reload")]
-    public async Task<ActionResult> ReloadCatalogs()
-    {
-        try
-        {
-            await _catalogService.ReloadCatalogsAsync();
-            
-            var catalogCount = _catalogService.GetAvailableDeviceTypes().Count();
-            return Ok(new { message = $"Successfully reloaded {catalogCount} catalogs", timestamp = DateTime.UtcNow });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error reloading catalogs");
-            return StatusCode(500, new { message = "Internal server error reloading catalogs" });
-        }
-    }
-
-    /// <summary>
     /// Get catalog loading status and information
     /// </summary>
     [HttpGet("status")]

@@ -14,7 +14,6 @@ public class DeviceCatalogService : IDeviceCatalogService
     private readonly object _loadLock = new();
 
     private string _catalogDirectory = string.Empty;
-    private FileSystemWatcher? _fileWatcher;
 
     public bool IsLoaded { get; private set; }
     public DateTime LastLoadTime { get; private set; }
@@ -74,8 +73,6 @@ public class DeviceCatalogService : IDeviceCatalogService
                 IsLoaded = true;
                 LastLoadTime = DateTime.UtcNow;
             }
-
-            SetupFileWatcher(catalogDirectory);
 
             _logger.LogInformation("Successfully loaded {Count} valid catalogs", validCatalogs.Count);
         }
@@ -147,75 +144,7 @@ public class DeviceCatalogService : IDeviceCatalogService
         return _catalogs.Values.ToList();
     }
 
-    public async Task ReloadCatalogsAsync()
-    {
-        if (string.IsNullOrEmpty(_catalogDirectory))
-        {
-            _logger.LogWarning("Cannot reload catalogs - no directory set");
-            return;
-        }
-
-        _logger.LogInformation("Reloading catalogs from {Directory}", _catalogDirectory);
-        
-        // Temporarily disable file watcher to avoid recursive reloads
-        _fileWatcher?.Dispose();
-        
-        try
-        {
-            await LoadCatalogsAsync(_catalogDirectory);
-        }
-        finally
-        {
-            SetupFileWatcher(_catalogDirectory);
-        }
-    }
-
-    private void SetupFileWatcher(string catalogDirectory)
-    {
-        _fileWatcher?.Dispose();
-
-        if (!Directory.Exists(catalogDirectory))
-            return;
-
-        try
-        {
-            _fileWatcher = new FileSystemWatcher(catalogDirectory, "*.json")
-            {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.CreationTime,
-                EnableRaisingEvents = true
-            };
-
-            _fileWatcher.Changed += OnCatalogFileChanged;
-            _fileWatcher.Created += OnCatalogFileChanged;
-            _fileWatcher.Deleted += OnCatalogFileChanged;
-
-            _logger.LogDebug("File system watcher setup for catalog directory {Directory}", catalogDirectory);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to setup file system watcher for {Directory}", catalogDirectory);
-        }
-    }
-
-    private async void OnCatalogFileChanged(object sender, FileSystemEventArgs e)
-    {
-        _logger.LogDebug("Catalog file changed: {FilePath}", e.FullPath);
-        
-        // Debounce multiple rapid changes
-        await Task.Delay(500);
-        
-        try
-        {
-            await ReloadCatalogsAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to reload catalogs after file change");
-        }
-    }
-
     public void Dispose()
     {
-        _fileWatcher?.Dispose();
     }
 }
