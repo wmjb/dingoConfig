@@ -1,0 +1,176 @@
+{
+  "deviceType": "DingoPdm",
+  "version": "1.0.0",
+  "manufacturer": "Dingo Electronics",
+  "description": "8 Channel Power Distribution Module",
+  "settings": [
+    {
+      "name": "output1Current",
+      "displayName": "Output 1 Current Limit",
+      "idOffset": "0x00",
+      "prefix": {
+        "name": "output1CurrentPrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      },
+      "type": "uint16",
+      "signal": {
+        "name": "output1CurrentValue",
+        "startBit": 0,
+        "length": 16,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "A",
+        "byteOrder": "littleEndian",
+        "minValue": 0,
+        "maxValue": 100
+      }
+    },
+    {
+      "name": "output1Enabled",
+      "displayName": "Output 1 Enabled",
+      "idOffset": "0x01",
+      "prefix": {
+        "name": "output1EnabledPrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      },
+      "type": "bool",
+      "signal": {
+        "name": "output1EnabledValue",
+        "startBit": 0,
+        "length": 1,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      }
+    },
+    {
+      "name": "batteryVoltage",
+      "displayName": "Battery Voltage",
+      "idOffset": "0x01",
+      "prefix": {
+        "name": "batteryVoltagePrefix",
+        "startBit": 0,
+        "length": 8,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "",
+        "byteOrder": "littleEndian"
+      },
+      "type": "uint16",
+      "signal": {
+        "name": "batteryVoltageValue",
+        "startBit": 0,
+        "length": 16,
+        "isSigned": false,
+        "scale": 1.0,
+        "offset": 0,
+        "unit": "A",
+        "byteOrder": "littleEndian",
+        "minValue": 0,
+        "maxValue": 20
+      }
+    }
+  ],
+  "cyclicData": [
+    {
+      "name": "statusFrame",
+      "idOffset": "0x580",
+      "signals": [
+        {
+          "name": "output0Current",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        },
+        {
+          "name": "output1Current",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        },
+        {
+          "name": "output1State",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        },
+        {
+          "name": "output1Fault",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        }
+      ]
+    },
+    {
+      "name": "batteryFrame",
+      "idOffset": "0x581",
+      "signals": [
+        {
+          "name": "batteryVoltage",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        },
+        {
+          "name": "temperature",
+          "startBit": 0,
+          "length": 16,
+          "isSigned": false,
+          "scale": 1.0,
+          "offset": 0,
+          "unit": "A",
+          "byteOrder": "littleEndian",
+          "minValue": 0,
+          "maxValue": 20
+        }
+      ]
+    }
+  ]
+}

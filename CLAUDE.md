@@ -2,99 +2,70 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Build Commands
 
-dingoConfig is a desktop application for reading CAN data and configuring Dingo Electronics devices (dingoPDM, dingoPDM-Max, CANBoard). It uses an ASP.NET Core backend with React frontend, runs locally with no internet connectivity required, and is developed/tested in JetBrains Rider.
-
-## Development Approach
-
-This project follows a **strict phased development approach with comprehensive testing**. The backend must be fully complete and tested before any frontend development begins.
-
-### Phase Requirements
-1. **Backend First**: Complete all backend phases (1-5) before starting frontend
-2. **Test-Driven Development**: Write tests before implementation
-3. **Quality Gates**: Each phase must pass all tests before proceeding
-4. **Coverage Requirements**: 90% for Core/Hardware, 85% for API controllers
-
-## Build and Test Commands
+.NET 9.0 is required. Use the full path to dotnet.exe on Windows WSL:
 
 ```bash
-# Build entire solution
-dotnet build
+# Build the entire solution
+"/mnt/c/Program Files/dotnet/dotnet.exe" build
 
-# Run all tests
-dotnet test
+# Build specific project
+"/mnt/c/Program Files/dotnet/dotnet.exe" build dingoConfig.api
 
-# Run tests with coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Build in Release configuration
+"/mnt/c/Program Files/dotnet/dotnet.exe" build -c Release
 
-# Run specific test project
-dotnet test src/Backend/Tests/dingoConfig.Core.Tests/
+# Run the API project
+"/mnt/c/Program Files/dotnet/dotnet.exe" run --project dingoConfig.api
 
-# Build for release
-dotnet publish -c Release
-
-# Restore packages (if needed)
-dotnet restore
-
-# Check solution info
-dotnet sln list
+# Test (when test projects are added)
+"/mnt/c/Program Files/dotnet/dotnet.exe" test
 ```
 
-## Project Architecture
+## Architecture
 
-### Multi-Project Structure
-```
-src/Backend/
-├── dingoConfig.API/          # Web API controllers, SignalR hubs
-├── dingoConfig.Core/         # Domain models, business logic
-├── dingoConfig.Hardware/     # CAN/USB communication layer
-└── Tests/                    # Comprehensive test projects
-```
+This is a .NET 9.0 solution with Clean Architecture implementing a device configuration system for CAN and USB CDC communication. The project is a rewrite of the existing DingoConfigurator WPF application as an ASP.NET Core web API.
 
-### Key Architectural Patterns
-- **Repository Pattern**: Abstract data access through interfaces
-- **Service Layer**: Business logic separated from controllers
-- **SignalR**: Real-time communication for device data streaming
-- **Dependency Injection**: Services registered in Program.cs
-- **Mock Implementations**: Hardware mocking for testing without physical devices
+### Core Projects
 
-### Communication Layers
-- **CAN Communication**: Peak PCAN USB and USB CDC (SLCAN) support
-- **SignalR Groups**: Device connections grouped for efficient broadcasting
-- **JSON Catalogs**: Device definitions loaded from catalog files
+- **dingoConfig.api**: ASP.NET Core Web API with controllers and SignalR hubs for real-time communication
+- **dingoConfig.application**: Business logic layer handling device communication protocols (SLCAN, PCAN, USB CDC), message parsing, and simulation
+- **dingoConfig.contracts**: Shared DTOs, enums, and data contracts between layers
+- **dingoConfig.persistence**: Data persistence layer for JSON configuration files and device catalogs
 
-### File Storage Strategy
-- Catalogs stored in `/catalogs` subdirectory
-- Configurations stored in `/configs` subdirectory
-- Atomic file operations for data integrity
-- User-configurable base directories
+### Legacy Reference
 
-## Testing Strategy
+The `DingoConfigurator/` directory contains the original WPF application that serves as a reference for:
+- Device communication patterns and data structures
+- CAN message formats and device property definitions (via JsonPropertyName attributes)
+- UI layout and user workflows
+- Device types: CanBoard, DingoDash, DingoPdm, SoftButtonBox, etc.
 
-### Required Test Types
-1. **Unit Tests**: All services, models, and business logic
-2. **Integration Tests**: API endpoints with in-memory setup
-3. **Hardware Mock Tests**: Communication layer without physical devices
-4. **End-to-End Tests**: Complete workflows with SignalR
+## Key Features
 
-### Quality Gates (Must Pass)
-- Phase 2: Core models and services 100% unit tested
-- Phase 3: Hardware communication layer fully tested
-- Phase 4: All API endpoints integration tested
-- Phase 5: Backend system passes end-to-end and performance tests
+- Multi-device simultaneous CAN/USB communication
+- Real-time data streaming via SignalR
+- JSON-based device catalog system for generic device handling
+- Configuration file management (save/load/validate)
+- Device simulation capabilities
+- Single executable deployment with embedded catalogs
 
-### Performance Benchmarks
-- Handle 10+ concurrent device connections
-- Real-time updates with <50ms latency
-- Memory stability over 24-hour operation
-- Graceful recovery from all error scenarios
+## Project Specification
 
-## Key Implementation Notes
+**IMPORTANT**: Always reference `dingoConfig-spec.md` when working on this project. It contains:
+- Implementation milestones with specific deliverables and acceptance criteria
+- REST API endpoints for device management
+- SignalR hub definitions for real-time updates
+- Device catalog schema and communication protocols
+- Configuration file structure
+- Cross-platform considerations and deployment requirements
+- Application update system via GitHub releases
 
-- **No Frontend Development** until backend phases 1-5 are complete and tested
-- Use comprehensive error handling with structured logging
-- Implement connection retry logic for hardware communication
-- Follow atomic file operations for configuration management
-- Create typed SignalR hubs for compile-time safety
-- Support multiple concurrent device connections through abstract interfaces
+The specification defines 6 implementation milestones:
+1. Device Catalog Handling
+2. Communication Methods Implementation (SLCAN, PCAN, USB CDC)
+3. Configuration File Management
+4. Cyclic Data Handling
+5. Device Settings Read/Write
+6. Simulation Engine
