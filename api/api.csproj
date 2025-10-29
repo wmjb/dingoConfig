@@ -4,7 +4,6 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>dingoConfig</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,6 +14,12 @@
       <Folder Include="Middleware\" />
       <Folder Include="Realtime\Hubs\" />
       <Folder Include="wwwroot\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\contracts\contracts.csproj" />
+      <ProjectReference Include="..\domain\domain.csproj" />
+      <ProjectReference Include="..\infrastructure\infrastructure.csproj" />
     </ItemGroup>
 
 </Project>

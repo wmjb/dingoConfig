@@ -1,13 +1,12 @@
-using System.Diagnostics;
 using domain.Enums;
 using domain.Events;
 using domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace infrastructure.Comms;
 
 public class CommsAdapterManager(ILogger<CommsAdapterManager> logger) : ICommsAdapterManager
 {
-    private readonly ILogger<CommsAdapterManager> _logger = logger;
     private ICommsAdapter? _activeAdapter;
     
     public ICommsAdapter?  ActiveAdapter => _activeAdapter;
@@ -32,7 +31,7 @@ public class CommsAdapterManager(ILogger<CommsAdapterManager> logger) : ICommsAd
         {
             _activeAdapter.DataReceived -= OnDataReceived;
             _activeAdapter = null;
-            _logger.LogError($"Failed to initialize comms adapter: {result.error}");
+            logger.LogError($"Failed to initialize comms adapter: {result.error}");
             return false;
         }
         
@@ -42,17 +41,12 @@ public class CommsAdapterManager(ILogger<CommsAdapterManager> logger) : ICommsAd
         {
             _activeAdapter.DataReceived -= OnDataReceived;
             _activeAdapter = null;
-            _logger.LogError($"Failed to start comms adapter: {result.error}");
+            logger.LogError("Failed to start comms adapter: {ResultError}", result.error);
             return false;
         }
 
-        _logger.LogInformation($"Adapter connected: {nameof(_activeAdapter)}");
+        logger.LogInformation($"Adapter connected: {nameof(_activeAdapter)}");
         return true;
-    }
-
-    public Task<bool> ConnectAsync(ICommsAdapter commsAdapter, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task DisconnectAsync()
@@ -62,7 +56,7 @@ public class CommsAdapterManager(ILogger<CommsAdapterManager> logger) : ICommsAd
         _activeAdapter.DataReceived -= OnDataReceived;
         await _activeAdapter.StopAsync();
 
-        _logger.LogInformation("Adapter disconnected: {AdapterName}", nameof(_activeAdapter));
+        logger.LogInformation("Adapter disconnected: {AdapterName}", nameof(_activeAdapter));
         _activeAdapter = null;
     }
 

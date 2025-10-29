@@ -124,18 +124,13 @@ public class CommsDataPipeline(
                 "TX frame sent: CanId={Id:X}, Length={Len}", 
                 data.Id, 
                 data.Len);
-            
-            // Complete the request (signal to caller)
-            request.CompletionSource?.TrySetResult();
         }
         catch (Exception ex)
         {
             logger.LogError(
                 ex, 
                 "Error transmitting frame: {CanId:X}", 
-                request.Frame.CanId);
-            
-            request.CompletionSource?.TrySetException(ex);
+                data.Id);
         }
     }
     
