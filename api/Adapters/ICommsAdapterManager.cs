@@ -12,7 +12,7 @@ public interface ICommsAdapterManager
     ICommsAdapter? ActiveAdapter { get; }
     bool IsConnected { get; }
     Task<bool> ConnectAsync(ICommsAdapter commsAdapter, string port, CanBitRate bitRate,  CancellationToken ct = default);
-    Task DisconnectAsync();
+    Task<bool> DisconnectAsync();
     
     event EventHandler<CanDataEventArgs>? DataReceived;
 }

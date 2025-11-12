@@ -1,4 +1,5 @@
 using api.Adapters;
+using api.Devices;
 using Microsoft.Extensions.Logging;
 
 namespace api.Services;

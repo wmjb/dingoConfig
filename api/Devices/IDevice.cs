@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using api.Models;
 
-namespace api.Adapters;
+namespace api.Devices;
 
 public interface IDevice
 {

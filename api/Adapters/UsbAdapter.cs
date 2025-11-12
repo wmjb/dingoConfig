@@ -15,7 +15,7 @@ public class UsbAdapter : ICommsAdapter
 
     public string? Name => "USB";
 
-    public bool InitAsync(string port, CanBitRate bitRate, CancellationToken ct = default)
+    public Task<bool> InitAsync(string port, CanBitRate bitRate, CancellationToken ct = default)
     {
         try
         {
@@ -25,13 +25,13 @@ public class UsbAdapter : ICommsAdapter
         }
         catch (Exception e)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool StartAsync(CancellationToken ct)
+    public Task<bool> StartAsync(CancellationToken ct)
     {
         try
         {
@@ -41,24 +41,24 @@ public class UsbAdapter : ICommsAdapter
         }
         catch (Exception e)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
+        return Task.FromResult(true);
         //return Task.FromResult<(bool success, string? error)>((_serial.IsOpen(), null));
     }
 
-    public bool StopAsync()
+    public Task<bool> StopAsync()
     {
         throw new NotImplementedException();
     }
 
-    public bool WriteAsync(CanData data, CancellationToken ct)
+    public Task<bool> WriteAsync(CanData data, CancellationToken ct)
     {
         throw new NotImplementedException();
     }
 
-    public DataReceivedHandler DataReceived { get; set; }
+    public event DataReceivedHandler? DataReceived;
 
     public Task<(bool success, string? error)> WriteAsync()
     {

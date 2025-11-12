@@ -17,11 +17,11 @@ public class SlcanAdapter : ICommsAdapter
 
     private CanBitRate _bitrate;
     
-    public DataReceivedHandler DataReceived { get; set; }
+    public event DataReceivedHandler? DataReceived;
 
     public bool IsConnected { get; set; }
 
-    public bool InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
+    public Task<bool> InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
     {
         try
         {
@@ -36,15 +36,15 @@ public class SlcanAdapter : ICommsAdapter
         }
         catch
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool StartAsync(CancellationToken ct)
+    public Task<bool> StartAsync(CancellationToken ct)
     {
-        if (!_serial.IsOpen) return false;
+        if (!_serial.IsOpen) return Task.FromResult(false);
 
         //byte[] data = new byte[8];
         try
@@ -69,16 +69,16 @@ public class SlcanAdapter : ICommsAdapter
         catch(Exception e)
         {
             Console.WriteLine(e.ToString());
-            return false;
+            return Task.FromResult(false);
         }
 
         IsConnected = true;
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool StopAsync()
+    public Task<bool> StopAsync()
     {
-        if (!_serial.IsOpen) return false;
+        if (!_serial.IsOpen) return Task.FromResult(false);
         
         var sData = "";
         sData = "C\r";
@@ -88,15 +88,15 @@ public class SlcanAdapter : ICommsAdapter
 
         _serial.Close();
 
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool WriteAsync(CanData data, CancellationToken ct)
+    public Task<bool> WriteAsync(CanData data, CancellationToken ct)
     {
         if (!_serial.IsOpen) 
-            return false;
+            return Task.FromResult(false);
         if (data.Payload.Length != 8) 
-            return false;
+            return Task.FromResult(false);
 
         try
         {
@@ -131,15 +131,10 @@ public class SlcanAdapter : ICommsAdapter
         catch (Exception e)
         {
             Console.WriteLine(e.ToString());
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
-    }
-
-    private void OnDataReceived(CanDataEventArgs args)
-    {
-        DataReceived(this, args);
+        return Task.FromResult(true);
     }
     
     private void _serial_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -187,7 +182,7 @@ public class SlcanAdapter : ICommsAdapter
                 Payload = payload
             };
 
-            OnDataReceived(new CanDataEventArgs(data));
+            DataReceived?.Invoke(this,new CanDataEventArgs(data));
         }
     }
 }

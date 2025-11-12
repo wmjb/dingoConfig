@@ -18,7 +18,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     private string? _activePort;
 
     public bool IsConnected => _activeAdapter?.IsConnected ?? false;
-    
+
     public event EventHandler<CanDataEventArgs>? DataReceived;
 
     public AdapterAvailableResponse GetAvailable()
@@ -64,39 +64,45 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         
         _activeAdapter.DataReceived += OnDataReceived;
 
-        var result = _activeAdapter.InitAsync(port, bitRate, ct);
+        var result = await _activeAdapter.InitAsync(port, bitRate, ct);
 
-        if (!result)
+        if (result == false)
         {
             _activeAdapter.DataReceived -= OnDataReceived;
             _activeAdapter = null;
             logger.LogError("Failed to initialize comms adapter");
-            return false;
+            return await Task.FromResult(false);
         }
         
-        result = _activeAdapter.StartAsync(ct);
+        result = await _activeAdapter.StartAsync(ct);
 
         if (!result)
         {
             _activeAdapter.DataReceived -= OnDataReceived;
             _activeAdapter = null;
             logger.LogError("Failed to start comms adapter");
-            return false;
+            return await Task.FromResult(false);
         }
 
         logger.LogInformation($"Adapter connected: {nameof(_activeAdapter)}");
-        return true;
+        return await Task.FromResult(true);
     }
 
-    public async Task DisconnectAsync()
+    public async Task<bool> DisconnectAsync()
     {
-        if (_activeAdapter == null) return;
-        
-        _activeAdapter.DataReceived -= OnDataReceived;
-        _activeAdapter.StopAsync();
+        if (_activeAdapter == null) return await Task.FromResult(false);
 
-        logger.LogInformation("Adapter disconnected: {AdapterName}", nameof(_activeAdapter));
+        if (_activeAdapter != null)
+        {
+            _activeAdapter.DataReceived -= OnDataReceived;
+            await _activeAdapter.StopAsync();
+
+            logger.LogInformation("Adapter disconnected: {AdapterName}", nameof(_activeAdapter));
+        }
+
         _activeAdapter = null;
+
+        return await Task.FromResult(true);
     }
 
     private void OnDataReceived(object sender, CanDataEventArgs e)

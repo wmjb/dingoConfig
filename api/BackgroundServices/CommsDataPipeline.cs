@@ -41,7 +41,7 @@ public class CommsDataPipeline(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Subscribe to adapter events
-        //if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
+        if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
             
         //adapterManager.ActiveAdapter.DataReceived += OnDataReceived;
         
@@ -119,7 +119,7 @@ public class CommsDataPipeline(
         {
             if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
             
-            adapterManager.ActiveAdapter.WriteAsync(data, ct);
+            await adapterManager.ActiveAdapter.WriteAsync(data, ct);
             
             logger.LogDebug(
                 "TX frame sent: CanId={Id:X}, Length={Len}", 

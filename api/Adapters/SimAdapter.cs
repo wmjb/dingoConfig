@@ -9,27 +9,27 @@ public class SimAdapter : ICommsAdapter
     private TimeSpan _rxTimeDelta;
     public string? Name => "Sim";
 
-    public bool InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
+    public Task<bool> InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
     {
         throw new NotImplementedException();
     }
 
-    public bool StartAsync(CancellationToken ct)
+    public Task<bool> StartAsync(CancellationToken ct)
     {
         throw new NotImplementedException();
     }
 
-    public bool StopAsync()
+    public Task<bool> StopAsync()
     {
         throw new NotImplementedException();
     }
 
-    public bool WriteAsync(CanData data, CancellationToken ct)
+    public Task<bool> WriteAsync(CanData data, CancellationToken ct)
     {
         throw new NotImplementedException();
     }
 
-    public DataReceivedHandler DataReceived { get; set; }
+    public event DataReceivedHandler? DataReceived;
     public TimeSpan RxTimeDelta()
     {
         throw new NotImplementedException();
