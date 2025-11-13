@@ -87,6 +87,14 @@ public class AdapterController(ICommsAdapterManager comms) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> Disconnect()
     {
+        if (!comms.IsConnected)
+        {
+            return Problem(
+                title: "Disconnection Error",
+                detail: "Adapter is not connected",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+        
         try
         {
             await comms.DisconnectAsync();

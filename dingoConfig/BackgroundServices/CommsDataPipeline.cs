@@ -41,7 +41,7 @@ public class CommsDataPipeline(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Subscribe to adapter events
-        if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
+        //if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
             
         //adapterManager.ActiveAdapter.DataReceived += OnDataReceived;
         
@@ -117,20 +117,26 @@ public class CommsDataPipeline(
     {
         try
         {
-            if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
-            
+            if (adapterManager.ActiveAdapter == null)
+            {
+                logger.LogDebug(
+                    "TX frame dropped: No active adapter. CanId={Id:X}",
+                    data.Id);
+                return;
+            }
+
             await adapterManager.ActiveAdapter.WriteAsync(data, ct);
-            
+
             logger.LogDebug(
-                "TX frame sent: CanId={Id:X}, Length={Len}", 
-                data.Id, 
+                "TX frame sent: CanId={Id:X}, Length={Len}",
+                data.Id,
                 data.Len);
         }
         catch (Exception ex)
         {
             logger.LogError(
-                ex, 
-                "Error transmitting frame: {CanId:X}", 
+                ex,
+                "Error transmitting frame: {CanId:X}",
                 data.Id);
         }
     }
