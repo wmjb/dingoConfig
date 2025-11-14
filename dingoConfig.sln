@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig", "dingoConfig\dingoConfig.csproj", "{70990DBC-36B8-4FFF-A7C2-9EFB02D1B53D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig.Server", "dingoConfig.Server\dingoConfig.Server.csproj", "{70990DBC-36B8-4FFF-A7C2-9EFB02D1B53D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig.Blazor", "dingoConfig.Blazor\dingoConfig.Blazor.csproj", "{8B9E2D5A-1F3C-4D6E-A7B2-C5F4E2A1D3B6}"
 EndProject
