@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig.Server", "dingo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig.Blazor", "dingoConfig.Blazor\dingoConfig.Blazor.csproj", "{8B9E2D5A-1F3C-4D6E-A7B2-C5F4E2A1D3B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dingoConfig.Launcher", "dingoConfig.Launcher\dingoConfig.Launcher.csproj", "{5390186D-1336-44C7-8F37-87BAB42CA801}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,6 +20,10 @@ Global
 		{8B9E2D5A-1F3C-4D6E-A7B2-C5F4E2A1D3B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B9E2D5A-1F3C-4D6E-A7B2-C5F4E2A1D3B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B9E2D5A-1F3C-4D6E-A7B2-C5F4E2A1D3B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5390186D-1336-44C7-8F37-87BAB42CA801}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5390186D-1336-44C7-8F37-87BAB42CA801}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5390186D-1336-44C7-8F37-87BAB42CA801}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5390186D-1336-44C7-8F37-87BAB42CA801}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
