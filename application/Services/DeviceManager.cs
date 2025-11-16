@@ -1,3 +1,4 @@
+using domain.Devices;
 using domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -6,6 +7,7 @@ namespace application.Services;
 public class DeviceManager(ILogger<DeviceManager> logger)
 {
     private List<IDevice> _devices = [];
+    private List<dingoPdmDevice> _dingoPdms = [];
 
     public async Task GetAllStatus()
     {
