@@ -9,7 +9,7 @@ public interface IDevice
     string Name { get; set; }
     int BaseId {get; set;}
     bool Connected {get; set;}
-    TimeSpan LastRxTime {get; set;}
+    DateTime LastRxTime {get; set;}
 
     void UpdateConnected();
     void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceResponse> queue);

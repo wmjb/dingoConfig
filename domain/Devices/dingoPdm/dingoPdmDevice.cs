@@ -1,4 +1,9 @@
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
+using domain.Devices.dingoPdm;
+using domain.Devices.dingoPdm.Enums;
+using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
 
@@ -18,98 +23,103 @@ public class dingoPdmDevice : IDevice
     protected virtual int _numCounters { get; } = 4;
     protected virtual int _numConditions { get; } = 32;
     
-    public Guid Id { get; }
-    public string Name { get; set; }
-    public int BaseId { get; set; }
-    public bool Connected { get; set; }
-    public TimeSpan LastRxTime { get; set; }
+    [JsonPropertyName("guid")] public Guid Id { get; }
+    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("baseId")] public int BaseId { get; set; }
 
+    [JsonIgnore] public DateTime LastRxTime { get; set; }
+    [JsonIgnore] public DeviceState DeviceState { get; set; }
+    [JsonIgnore] public double TotalCurrent { get; set; }
+    [JsonIgnore] public double BatteryVoltage { get; set; }
+    [JsonIgnore] public double BoardTempC { get; set; }
+    [JsonIgnore] public double BoardTempF { get; set; }
+    [JsonIgnore] public string Version { get; set; }
+    [JsonIgnore] public bool SleepEnabled { get; set; }
+    [JsonIgnore] public bool CanFiltersEnabled { get; set; }
+    [JsonIgnore] public CanBitRate BitRate { get; set; }
+    
+    [JsonPropertyName("digitalInputs")] protected List<Input> DigitalInputs { get; set; } = new List<Input>();
+    [JsonPropertyName("outputs")] protected List<Output> Outputs { get; set; } = new List<Output>();
+    [JsonPropertyName("canInputs")] protected List<CanInput> CanInputs { get; set; } = new List<CanInput>();
+    [JsonPropertyName("virtualInputs")] protected List<VirtualInput> VirtualInputs { get; set; } = new List<VirtualInput>();
+    [JsonPropertyName("wipers")] protected Wiper Wipers { get; set; } = new Wiper("wiper");
+    [JsonPropertyName("flashers")] protected List<Flasher> Flashers { get; set; } = new List<Flasher>();
+    [JsonPropertyName("starterDisable")] protected StarterDisable StarterDisable { get; set; } = new StarterDisable("starterDisable");
+    [JsonPropertyName("counters")] protected  List<Counter> Counters { get; set; } = new List<Counter>();
+    [JsonPropertyName("conditions")] protected List<Condition> Conditions { get; set; } = new List<Condition>();
+    
+    public bool Connected
+    {
+        get;
+        set
+        {
+            if (field != value)
+            {
+                Clear();
+                
+                field = value;
+            }
+        }
+    }
+    
     public dingoPdmDevice(string name, int baseId)
     {
         Name = name;
         BaseId = baseId;
+
+        for (var i = 0; i < _numDigitalInputs; i++)
+            DigitalInputs.Add(new Input(i + 1, "digitalInput" + i));
         
-        DigitalInputs = new ObservableCollection<Input>();
-        for (int i = 0; i < _numDigitalInputs; i++)
-        {
-            DigitalInputs.Add(new Input());
-            DigitalInputs[i].Number = i + 1;
-        }
+        for (var i = 0; i < _numOutputs; i++)
+            Outputs.Add(new Output(i + 1, "output" + i));
 
-        TotalCurrent = 0;
-        BatteryVoltage = 0;
-        BoardTempC = 0;
+        for (var i = 0; i < _numCanInputs; i++)
+            CanInputs.Add(new CanInput(i + 1, "canInput" + i));
 
-        Outputs = new ObservableCollection<Output>();
-        for (int i = 0; i < _numOutputs; i++)
-        {
-            Outputs.Add(new Output());
-            Outputs[i].Number = i + 1;
-        }
+        for (var i = 0; i < _numVirtualInputs; i++)
+            VirtualInputs.Add(new VirtualInput(i + 1, "virtualInput" + i));
 
-        CanInputs = new ObservableCollection<CanInput>();
-        for (int i = 0; i < _numCanInputs; i++)
-        {
-            CanInputs.Add(new CanInput());
-            CanInputs[i].Number = i + 1;
-        }
+        for (var i = 0; i < _numFlashers; i++)
+            Flashers.Add(new Flasher(i + 1,  "flasher" + i));
 
-        VirtualInputs = new ObservableCollection<VirtualInput>();
-        for (int i = 0; i < _numVirtualInputs; i++)
-        {
-            VirtualInputs.Add(new VirtualInput());
-            VirtualInputs[i].Number = i + 1;
-        }
+        for (var i = 0; i < _numCounters; i++)
+            Counters.Add(new Counter(i  + 1, "counter" + i));
 
-        Wipers = new ObservableCollection<Wiper>
-        {
-            new Wiper()
-        };
-
-        Flashers = new ObservableCollection<Flasher>();
-        for (int i = 0; i < _numFlashers; i++)
-        {
-            Flashers.Add(new Flasher());
-            Flashers[i].Number = i + 1;
-        }
-
-        StarterDisable = new ObservableCollection<StarterDisable>
-        {
-            new StarterDisable()
-        };
-
-        Counters = new ObservableCollection<Counter>();
-        for (int i = 0; i < _numCounters; i++)
-        {
-            Counters.Add(new Counter());
-            Counters[i].Number = i + 1;
-        }
-
-        Conditions = new ObservableCollection<Condition>();
-        for (int i = 0; i < _numConditions; i++)
-        {
-            Conditions.Add(new Condition());
-            Conditions[i].Number = i + 1;
-        }
+        for (var i = 0; i < _numConditions; i++)
+            Conditions.Add(new Condition(i + 1, "condition" + i));
     }
     public void UpdateConnected()
     {
-        throw new NotImplementedException();
-    }
-
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceResponse> queue)
-    {
-        throw new NotImplementedException();
+        TimeSpan timeSpan = DateTime.Now - LastRxTime;
+        Connected = timeSpan.TotalMilliseconds < 500;
     }
 
     public void Clear()
     {
-        throw new NotImplementedException();
+        foreach(var input in DigitalInputs)
+            input.State = false;
+
+        foreach(var output in Outputs)
+        {
+            output.Current = 0;
+            output.State = OutState.Off;
+        }
+
+        foreach(var input in VirtualInputs)
+            input.Value = false;
+
+        foreach(var canInput in CanInputs)
+            canInput.Output = false;
     }
 
     public bool InIdRange(int id)
     {
-        return (id >= BaseId - 1) && (id <= BaseId + 30);
+        return (id >= BaseId) && (id <= BaseId + 31);
+    }
+    
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceResponse> queue)
+    {
+        throw new NotImplementedException();
     }
 
     public List<DeviceResponse> GetUploadMsgs()
