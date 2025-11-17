@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -17,11 +18,11 @@ public class StarterDisable(string name) : IDeviceFunction
     [JsonPropertyName("output6")] bool Output6 {get; set;}
     [JsonPropertyName("output7")] bool Output7 {get; set;}
     [JsonPropertyName("output8")] bool Output8 {get; set;}
-    
+
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.StarterDisable);
+        InsertSignalInt(data, (long)MessagePrefix.StarterDisable, 0, 8);
         return data;
     }
 
@@ -29,16 +30,16 @@ public class StarterDisable(string name) : IDeviceFunction
     {
         if (data.Length != 4) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Input = (VarMap)(data[2]);
-        Output1 = Convert.ToBoolean(data[3] & 0x01);
-        Output2 = Convert.ToBoolean((data[3] & 0x02) >> 1);
-        Output3 = Convert.ToBoolean((data[3] & 0x04) >> 2);
-        Output4 = Convert.ToBoolean((data[3] & 0x08) >> 3);
-        Output5 = Convert.ToBoolean((data[3] & 0x10) >> 4);
-        Output6 = Convert.ToBoolean((data[3] & 0x20) >> 5);
-        Output7 = Convert.ToBoolean((data[3] & 0x40) >> 6);
-        Output8 = Convert.ToBoolean((data[3] & 0x80) >> 7);
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Input = (VarMap)ExtractSignalInt(data, 16, 8);
+        Output1 = ExtractSignalInt(data, 24, 1) == 1;
+        Output2 = ExtractSignalInt(data, 25, 1) == 1;
+        Output3 = ExtractSignalInt(data, 26, 1) == 1;
+        Output4 = ExtractSignalInt(data, 27, 1) == 1;
+        Output5 = ExtractSignalInt(data, 28, 1) == 1;
+        Output6 = ExtractSignalInt(data, 29, 1) == 1;
+        Output7 = ExtractSignalInt(data, 30, 1) == 1;
+        Output8 = ExtractSignalInt(data, 31, 1) == 1;
 
         return true;
     }
@@ -46,17 +47,17 @@ public class StarterDisable(string name) : IDeviceFunction
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.StarterDisable);
-        data[1] = Convert.ToByte(Convert.ToByte(Enabled) & 0x01);
-        data[2] = Convert.ToByte(Input);
-        data[3] = Convert.ToByte(((Convert.ToByte(Output8) & 0x01) << 7) +
-                                 ((Convert.ToByte(Output7) & 0x01) << 6) +
-                                 ((Convert.ToByte(Output6) & 0x01) << 5) +
-                                 ((Convert.ToByte(Output5) & 0x01) << 4) +
-                                 ((Convert.ToByte(Output4) & 0x01) << 3) +
-                                 ((Convert.ToByte(Output3) & 0x01) << 2) +
-                                 ((Convert.ToByte(Output2) & 0x01) << 1) +
-                                 (Convert.ToByte(Output1) & 0x01));
+        InsertSignalInt(data, (long)MessagePrefix.StarterDisable, 0, 8);
+        InsertBool(data, Enabled, 8);
+        InsertSignalInt(data, (long)Input, 16, 8);
+        InsertBool(data, Output1, 24);
+        InsertBool(data, Output2, 25);
+        InsertBool(data, Output3, 26);
+        InsertBool(data, Output4, 27);
+        InsertBool(data, Output5, 28);
+        InsertBool(data, Output6, 29);
+        InsertBool(data, Output7, 30);
+        InsertBool(data, Output8, 31);
         return data;
     }
 }

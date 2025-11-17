@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -26,8 +27,8 @@ public class VirtualInput(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.VirtualInputs);
-        data[1] = Convert.ToByte(index);
+        InsertSignalInt(data, (long)MessagePrefix.VirtualInputs, 0, 8);
+        InsertSignalInt(data, index, 8, 8);
         return data;
     }
 
@@ -35,16 +36,18 @@ public class VirtualInput(int num, string name) : IDeviceFunction
     {
         if (data.Length != 7) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Not0 = Convert.ToBoolean((data[1] & 0x02) >> 1);
-        Not1 = Convert.ToBoolean((data[1] & 0x04) >> 2);
-        Not2 = Convert.ToBoolean((data[1] & 0x08) >> 3);
-        Var0 = (VarMap)data[3];
-        Var1 = (VarMap)data[4];
-        Var2 = (VarMap)data[5];
-        Mode = (InputMode)((data[6] & 0xC0) >> 6);
-        Cond0 = (Conditional)(data[6] & 0x03);
-        Cond1 = (Conditional)((data[6] & 0x0C) >> 2);
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Not0 = ExtractSignalInt(data, 9, 1) == 1;   
+        Not1 = ExtractSignalInt(data, 10, 1) == 1;  
+        Not2 = ExtractSignalInt(data, 11, 1) == 1;  
+
+        Var0 = (VarMap)ExtractSignalInt(data, 24, 8);
+        Var1 = (VarMap)ExtractSignalInt(data, 32, 8);
+        Var2 = (VarMap)ExtractSignalInt(data, 40, 8);
+
+        Mode = (InputMode)ExtractSignalInt(data, 54, 2);
+        Cond0 = (Conditional)ExtractSignalInt(data, 48, 2);
+        Cond1 = (Conditional)ExtractSignalInt(data, 50, 2);
 
         return true;
     }
@@ -52,18 +55,18 @@ public class VirtualInput(int num, string name) : IDeviceFunction
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.VirtualInputs);
-        data[1] = Convert.ToByte((Convert.ToByte(Not2) << 3) +
-                                 (Convert.ToByte(Not1) << 2) +
-                                 (Convert.ToByte(Not0) << 1) +
-                                 Convert.ToByte(Enabled));
-        data[2] = Convert.ToByte(Number - 1);
-        data[3] = Convert.ToByte(Var0);
-        data[4] = Convert.ToByte(Var1);
-        data[5] = Convert.ToByte(Var2);
-        data[6] = Convert.ToByte(((Convert.ToByte(Mode) & 0x03) << 0x06) +
-                                 ((Convert.ToByte(Cond1) & 0x03) << 2) +
-                                 (Convert.ToByte(Cond0) & 0x03));
+        InsertSignalInt(data, (long)MessagePrefix.VirtualInputs, 0, 8);
+        InsertBool(data, Enabled, 8); 
+        InsertBool(data, Not0, 9);    
+        InsertBool(data, Not1, 10);   
+        InsertBool(data, Not2, 11);   
+        InsertSignalInt(data, Number - 1, 16, 8);  
+        InsertSignalInt(data, (long)Var0, 24, 8);  
+        InsertSignalInt(data, (long)Var1, 32, 8);  
+        InsertSignalInt(data, (long)Var2, 40, 8);  
+        InsertSignalInt(data, (long)Mode, 54, 2);  
+        InsertSignalInt(data, (long)Cond1, 50, 2); 
+        InsertSignalInt(data, (long)Cond0, 48, 2); 
         return data;
     }
 }

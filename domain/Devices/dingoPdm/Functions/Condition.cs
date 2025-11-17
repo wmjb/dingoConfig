@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
+using domain.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -19,8 +21,8 @@ public class Condition(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Conditions);
-        data[1] = Convert.ToByte(index);
+        InsertSignalInt(data, (long)MessagePrefix.Conditions, 0, 8);
+        InsertSignalInt(data, index, 8, 8);
         return data;
     }
 
@@ -28,10 +30,10 @@ public class Condition(int num, string name) : IDeviceFunction
     {
         if (data.Length != 6) return false;
 
-        Enabled = Convert.ToBoolean(data[2] & 0x01);
-        Operator = (Operator)(data[2] >> 4);
-        Input = (VarMap)(data[3]);
-        Arg = (data[4] << 8) + data[5];
+        Enabled = ExtractSignalInt(data, 16, 1) == 1;
+        Operator = (Operator)ExtractSignalInt(data, 20, 4);
+        Input = (VarMap)ExtractSignalInt(data, 24, 8);
+        Arg = (int)ExtractSignalInt(data, 32, 16, ByteOrder.BigEndian);
 
         return true;
     }
@@ -39,13 +41,12 @@ public class Condition(int num, string name) : IDeviceFunction
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Conditions);
-        data[1] = Convert.ToByte(Number - 1);
-        data[2] = Convert.ToByte((Convert.ToByte(Operator) << 4) +
-                                 (Convert.ToByte(Enabled)));
-        data[3] = Convert.ToByte(Input);
-        data[4] = Convert.ToByte(Arg >> 8);
-        data[5] = Convert.ToByte(Arg & 0xFF);
+        InsertSignalInt(data, (long)MessagePrefix.Conditions, 0, 8);
+        InsertSignalInt(data, Number - 1, 8, 8);
+        InsertBool(data, Enabled, 16);
+        InsertSignalInt(data, (long)Operator, 20, 4);
+        InsertSignalInt(data, (long)Input, 24, 8);
+        InsertSignalInt(data, Arg, 32, 16, ByteOrder.BigEndian);
 
         return data;
     }

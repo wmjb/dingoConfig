@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -36,8 +37,8 @@ public class CanInput(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.CanInputs);
-        data[1] = Convert.ToByte(index);
+        InsertSignalInt(data, (long)MessagePrefix.CanInputs, 0, 8);
+        InsertSignalInt(data, index, 8, 8);
         return data;
     }
 
@@ -45,39 +46,38 @@ public class CanInput(int num, string name) : IDeviceFunction
     {
         if (data.Length != 7) return false;
 
-        Enabled = Convert.ToBoolean(data[2] & 0x01);
-        Mode = (InputMode)((data[2] & 0x06) >> 1);
-        TimeoutEnabled = Convert.ToBoolean((data[2] & 0x08) >> 3);
-        Operator = (Operator)((data[2] & 0xF0) >> 4);
-        Dlc = (data[3] & 0xF0) >> 4;
-        StartingByte = (data[3] & 0x0F);
-        OnVal = (data[4] << 8) + data[5];
-        Timeout = (int)(data[6] / 10.0);
+        Enabled = ExtractSignalInt(data, 16, 1) == 1;
+        Mode = (InputMode)ExtractSignalInt(data, 17, 2);
+        TimeoutEnabled = ExtractSignalInt(data, 19, 1) == 1;
+        Operator = (Operator)ExtractSignalInt(data, 20, 4);
+        StartingByte = (int)ExtractSignalInt(data, 24, 4);
+        Dlc = (int)ExtractSignalInt(data, 28, 4);
+        OnVal = (int)ExtractSignalInt(data, 32, 16, ByteOrder.BigEndian);
+        Timeout = (int)ExtractSignal(data, 48, 8, factor: 0.1);
         return true;
     }
 
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.CanInputs);
-        data[1] = Convert.ToByte(Number - 1);
-        data[2] = Convert.ToByte(((Convert.ToByte(Operator) & 0x0F) << 4) +
-                                 ((Convert.ToByte(Mode) & 0x03) << 1) +
-                                 Convert.ToByte((Convert.ToByte(TimeoutEnabled) << 3)) +
-                                 (Convert.ToByte(Enabled) & 0x01));
-        data[3] = Convert.ToByte(((Dlc & 0x0F) << 4) +
-                                 (Convert.ToByte(StartingByte) & 0x0F));
-        data[4] = Convert.ToByte((OnVal & 0xFF00) >> 8); 
-        data[5] = Convert.ToByte(OnVal & 0x00FF);
-        data[6] = Convert.ToByte((Timeout * 10));
+        InsertSignalInt(data, (long)MessagePrefix.CanInputs, 0, 8);
+        InsertSignalInt(data, Number - 1, 8, 8);
+        InsertBool(data, Enabled, 16);
+        InsertSignalInt(data, (long)Mode, 17, 2);
+        InsertBool(data, TimeoutEnabled, 19);
+        InsertSignalInt(data, (long)Operator, 20, 4);
+        InsertSignalInt(data, StartingByte, 24, 4);
+        InsertSignalInt(data, Dlc, 28, 4);
+        InsertSignalInt(data, OnVal, 32, 16, ByteOrder.BigEndian);
+        InsertSignal(data, Timeout, 48, 8, factor: 0.1);
         return data;
     }
     
     public static byte[] RequestId(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.CanInputsId);
-        data[1] = Convert.ToByte(index);
+        InsertSignalInt(data, (long)MessagePrefix.CanInputsId, 0, 8);
+        InsertSignalInt(data, index, 8, 8);
         return data;
     }
 
@@ -85,15 +85,19 @@ public class CanInput(int num, string name) : IDeviceFunction
     {
         if (data.Length != 8) return false;
 
-        Ide = Convert.ToBoolean((data[2] & 0x08) >> 3);
+        Ide = ExtractSignalInt(data, 19, 1) == 1;
 
         if (Ide)
         {
-            Id = ((data[4] & 0x1F) << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
+            // Extended ID: bits 32-36 (5 bits) + bits 40-63 (24 bits) = 29 bits total
+            int idUpper = (int)ExtractSignalInt(data, 32, 5);
+            int idLower = (int)ExtractSignalInt(data, 40, 24, ByteOrder.BigEndian);
+            Id = (idUpper << 24) | idLower;
         }
         else
         {
-            Id = ((data[2] & 0x07) << 8) + data[3];
+            // Standard ID: 11 bits at position 16-18 (3 bits) and 24-31 (8 bits)
+            Id = (int)ExtractSignalInt(data, 16, 3) << 8 | (int)ExtractSignalInt(data, 24, 8);
         }
 
         return true;
@@ -102,15 +106,25 @@ public class CanInput(int num, string name) : IDeviceFunction
     public byte[] WriteId()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.CanInputsId);
-        data[1] = Convert.ToByte(Number - 1);
-        data[2] = Convert.ToByte((Convert.ToByte(Ide) << 3) +
-                                 ((Id >> 8) & 0x07));
-        data[3] = Convert.ToByte(Id & 0xFF);
-        data[4] = Convert.ToByte((Id >> 24) & 0x1F);
-        data[5] = Convert.ToByte((Id >> 16) & 0xFF);
-        data[6] = Convert.ToByte((Id >> 8) & 0xFF);
-        data[7] = Convert.ToByte(Id & 0xFF);
+        InsertSignalInt(data, (long)MessagePrefix.CanInputsId, 0, 8);
+        InsertSignalInt(data, Number - 1, 8, 8);
+
+        if (Ide)
+        {
+            // Extended ID: upper 5 bits and lower 24 bits
+            InsertSignalInt(data, (Id >> 8) & 0x07, 16, 3);
+            InsertBool(data, Ide, 19);
+            InsertSignalInt(data, (Id >> 24) & 0x1F, 32, 5);
+            InsertSignalInt(data, Id & 0xFFFFFF, 40, 24, ByteOrder.BigEndian);
+        }
+        else
+        {
+            // Standard ID: 11 bits split across byte 2 and 3
+            InsertSignalInt(data, (Id >> 8) & 0x07, 16, 3);
+            InsertBool(data, Ide, 19);
+            InsertSignalInt(data, Id & 0xFF, 24, 8);
+        }
+
         return data;
     }
 }

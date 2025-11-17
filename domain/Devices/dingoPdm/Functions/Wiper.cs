@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -30,7 +31,7 @@ public class Wiper(string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Wiper);
+        InsertSignalInt(data, (long)MessagePrefix.Wiper, 0, 8);
         return data;
     }
 
@@ -38,41 +39,41 @@ public class Wiper(string name) : IDeviceFunction
     {
         if (data.Length != 8) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Mode = (WiperMode)((data[1] & 0x06) >> 1);
-        ParkStopLevel = Convert.ToBoolean((data[1] & 0x08) >> 3);
-        WashWipeCycles = (data[1] & 0xF0) >> 4;
-        SlowInput = (VarMap)data[2];
-        FastInput = (VarMap)data[3];
-        InterInput = (VarMap)data[4];
-        OnInput = (VarMap)data[5];
-        ParkInput = (VarMap)data[6];
-        WashInput = (VarMap)data[7];
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Mode = (WiperMode)ExtractSignalInt(data, 9, 2);
+        ParkStopLevel = ExtractSignalInt(data, 11, 1) == 1;
+        WashWipeCycles = (byte)ExtractSignalInt(data, 12, 4);
+        SlowInput = (VarMap)ExtractSignalInt(data, 16, 8);
+        FastInput = (VarMap)ExtractSignalInt(data, 24, 8);
+        InterInput = (VarMap)ExtractSignalInt(data, 32, 8);
+        OnInput = (VarMap)ExtractSignalInt(data, 40, 8);
+        ParkInput = (VarMap)ExtractSignalInt(data, 48, 8);
+        WashInput = (VarMap)ExtractSignalInt(data, 56, 8);
 
         return true;
     }
 
     public byte[] Write()
     {
-        byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Wiper);
-        data[1] = Convert.ToByte(((Convert.ToByte(WashWipeCycles) & 0x0F) << 4) +
-                                 ((Convert.ToByte(ParkStopLevel) & 0x01) << 3) +
-                                 ((Convert.ToByte(Mode) & 0x03) << 1) +
-                                 (Convert.ToByte(Enabled) & 0x01));
-        data[2] = Convert.ToByte(SlowInput);
-        data[3] = Convert.ToByte(FastInput);
-        data[4] = Convert.ToByte(InterInput);
-        data[5] = Convert.ToByte(OnInput);
-        data[6] = Convert.ToByte(ParkInput);
-        data[7] = Convert.ToByte(WashInput);
+        var data = new byte[8];
+        InsertSignalInt(data, (long)MessagePrefix.Wiper, 0, 8);
+        InsertBool(data, Enabled, 8);
+        InsertSignalInt(data, (long)Mode, 9, 2);
+        InsertBool(data, ParkStopLevel, 11);
+        InsertSignalInt(data, WashWipeCycles, 12, 4);
+        InsertSignalInt(data, (long)SlowInput, 16, 8);
+        InsertSignalInt(data, (long)FastInput, 24, 8);
+        InsertSignalInt(data, (long)InterInput, 32, 8);
+        InsertSignalInt(data, (long)OnInput, 40, 8);
+        InsertSignalInt(data, (long)ParkInput, 48, 8);
+        InsertSignalInt(data, (long)WashInput, 56, 8);
         return data;
     }
-    
+
     public static byte[] RequestSpeed()
     {
-        byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.WiperSpeed);
+        var data = new byte[8];
+        InsertSignalInt(data, (long)MessagePrefix.WiperSpeed, 0, 8);
         return data;
     }
 
@@ -80,42 +81,41 @@ public class Wiper(string name) : IDeviceFunction
     {
         if (data.Length != 7) return false;
 
-        SwipeInput = (VarMap)data[1];
-        SpeedInput = (VarMap)data[2];
-        SpeedMap[0] = (WiperSpeed)(data[3] & 0x0F);
-        SpeedMap[1] = (WiperSpeed)((data[3] & 0xF0) >> 4);
-        SpeedMap[2] = (WiperSpeed)(data[4] & 0x0F);
-        SpeedMap[3] = (WiperSpeed)((data[4] & 0xF0) >> 4);
-        SpeedMap[4] = (WiperSpeed)(data[5] & 0x0F);
-        SpeedMap[5] = (WiperSpeed)((data[5] & 0xF0) >> 4);
-        SpeedMap[6] = (WiperSpeed)(data[6] & 0x0F);
-        SpeedMap[7] = (WiperSpeed)((data[6] & 0xF0) >> 4);
+        SwipeInput = (VarMap)ExtractSignalInt(data, 8, 8);
+        SpeedInput = (VarMap)ExtractSignalInt(data, 16, 8);
+        SpeedMap[0] = (WiperSpeed)ExtractSignalInt(data, 24, 4);
+        SpeedMap[1] = (WiperSpeed)ExtractSignalInt(data, 28, 4);
+        SpeedMap[2] = (WiperSpeed)ExtractSignalInt(data, 32, 4);
+        SpeedMap[3] = (WiperSpeed)ExtractSignalInt(data, 36, 4);
+        SpeedMap[4] = (WiperSpeed)ExtractSignalInt(data, 40, 4);
+        SpeedMap[5] = (WiperSpeed)ExtractSignalInt(data, 44, 4);
+        SpeedMap[6] = (WiperSpeed)ExtractSignalInt(data, 48, 4);
+        SpeedMap[7] = (WiperSpeed)ExtractSignalInt(data, 52, 4);
 
         return true;
     }
 
     public byte[] WriteSpeed()
     {
-        byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.WiperSpeed);
-        data[1] = Convert.ToByte(SwipeInput);
-        data[2] = Convert.ToByte(SpeedInput);
-        data[3] = Convert.ToByte(((Convert.ToByte(SpeedMap[1]) & 0x0F) << 4) +
-                  (Convert.ToByte(SpeedMap[0]) & 0x0F));
-        data[4] = Convert.ToByte(((Convert.ToByte(SpeedMap[3]) & 0x0F) << 4) +
-                  (Convert.ToByte(SpeedMap[2]) & 0x0F));
-        data[5] = Convert.ToByte(((Convert.ToByte(SpeedMap[4]) & 0x0F) << 4) +
-                  (Convert.ToByte(SpeedMap[5]) & 0x0F));
-        data[6] = Convert.ToByte(((Convert.ToByte(SpeedMap[7]) & 0x0F) << 4) +
-                  (Convert.ToByte(SpeedMap[6]) & 0x0F));
-                
+        var data = new byte[8];
+        InsertSignalInt(data, (long)MessagePrefix.WiperSpeed, 0, 8);
+        InsertSignalInt(data, (long)SwipeInput, 8, 8);
+        InsertSignalInt(data, (long)SpeedInput, 16, 8);
+        InsertSignalInt(data, (long)SpeedMap[0], 24, 4);
+        InsertSignalInt(data, (long)SpeedMap[1], 28, 4);
+        InsertSignalInt(data, (long)SpeedMap[2], 32, 4);
+        InsertSignalInt(data, (long)SpeedMap[3], 36, 4);
+        InsertSignalInt(data, (long)SpeedMap[4], 40, 4);
+        InsertSignalInt(data, (long)SpeedMap[5], 44, 4);
+        InsertSignalInt(data, (long)SpeedMap[6], 48, 4);
+        InsertSignalInt(data, (long)SpeedMap[7], 52, 4);
         return data;
     }
 
     public static byte[] RequestDelays()
     {
-        byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.WiperDelays);
+        var data = new byte[8];
+        InsertSignalInt(data, (long)MessagePrefix.WiperDelays, 0, 8);
         return data;
     }
 
@@ -123,27 +123,26 @@ public class Wiper(string name) : IDeviceFunction
     {
         if (data.Length != 7) return false;
 
-        IntermitTime[0] = data[1] / 10.0;
-        IntermitTime[1] = data[2] / 10.0;
-        IntermitTime[2] = data[3] / 10.0;
-        IntermitTime[3] = data[4] / 10.0;
-        IntermitTime[4] = data[5] / 10.0;
-        IntermitTime[5] = data[6] / 10.0;
+        IntermitTime[0] = ExtractSignal(data, 8, 8, factor: 0.1);
+        IntermitTime[1] = ExtractSignal(data, 16, 8, factor: 0.1);
+        IntermitTime[2] = ExtractSignal(data, 24, 8, factor: 0.1);
+        IntermitTime[3] = ExtractSignal(data, 32, 8, factor: 0.1);
+        IntermitTime[4] = ExtractSignal(data, 40, 8, factor: 0.1);
+        IntermitTime[5] = ExtractSignal(data, 48, 8, factor: 0.1);
 
         return true;
     }
 
     public byte[] WriteDelays()
     {
-        byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.WiperDelays);
-        data[1] = Convert.ToByte(IntermitTime[0] * 10);
-        data[2] = Convert.ToByte(IntermitTime[1] * 10);
-        data[3] = Convert.ToByte(IntermitTime[2] * 10);
-        data[4] = Convert.ToByte(IntermitTime[3] * 10);
-        data[5] = Convert.ToByte(IntermitTime[4] * 10);
-        data[6] = Convert.ToByte(IntermitTime[5] * 10);
-               
+        var data = new byte[8];
+        InsertSignalInt(data, (long)MessagePrefix.WiperDelays, 0, 8);
+        InsertSignal(data, IntermitTime[0], 8, 8, factor: 0.1);
+        InsertSignal(data, IntermitTime[1], 16, 8, factor: 0.1);
+        InsertSignal(data, IntermitTime[2], 24, 8, factor: 0.1);
+        InsertSignal(data, IntermitTime[3], 32, 8, factor: 0.1);
+        InsertSignal(data, IntermitTime[4], 40, 8, factor: 0.1);
+        InsertSignal(data, IntermitTime[5], 48, 8, factor: 0.1);
         return data;
     }
 }

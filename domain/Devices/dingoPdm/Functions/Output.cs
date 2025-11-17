@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -26,8 +27,8 @@ public class Output(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Outputs);
-        data[1] = Convert.ToByte((index & 0x0F) << 4);
+        InsertSignalInt(data, (long)MessagePrefix.Outputs, 0, 8);
+        InsertSignalInt(data, index, 12, 4);
         return data;
     }
 
@@ -35,14 +36,14 @@ public class Output(int num, string name) : IDeviceFunction
     {
         if (data.Length != 8) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Input = (VarMap)(data[2]);
-        CurrentLimit = data[3];
-        ResetCountLimit = (data[4] & 0xF0) >> 4;
-        ResetMode = (ResetMode)(data[4] & 0x0F);
-        ResetTime = data[5] / 10.0;
-        InrushCurrentLimit = data[6];
-        InrushTime = data[7] / 10.0;
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Input = (VarMap)ExtractSignalInt(data, 16, 8);
+        CurrentLimit = (int)ExtractSignalInt(data, 24, 8);
+        ResetMode = (ResetMode)ExtractSignalInt(data, 32, 4);
+        ResetCountLimit = (int)ExtractSignalInt(data, 36, 4);
+        ResetTime = ExtractSignal(data, 40, 8, factor: 0.1);
+        InrushCurrentLimit = (int)ExtractSignalInt(data, 48, 8);
+        InrushTime = ExtractSignal(data, 56, 8, factor: 0.1);
 
         return true;
     }
@@ -50,14 +51,16 @@ public class Output(int num, string name) : IDeviceFunction
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Outputs);
-        data[1] = Convert.ToByte((((Number - 1) & 0x0F) << 4) + (Convert.ToByte(Enabled) & 0x01));
-        data[2] = Convert.ToByte(Input);
-        data[3] = Convert.ToByte(CurrentLimit);
-        data[4] = Convert.ToByte((Convert.ToByte(ResetCountLimit) << 4) + (Convert.ToByte(ResetMode) & 0x0F));
-        data[5] = Convert.ToByte(ResetTime * 10);
-        data[6] = Convert.ToByte(InrushCurrentLimit);
-        data[7] = Convert.ToByte(InrushTime * 10);
+        InsertSignalInt(data, (long)MessagePrefix.Outputs, 0, 8);
+        InsertBool(data, Enabled, 8);
+        InsertSignalInt(data, Number - 1, 12, 4);
+        InsertSignalInt(data, (long)Input, 16, 8);
+        InsertSignalInt(data, CurrentLimit, 24, 8);
+        InsertSignalInt(data, (long)ResetMode, 32, 4);
+        InsertSignalInt(data, ResetCountLimit, 36, 4);
+        InsertSignal(data, ResetTime, 40, 8, factor: 0.1);
+        InsertSignalInt(data, InrushCurrentLimit, 48, 8);
+        InsertSignal(data, InrushTime, 56, 8, factor: 0.1);
         return data;
     }
 }

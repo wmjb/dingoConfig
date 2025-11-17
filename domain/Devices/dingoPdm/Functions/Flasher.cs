@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -19,8 +20,8 @@ public class Flasher(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Flashers);
-        data[1] = Convert.ToByte((index & 0x0F) << 4);
+        InsertSignalInt(data, (long)MessagePrefix.Flashers, 0, 8);
+        InsertSignalInt(data, index, 12, 4);
         return data;
     }
 
@@ -28,11 +29,11 @@ public class Flasher(int num, string name) : IDeviceFunction
     {
         if (data.Length != 6) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Single = Convert.ToBoolean((data[1] & 0x02) >> 1);
-        Input = (VarMap)(data[2]);
-        OnTime = (int)(data[4] / 10.0);
-        OffTime = (int)(data[5] / 10.0);
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Single = ExtractSignalInt(data, 9, 1) == 1;
+        Input = (VarMap)ExtractSignalInt(data, 16, 8);
+        OnTime = (int)ExtractSignal(data, 32, 8, factor: 0.1);
+        OffTime = (int)ExtractSignal(data, 40, 8, factor: 0.1);
 
         return true;
     }
@@ -40,14 +41,13 @@ public class Flasher(int num, string name) : IDeviceFunction
     public byte[] Write()
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Flashers);
-        data[1] = Convert.ToByte((((Number - 1) & 0x0F) << 4) +
-                                 (Convert.ToByte(Single) << 1) +
-                                 (Convert.ToByte(Enabled)));
-        data[2] = Convert.ToByte(Input);
-        data[3] = 0;
-        data[4] = Convert.ToByte(OnTime * 10);
-        data[5] = Convert.ToByte(OffTime * 10);
+        InsertSignalInt(data, (long)MessagePrefix.Flashers, 0, 8);
+        InsertBool(data, Enabled, 8);
+        InsertBool(data, Single, 9);
+        InsertSignalInt(data, Number - 1, 12, 4);
+        InsertSignalInt(data, (long)Input, 16, 8);
+        InsertSignal(data, OnTime, 32, 8, factor: 0.1);
+        InsertSignal(data, OffTime, 40, 8, factor: 0.1);
         return data;
     }
 }

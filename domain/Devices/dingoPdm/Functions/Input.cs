@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
+using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
@@ -19,8 +20,8 @@ public class Input(int num, string name) : IDeviceFunction
     public static byte[] Request(int index)
     {
         var data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Inputs);
-        data[1] = Convert.ToByte((index & 0x0F) << 4);
+        InsertSignalInt(data, (long)MessagePrefix.Inputs, 0, 8);
+        InsertSignalInt(data, index, 12, 4);
         return data;
     }
 
@@ -28,11 +29,11 @@ public class Input(int num, string name) : IDeviceFunction
     {
         if (data.Length != 4) return false;
 
-        Enabled = Convert.ToBoolean(data[1] & 0x01);
-        Invert = Convert.ToBoolean((data[1] & 0x08) >> 3);
-        Mode = (InputMode)((data[1] & 0x06) >> 1);
-        DebounceTime = data[2] * 10;
-        Pull = (InputPull)(data[3] & 0x03);
+        Enabled = ExtractSignalInt(data, 8, 1) == 1;
+        Mode = (InputMode)ExtractSignalInt(data, 9, 2);
+        Invert = ExtractSignalInt(data, 11, 1) == 1;
+        DebounceTime = (int)ExtractSignal(data, 16, 8, factor: 10.0);
+        Pull = (InputPull)ExtractSignalInt(data, 24, 2);
 
         return true;
     }
@@ -40,13 +41,13 @@ public class Input(int num, string name) : IDeviceFunction
     public byte[] Write()
     {
         byte[] data = new byte[8];
-        data[0] = Convert.ToByte(MessagePrefix.Inputs);
-        data[1] = Convert.ToByte((((Number - 1) & 0x0F) << 4) +
-                                 ((Convert.ToByte(Invert) & 0x01) << 3) +
-                                 ((Convert.ToByte(Mode) & 0x03) << 1) +
-                                 (Convert.ToByte(Enabled) & 0x01));
-        data[2] = Convert.ToByte(DebounceTime / 10);
-        data[3] = Convert.ToByte((byte)Pull & 0x03);
+        InsertSignalInt(data, (long)MessagePrefix.Inputs, 0, 8);
+        InsertBool(data, Enabled, 8);
+        InsertSignalInt(data, (long)Mode, 9, 2);
+        InsertBool(data, Invert, 11);
+        InsertSignalInt(data, Number - 1, 12, 4);
+        InsertSignal(data, DebounceTime, 16, 8, factor: 10.0);
+        InsertSignalInt(data, (long)Pull, 24, 2);
         return data;
     }
 }
