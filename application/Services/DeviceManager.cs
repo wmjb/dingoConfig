@@ -1,5 +1,7 @@
 using domain.Devices;
+using domain.Devices.CanboardDevice;
 using domain.Devices.dingoPdm;
+using domain.Devices.dingoPdmMax;
 using domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +10,9 @@ namespace application.Services;
 public class DeviceManager(ILogger<DeviceManager> logger)
 {
     private List<IDevice> _devices = [];
-    private List<dingoPdmDevice> _dingoPdms = [];
+    private List<PdmDevice> _pdms = [];
+    private List<PdmMaxDevice> _maxPdms = [];
+    private List<CanboardDevice> _canboards = [];
 
     public async Task GetAllStatus()
     {

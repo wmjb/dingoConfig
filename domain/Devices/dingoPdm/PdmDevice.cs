@@ -5,11 +5,12 @@ using domain.Devices.dingoPdm.Functions;
 using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
+using Microsoft.Extensions.Logging;
 using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm;
 
-public class dingoPdmDevice : IDevice
+public class PdmDevice : IDevice
 {
     protected virtual int MinMajorVersion { get; } = 0;
     protected virtual int MinMinorVersion { get; } = 4;
@@ -63,13 +64,21 @@ public class dingoPdmDevice : IDevice
             }
         }
     }
+
+    private readonly ILogger _logger;
     
-    public dingoPdmDevice(string name, int baseId)
+    public PdmDevice(string name, int baseId, ILogger<PdmDevice> logger)
     {
         Name = name;
         BaseId = baseId;
         Guid = Guid.NewGuid();
+        _logger = logger;
+        
+        InitializeCollections();
+    }
 
+    protected virtual void InitializeCollections()
+    {
         for (var i = 0; i < NumDigitalInputs; i++)
             Inputs.Add(new Input(i + 1, "digitalInput" + i));
         
@@ -225,12 +234,12 @@ public class dingoPdmDevice : IDevice
 
     protected virtual void ReadMessage5(byte[] data)
     {
-        for (int i = 0; i < 32; i++)
+        for (var i = 0; i < 32; i++)
         {
             CanInputs[i].Output = ExtractSignalInt(data, i, 1) == 1;
         }
 
-        for (int i = 0; i < 16; i++)
+        for (var i = 0; i < 16; i++)
         {
             VirtualInputs[i].Value = ExtractSignalInt(data, 32 + i, 1) == 1;
         }
@@ -345,10 +354,7 @@ public class dingoPdmDevice : IDevice
                 Version = $"V{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
 
                 if (!CheckVersion(data[1], data[2], (data[3] << 8) + (data[4])))
-                {
-                    //TODO: Add log
-                    //Logger.Error($"{Name} ID: {BaseId}, Firmware needs to be updated. V{_minMajorVersion}.{_minMinorVersion}.{_minBuildVersion} or greater");
-                }
+                    _logger.LogError($"{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater");
 
                 key = (BaseId, (int)MessagePrefix.Version, 0);
                 if (queue.TryGetValue(key, out canFrame!))
@@ -587,8 +593,7 @@ public class dingoPdmDevice : IDevice
 			case MessagePrefix.BurnSettings:
                 if (data[1] == 1) //Successful burn
                 {
-                    //TODO: Add log
-                    //Logger.Info($"{Name} ID: {BaseId}, Burn Successful");
+                    _logger.LogInformation($"{Name} ID: {BaseId}, Burn Successful");
 
                     key = (BaseId, (int)MessagePrefix.BurnSettings, 0);
                     if (queue.TryGetValue(key, out canFrame!))
@@ -599,17 +604,14 @@ public class dingoPdmDevice : IDevice
                 }
 
                 if (data[1] == 0) //Unsuccessful burn
-                {
-                    //TODO: Add log
-                    //Logger.Error($"{Name} ID: {BaseId}, Burn Failed");
-                }
+                    _logger.LogError($"{Name} ID: {BaseId}, Burn Failed");
+                
                 break;
 
             case MessagePrefix.Sleep:
                 if (data[1] == 1) //Successful sleep
                 {
-                    //TODO: Add log
-                    //Logger.Info($"{Name} ID: {BaseId}, Sleep Successful");
+                    _logger.LogInformation($"{Name} ID: {BaseId}, Sleep Successful");
 
                     key = (BaseId, (int)MessagePrefix.Sleep, 0);
                     if (queue.TryGetValue(key, out canFrame!))
@@ -620,10 +622,8 @@ public class dingoPdmDevice : IDevice
                 }
 
                 if (data[1] == 0) //Unsuccessful sleep
-                {
-                    //TODO: Add log
-                    //Logger.Error($"{Name} ID: {BaseId}, Sleep Failed");
-                }
+                    _logger.LogError($"{Name} ID: {BaseId}, Sleep Failed");
+                
                 break;
 
             default:
@@ -640,16 +640,13 @@ public class dingoPdmDevice : IDevice
         switch (type)
         {
             case MessageType.Info:
-                //TODO: Add log
-                //Logger.Info($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                _logger.LogInformation($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
             case MessageType.Warning:
-                //TODO: Add log
-                //Logger.Warn($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                _logger.LogWarning($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
             case MessageType.Error:
-                //TODO: Add log
-                //Logger.Error($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                _logger.LogError($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
         }
     }
