@@ -143,7 +143,31 @@ public interface ICommsAdapter
 
 Available adapters: `UsbAdapter`, `SlcanAdapter`, `PcanAdapter`, `SimAdapter`
 
-### 4. Dependency Injection Setup
+### 4. DeviceManager (Device Lifecycle & Request/Response Tracking)
+
+**Location**: `application/Services/DeviceManager.cs`
+
+Central service for managing all devices and coordinating CAN communication. Handles device creation, request/response tracking with timeouts and retries, and device operations.
+
+**Key Responsibilities**:
+- **Device Registry**: `Dictionary<Guid, IDevice>` - all devices keyed by Guid
+- **Request Queue**: `ConcurrentDictionary<(BaseId, Prefix, Index), DeviceCanFrame>` - tracks pending messages
+- **Timeout Management**: Automatically retries failed messages (max 3 attempts, 500ms timeout)
+- **Polymorphic Operations**: Calls interface methods on all device types uniformly
+
+**Key Methods**:
+- `AddDevice(string deviceType, string name, int baseId)`: Create and register a new device
+- `GetDevice(Guid id)` / `GetDevice<T>(Guid id)`: Retrieve devices
+- `OnCanDataReceived(CanFrame frame)`: Called by CommsDataPipeline - routes data to devices
+- `SetTransmitCallback(Action<CanFrame> callback)`: Sets up TX channel connection
+- Device operations: `UploadDeviceConfig()`, `DownloadDeviceConfig()`, `BurnDeviceSettings()`, `SleepDevice()`, `RequestDeviceVersion()`, `DownloadUpdatedConfig()`
+
+**Design Pattern**:
+- All devices implement `IDevice` interface with all methods (even if no-op)
+- DeviceManager calls interface methods without type checking
+- Device-specific functionality handled uniformly through polymorphism
+
+### 5. Dependency Injection Setup
 
 **Location**: `api/Program.cs`
 
@@ -153,6 +177,11 @@ builder.Services.AddTransient<UsbAdapter>();
 builder.Services.AddTransient<SlcanAdapter>();
 builder.Services.AddTransient<PcanAdapter>();
 builder.Services.AddTransient<SimAdapter>();
+```
+
+DeviceManager is Singleton (one instance for the lifetime of the app):
+```csharp
+builder.Services.AddSingleton<DeviceManager>();
 ```
 
 CommsAdapterManager is Singleton (one instance for the lifetime of the app):
@@ -167,23 +196,52 @@ builder.Services.AddHostedService<CommsDataPipeline>();
 
 ## Data Flow Patterns
 
-### Cyclic Data Flow (Real-time Monitoring)
+### RX Pipeline (Receive Cyclic Data)
 ```
 CAN Adapter (3000 msg/s)
     ↓
 CommsAdapterManager.DataReceived event
     ↓
-CommsDataPipeline.OnDataReceived()
-    ↓
-Writes to RX Channel
+CommsDataPipeline.OnDataReceived() writes to RX Channel
     ↓
 ProcessRxPipelineAsync() reads from channel
     ↓
-Route to devices (to be implemented)
+DeviceManager.OnCanDataReceived(frame) routes to devices
     ↓
-Device updates properties and circular buffers
+Device.Read() parses data and updates properties
+    ↓
+If response message: removes from _requestQueue
+    ↓
+Device updates state/config properties and circular buffers
     ↓
 SignalR broadcasts to web clients at 20 Hz
+```
+
+### TX Pipeline (Request/Response Tracking)
+```
+Controller receives request (e.g., /api/pdm-devices/{id}/burn)
+    ↓
+Controller calls DeviceManager.BurnDeviceSettings(deviceId)
+    ↓
+DeviceManager.QueueMessage(DeviceCanFrame)
+    ↓
+Message added to _requestQueue with key (BaseId, Prefix, Index)
+    ↓
+Timer starts (500ms timeout)
+    ↓
+Message queued to TX Channel via SetTransmitCallback()
+    ↓
+CommsDataPipeline.ProcessTxPipelineAsync() sends to adapter
+    ↓
+Adapter.WriteAsync() transmits over CAN bus
+    ↓
+Device responds with matching Prefix
+    ↓
+Response arrives → RX Pipeline → Device.Read() removes from queue
+    ↓
+Timer cancelled, message complete
+    ↓
+[If timeout] HandleMessageTimeout() → retries (max 3 attempts) or logs error
 ```
 
 ### Runtime Adapter Selection Flow
@@ -207,46 +265,69 @@ CommsDataPipeline starts receiving data via manager
 
 ## Implementation Approach
 
-### Current State (Phase 2-3)
+### Current State (Phase 3)
 - ✅ Foundation and folder structure complete
 - ✅ Core interfaces defined in domain/ (ICommsAdapter, IDevice, ICommsAdapterManager)
 - ✅ CommsAdapterManager fully implemented in infrastructure/Comms/
-- ✅ CommsDataPipeline with bidirectional channels implemented in infrastructure/BackgroundServices/
+- ✅ CommsDataPipeline with bidirectional channels and RX/TX pipelines implemented
 - ✅ Adapter stubs created (UsbAdapter, SlcanAdapter, PcanAdapter, SimAdapter)
-- ✅ Basic DI setup in api/Program.cs
-- ⚠️ Device implementations not yet created
-- ⚠️ DeviceManager not yet implemented
-- ⚠️ Request/response tracking not yet added to pipeline
+- ✅ DeviceManager fully implemented with:
+  - Device creation and registry
+  - Request/response tracking with timeout/retry logic
+  - Polymorphic device operations (no type checking needed)
+  - TX callback integration with CommsDataPipeline
+- ✅ Device implementations for PdmDevice and PdmMaxDevice (with all IDevice methods)
+- ✅ CreateDeviceRequest DTO in contracts/
+- ✅ DI setup in api/Program.cs
+- ⚠️ Controllers for device operations not yet created
+- ⚠️ SignalR real-time updates not yet implemented
+- ⚠️ AutoMapper profiles for DTO mapping not yet created
 
 ### Next Steps
-1. **Complete Device Implementations**: Create concrete device classes in `domain/Devices/` (DingoPDMDevice, etc.)
-2. **Add Request/Response Tracking**: Enhance CommsDataPipeline with ConcurrentDictionary for configuration read/write
-3. **Implement DeviceManager**: Central registry in `application/Services/`
-4. **Add MediatR**: Commands/queries/handlers for business operations
-5. **Build Controllers**: Device-specific API endpoints
-6. **Add SignalR**: Real-time web updates
-7. **Implement CSV Logging**: Message logging with rotation
+1. **Build Controllers**: Device-specific API endpoints (DeviceController, PdmDeviceController, etc.)
+2. **Add AutoMapper Profiles**: DTO mapping for State/Config DTOs
+3. **Add SignalR**: Real-time web updates to clients
+4. **Implement CSV Logging**: Message logging with rotation
+5. **Add MediatR**: Commands/queries/handlers for business operations (optional optimization)
+6. **Unit Tests**: Test DeviceManager, device operations, timeout/retry logic
+7. **Integration Tests**: End-to-end CAN communication testing
 
 ### When Adding New Features
 
 **Device Classes**:
 - Place concrete implementations in `domain/Devices/`
-- Implement `IDevice` interface
+- Implement the complete `IDevice` interface (provide no-op implementations for unused methods)
 - Include cyclic properties (real-time values), configuration properties, and circular buffers for charting
-- Parse incoming CAN data and raise CyclicDataReceived events
+- Parse incoming CAN data and update device state via `Read()` method
+- Remove completed messages from request queue via the ref `queue` parameter
 
 **Controllers**:
 - Create device-specific controllers in `api/Controllers/`
-- Use MediatR for command/query handling
+- Call `DeviceManager` methods for device operations (upload, download, burn, etc.)
+- Map DTOs to device properties before calling `DownloadUpdatedConfig()`
+- Use AutoMapper for DTO ↔ domain model mapping
 - Return DTOs from `contracts/` layer
 
-**DTOs**:
-- Define all API contracts in `contracts/` with appropriate subfolders
-- Keep them pure data structures with no logic
+**DTOs** (State vs Config):
+- **State DTOs**: Real-time data, sent via SignalR, updated frequently from device cyclic messages
+  - Properties: Connected, LastRxTime, Version, BatteryVoltage, TotalCurrent, temperature, input/output states, etc.
+  - Location: `contracts/Devices/{DeviceType}/[DeviceName]StateDto.cs`
+  - Base: `DeviceStateDto` (contains Guid, Name, BaseId, Connected, LastRxTime, Version, voltage, current, temps)
+
+- **Config DTOs**: Persistent settings, modified via REST API, downloaded to device via CAN
+  - Properties: SleepEnabled, CanFiltersEnabled, BitRate, input/output configurations, etc.
+  - Location: `contracts/Devices/{DeviceType}/[DeviceName]ConfigDto.cs`
+  - Base: `DeviceConfigDto` (contains Guid, Name, BaseId, SleepEnabled, CanFiltersEnabled, BitRate)
+
+- **Request DTOs**: Data sent TO the server for creating/updating resources
+  - `CreateDeviceRequest`: Device creation (DeviceType, Name, BaseId)
+  - `Update[Device]ConfigRequest`: Config updates (same fields as ConfigDto minus Guid/BaseId which are immutable)
+  - Location: `contracts/Devices/{DeviceType}/Requests/`
 
 **Background Services**:
 - Implement as IHostedService
 - Register in `api/Program.cs` with `AddHostedService<T>()`
+- For startup tasks, register as factory service if dependency on other singletons needed
 
 ## Key Design Decisions
 
@@ -290,19 +371,30 @@ Key settings that will be needed in `appsettings.json` (to be added during imple
 
 1. **CommsDataPipeline subscribes to ICommsAdapterManager, not individual adapters**, because adapters are selected at runtime.
 
-2. **CanData Model**: The codebase uses `CanData` as the core model (with Id, Len, Payload properties) for all CAN bus communication.
+2. **CanFrame Model**: The codebase uses `CanFrame` as the core model (with Id, Len, Payload properties) for all CAN bus communication. `DeviceCanFrame` wraps CanFrame with metadata for request/response tracking.
 
-3. **Circular Buffer Throttling**: When implemented, devices should throttle circular buffer updates to ~10 Hz (not every CAN message) to save memory.
+3. **Device Polymorphism**: All devices implement the complete `IDevice` interface. DeviceManager calls interface methods uniformly without type checking. Devices that don't need certain functionality can provide no-op implementations (e.g., returning empty DeviceCanFrame lists).
 
-4. **SignalR Throttling**: SignalR broadcasts should be throttled to 20 Hz to avoid overwhelming browsers while internal processing runs at full speed.
+4. **Request/Response Tracking**:
+   - **Key**: Tuple of `(BaseId, Prefix, Index)` uniquely identifies each pending message
+   - **Timeout**: 500ms by default, configurable via constants in DeviceManager
+   - **Retries**: Maximum 3 attempts (configurable), automatic backoff on timeout
+   - **Response Handling**: Devices remove completed messages from queue in their `Read()` method via ref parameter
+   - **Concurrency**: Uses ConcurrentDictionary for thread-safe access from RX and TX paths
 
-5. **No MediatR in RX Path**: Don't use MediatR for cyclic data processing (too slow for 3000 msg/s). Use events and direct method calls instead.
+5. **Circular Buffer Throttling**: When implemented, devices should throttle circular buffer updates to ~10 Hz (not every CAN message) to save memory.
 
-6. **Channel Capacity Tuning**: The 50K RX and 10K TX capacities are starting points. Monitor BoundedChannelFullMode.DropOldest behavior and adjust if messages are being dropped.
+6. **SignalR Throttling**: SignalR broadcasts should be throttled to 20 Hz to avoid overwhelming browsers while internal processing runs at full speed.
 
-7. **Realtime Folder**: The actual codebase uses `api/Realtime/` for SignalR components, not `api/SignalR/` as might be expected.
+7. **No MediatR in RX Path**: Don't use MediatR for cyclic data processing (too slow for 3000 msg/s). Use events and direct method calls instead.
 
-8. **DeviceManager Dependency**: The CommsDataPipeline constructor includes a DeviceManager parameter, but device routing is not yet fully implemented. This is part of the next implementation phase where devices will receive and parse messages from the RX channel.
+8. **Channel Capacity Tuning**: The 50K RX and 10K TX capacities are starting points. Monitor BoundedChannelFullMode.DropOldest behavior and adjust if messages are being dropped.
+
+9. **Realtime Folder**: The actual codebase uses `api/Realtime/` for SignalR components, not `api/SignalR/` as might be expected.
+
+10. **SetTransmitCallback**: DeviceManager requires CommsDataPipeline to call `SetTransmitCallback()` during startup to establish the TX path. This decouples DeviceManager from the pipeline infrastructure.
+
+11. **Device Identity**: Each device has a unique `Guid` assigned at creation time. Use this for all API endpoints and SignalR subscriptions. `BaseId` is the CAN identifier range, not the unique device key.
 
 ## Reference Documentation
 
