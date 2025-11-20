@@ -1,10 +1,9 @@
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdm.Enums;
-using Microsoft.Extensions.Logging;
 
 namespace domain.Devices.dingoPdmMax;
 
-public class PdmMaxDevice(string name, int baseId, ILogger<PdmMaxDevice> logger) : PdmDevice(name, baseId, logger)
+public class PdmMaxDevice(string name, int baseId) : PdmDevice(name, baseId)
 {
     protected override int MinMajorVersion { get; } = 0;
     protected override int MinMinorVersion { get; } = 4;

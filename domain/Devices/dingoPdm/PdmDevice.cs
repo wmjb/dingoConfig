@@ -5,7 +5,6 @@ using domain.Devices.dingoPdm.Functions;
 using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
-using Microsoft.Extensions.Logging;
 using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm;
@@ -64,15 +63,12 @@ public class PdmDevice : IDevice
             }
         }
     }
-
-    private readonly ILogger _logger;
     
-    public PdmDevice(string name, int baseId, ILogger<PdmDevice> logger)
+    public PdmDevice(string name, int baseId)
     {
         Name = name;
         BaseId = baseId;
         Guid = Guid.NewGuid();
-        _logger = logger;
         
         InitializeCollections();
     }
@@ -353,9 +349,6 @@ public class PdmDevice : IDevice
             case MessagePrefix.Version:
                 Version = $"V{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
 
-                if (!CheckVersion(data[1], data[2], (data[3] << 8) + (data[4])))
-                    _logger.LogError($"{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater");
-
                 key = (BaseId, (int)MessagePrefix.Version, 0);
                 if (queue.TryGetValue(key, out canFrame!))
                 {
@@ -593,7 +586,7 @@ public class PdmDevice : IDevice
 			case MessagePrefix.BurnSettings:
                 if (data[1] == 1) //Successful burn
                 {
-                    _logger.LogInformation($"{Name} ID: {BaseId}, Burn Successful");
+                    //_logger.LogInformation($"{Name} ID: {BaseId}, Burn Successful");
 
                     key = (BaseId, (int)MessagePrefix.BurnSettings, 0);
                     if (queue.TryGetValue(key, out canFrame!))
@@ -603,15 +596,15 @@ public class PdmDevice : IDevice
                     }
                 }
 
-                if (data[1] == 0) //Unsuccessful burn
-                    _logger.LogError($"{Name} ID: {BaseId}, Burn Failed");
+                //if (data[1] == 0) //Unsuccessful burn
+                    //_logger.LogError($"{Name} ID: {BaseId}, Burn Failed");
                 
                 break;
 
             case MessagePrefix.Sleep:
                 if (data[1] == 1) //Successful sleep
                 {
-                    _logger.LogInformation($"{Name} ID: {BaseId}, Sleep Successful");
+                    //_logger.LogInformation($"{Name} ID: {BaseId}, Sleep Successful");
 
                     key = (BaseId, (int)MessagePrefix.Sleep, 0);
                     if (queue.TryGetValue(key, out canFrame!))
@@ -621,8 +614,8 @@ public class PdmDevice : IDevice
                     }
                 }
 
-                if (data[1] == 0) //Unsuccessful sleep
-                    _logger.LogError($"{Name} ID: {BaseId}, Sleep Failed");
+                //if (data[1] == 0) //Unsuccessful sleep
+                    //_logger.LogError($"{Name} ID: {BaseId}, Sleep Failed");
                 
                 break;
 
@@ -640,13 +633,13 @@ public class PdmDevice : IDevice
         switch (type)
         {
             case MessageType.Info:
-                _logger.LogInformation($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                //_logger.LogInformation($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
             case MessageType.Warning:
-                _logger.LogWarning($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                //_logger.LogWarning($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
             case MessageType.Error:
-                _logger.LogError($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
+                //_logger.LogError($"{Name} ID: {BaseId}, Src: {src} {((data[3] << 8) + data[2])} {((data[5] << 8) + data[4])} {((data[7] << 8) + data[6])}");
                 break;
         }
     }
