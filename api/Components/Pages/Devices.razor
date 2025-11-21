@@ -1,0 +1,233 @@
+@page "/devices"
+@using contracts.Devices
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Devices</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h3">Device Management</MudText>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@ToggleCreateForm">
+            @(showCreateForm ? "Cancel" : "Add Device")
+        </MudButton>
+    </MudStack>
+
+    @if (showCreateForm)
+    {
+        <MudCard Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Create New Device</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="newDeviceName"
+                                      Label="Device Name"
+                                      Required="true"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect @bind-Value="newDeviceType"
+                                   Label="Device Type"
+                                   Required="true"
+                                   Variant="Variant.Outlined"
+                                   T="string">
+                            <MudSelectItem T="string" Value="@("Pdm")">PDM</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("PdmMax")">PDM-Max</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("Canboard")">CANBoard</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField @bind-Value="newDeviceBaseId"
+                                         Label="Base ID"
+                                         Required="true"
+                                         Variant="Variant.Outlined"
+                                         Min="0"
+                                         Max="2047"
+                                         T="int" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton OnClick="@ToggleCreateForm">Cancel</MudButton>
+                <MudButton Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           OnClick="@CreateDevice"
+                           Disabled="@(string.IsNullOrWhiteSpace(newDeviceName) || string.IsNullOrWhiteSpace(newDeviceType))">
+                    Create
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (!devices.Any())
+    {
+        <MudAlert Severity="Severity.Info">
+            No devices configured. Click "Add Device" to create one.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var device in devices)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@device.Name</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudChip T="string" Size="Size.Small" Color="@(device.Connected ? Color.Success : Color.Error)">
+                                    @(device.Connected ? "Connected" : "Disconnected")
+                                </MudChip>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Type: @device.DeviceType
+                            </MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Base ID: @device.BaseId
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                GUID: @device.Guid
+                            </MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="@(() => NavigateToDevice(device.Guid))">
+                                Monitor
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="@(() => DeleteDevice(device))">
+                                Delete
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<DeviceDto> devices = new();
+    private bool loading = true;
+    private bool showCreateForm = false;
+
+    // Form fields
+    private string newDeviceName = string.Empty;
+    private string newDeviceType = string.Empty;
+    private int newDeviceBaseId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDevices();
+    }
+
+    private async Task LoadDevices()
+    {
+        loading = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<DeviceDto>>("api/devices");
+            devices = response ?? new List<DeviceDto>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading devices: {ex.Message}", Severity.Error);
+            devices = new List<DeviceDto>();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        showCreateForm = !showCreateForm;
+        if (showCreateForm)
+        {
+            // Reset form fields
+            newDeviceName = string.Empty;
+            newDeviceType = string.Empty;
+            newDeviceBaseId = 0;
+        }
+    }
+
+    private async Task CreateDevice()
+    {
+        try
+        {
+            var request = new CreateDeviceRequest
+            {
+                DeviceType = newDeviceType,
+                Name = newDeviceName,
+                BaseId = newDeviceBaseId
+            };
+
+            var response = await Http.PostAsJsonAsync("api/devices", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"Device '{newDeviceName}' created successfully", Severity.Success);
+                showCreateForm = false;
+                await LoadDevices();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to create device: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating device: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteDevice(DeviceDto device)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/devices/{device.Guid}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"Device '{device.Name}' deleted successfully", Severity.Success);
+                await LoadDevices();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to delete device: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting device: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void NavigateToDevice(Guid deviceId)
+    {
+        Navigation.NavigateTo($"/device/{deviceId}");
+    }
+}

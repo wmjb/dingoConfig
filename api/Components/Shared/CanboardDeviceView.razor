@@ -1,0 +1,38 @@
+@using contracts.Devices.Canboard
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.h5">CANBoard Device</MudText>
+                <MudChip T="string" Color="@(State.Connected ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(State.Connected ? "Connected" : "Disconnected")
+                </MudChip>
+            </MudStack>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudText Typo="Typo.caption">GUID: @State.Guid</MudText>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudAlert Severity="Severity.Info">
+            CANBoard device implementation coming soon
+        </MudAlert>
+
+        @* Placeholder for CANBoard-specific UI *@
+        <MudText Typo="Typo.body1" Class="mt-4">
+            CANBoard will display:
+        </MudText>
+        <MudList T="string">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Message">CAN message statistics</MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Filter">Active CAN filters</MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Analytics">Bus load percentage</MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Storage">Message logging status</MudListItem>
+        </MudList>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public CanboardDto State { get; set; } = null!;
+}

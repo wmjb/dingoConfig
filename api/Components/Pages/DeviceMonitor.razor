@@ -1,0 +1,81 @@
+@page "/device/{DeviceId:guid}"
+@using contracts.Devices
+@using contracts.Devices.Pdm
+@using contracts.Devices.PdmMax
+@using contracts.Devices.Canboard
+@using application.Services
+@using api.Components.Shared
+@inject DeviceStateService StateService
+@implements IDisposable
+
+<PageTitle>Device Monitor</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    @if (currentState != null)
+    {
+        @* Render appropriate view based on device type *@
+        @switch (currentState)
+        {
+            case PdmMaxDto pdmMaxState:
+                <PdmMaxDeviceView State="pdmMaxState" />
+                break;
+
+            case PdmDto pdmState:
+                <PdmDeviceView State="pdmState" />
+                break;
+
+            case CanboardDto canboardState:
+                <CanboardDeviceView State="canboardState" />
+                break;
+
+            default:
+                <MudAlert Severity="Severity.Warning">
+                    Unknown device type: @currentState.GetType().Name
+                </MudAlert>
+                break;
+        }
+    }
+    else
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudProgressCircular Indeterminate="true" />
+                <MudText Class="ml-2">Loading device...</MudText>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public Guid DeviceId { get; set; }
+
+    private DeviceDto? currentState;
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to state changes
+        StateService.OnStateChanged += HandleStateChanged;
+
+        // Get initial state
+        currentState = StateService.GetDeviceState(DeviceId);
+    }
+
+    private void HandleStateChanged(Guid deviceId, DeviceDto state)
+    {
+        if (deviceId == DeviceId)
+        {
+            currentState = state;
+
+            // Tell Blazor to re-render this component
+            // InvokeAsync is required because this is called from a background thread
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe when component is disposed to prevent memory leaks
+        StateService.OnStateChanged -= HandleStateChanged;
+    }
+}

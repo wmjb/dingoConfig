@@ -1,7 +1,8 @@
 namespace contracts.Devices.Pdm.Functions;
 
-public class FlasherConfigDto
+public class FlasherDto
 {
+    // Config properties
     public string Name { get; set; } = string.Empty;
     public int Number { get; set; }
     public bool Enabled { get; set; }
@@ -9,4 +10,7 @@ public class FlasherConfigDto
     public int Input { get; set; }
     public int OnTime { get; set; }
     public int OffTime { get; set; }
+
+    // State properties
+    public bool Value { get; set; }
 }
