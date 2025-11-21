@@ -19,38 +19,26 @@ namespace infrastructure.BackgroundServices;
 /// Background service that broadcasts device state updates to DeviceStateService at 20 Hz.
 /// Handles all device types (PDM, PDM-Max, CANBoard) and maps them to their respective DTOs.
 /// </summary>
-public class DeviceStateBroadcaster : BackgroundService
+public class DeviceStateBroadcaster(
+    DeviceManager deviceManager,
+    DeviceStateService stateService,
+    IMapper mapper,
+    ILogger<DeviceStateBroadcaster> logger)
+    : BackgroundService
 {
-    private readonly DeviceManager _deviceManager;
-    private readonly DeviceStateService _stateService;
-    private readonly IMapper _mapper;
-    private readonly ILogger<DeviceStateBroadcaster> _logger;
-
-    public DeviceStateBroadcaster(
-        DeviceManager deviceManager,
-        DeviceStateService stateService,
-        IMapper mapper,
-        ILogger<DeviceStateBroadcaster> logger)
-    {
-        _deviceManager = deviceManager;
-        _stateService = stateService;
-        _mapper = mapper;
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Broadcast state at 20 Hz (every 50ms) as per CLAUDE.md
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
 
-        _logger.LogInformation("DeviceStateBroadcaster started - broadcasting at 20 Hz");
+        logger.LogInformation("DeviceStateBroadcaster started - broadcasting at 20 Hz");
 
         while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken))
         {
             try
             {
                 // Get ALL devices regardless of type
-                var allDevices = _deviceManager.GetAllDevices();
+                var allDevices = deviceManager.GetAllDevices();
 
                 foreach (var device in allDevices)
                 {
@@ -59,17 +47,17 @@ public class DeviceStateBroadcaster : BackgroundService
 
                     if (stateDto != null)
                     {
-                        _stateService.UpdateDeviceState(device.Guid, stateDto);
+                        stateService.UpdateDeviceState(device.Guid, stateDto);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error broadcasting device state");
+                logger.LogError(ex, "Error broadcasting device state");
             }
         }
 
-        _logger.LogInformation("DeviceStateBroadcaster stopped");
+        logger.LogInformation("DeviceStateBroadcaster stopped");
     }
 
     /// <summary>
@@ -89,23 +77,19 @@ public class DeviceStateBroadcaster : BackgroundService
     private PdmDto MapPdmDto(PdmDevice device)
     {
         // Map base device properties using AutoMapper
-        var dto = _mapper.Map<PdmDto>(device);
+        var dto = mapper.Map<PdmDto>(device);
 
-        // Map collections using reflection (since properties are protected)
-        var deviceType = device.GetType();
-
-        dto.Inputs = MapCollection<Input, InputDto>(deviceType, device, "Inputs");
-        dto.Outputs = MapCollection<Output, OutputDto>(deviceType, device, "Outputs");
-        dto.CanInputs = MapCollection<CanInput, CanInputDto>(deviceType, device, "CanInputs");
-        dto.VirtualInputs = MapCollection<VirtualInput, VirtualInputDto>(deviceType, device, "VirtualInputs");
-        dto.Flashers = MapCollection<Flasher, FlasherDto>(deviceType, device, "Flashers");
-        dto.Counters = MapCollection<Counter, CounterDto>(deviceType, device, "Counters");
-        dto.Conditions = MapCollection<Condition, ConditionDto>(deviceType, device, "Conditions");
+        // Map collections using accessor methods
+        dto.Inputs = mapper.Map<List<InputDto>>(device.GetInputs());
+        dto.Outputs = mapper.Map<List<OutputDto>>(device.GetOutputs());
+        dto.CanInputs = mapper.Map<List<CanInputDto>>(device.GetCanInputs());
+        dto.VirtualInputs = mapper.Map<List<VirtualInputDto>>(device.GetVirtualInputs());
+        dto.Flashers = mapper.Map<List<FlasherDto>>(device.GetFlashers());
+        dto.Counters = mapper.Map<List<CounterDto>>(device.GetCounters());
+        dto.Conditions = mapper.Map<List<ConditionDto>>(device.GetConditions());
 
         // Map single objects
-        var wiper = deviceType.GetProperty("Wipers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as Wiper;
-        dto.Wipers = wiper != null ? _mapper.Map<WiperDto>(wiper) : null;
+        dto.Wipers = mapper.Map<WiperDto>(device.GetWipers());
 
         return dto;
     }
@@ -116,7 +100,7 @@ public class DeviceStateBroadcaster : BackgroundService
         var pdmDto = MapPdmDto(device);
 
         // Map to PdmMaxDto (which currently inherits from PdmDto)
-        var dto = _mapper.Map<PdmMaxDto>(device);
+        var dto = mapper.Map<PdmMaxDto>(device);
 
         // Copy properties from base mapping
         dto.Inputs = pdmDto.Inputs;
@@ -135,19 +119,9 @@ public class DeviceStateBroadcaster : BackgroundService
     {
         // Placeholder for CANBoard DTO mapping
         // Will be expanded when CanboardDevice is fully implemented
-        var dto = _mapper.Map<CanboardDto>(device);
+        var dto = mapper.Map<CanboardDto>(device);
 
         return dto;
     }
 
-    /// <summary>
-    /// Helper method to map collections from protected properties
-    /// </summary>
-    private List<TDto> MapCollection<TDomain, TDto>(Type deviceType, IDevice device, string propertyName)
-    {
-        var collection = deviceType.GetProperty(propertyName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as List<TDomain>;
-
-        return collection != null ? _mapper.Map<List<TDto>>(collection) : [];
-    }
 }

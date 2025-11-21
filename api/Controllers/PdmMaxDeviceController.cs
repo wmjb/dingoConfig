@@ -32,24 +32,18 @@ public class PdmMaxDeviceController(DeviceManager deviceManager, IMapper mapper)
         // Use AutoMapper for device-level properties
         var deviceDto = mapper.Map<PdmMaxDto>(device);
 
-        // Map collections using reflection + AutoMapper (same as PdmDevice)
-        var deviceType = device.GetType();
+        // Map collections using accessor methods
+        deviceDto.Inputs = mapper.Map<List<InputDto>>(device.GetInputs());
+        deviceDto.Outputs = mapper.Map<List<OutputDto>>(device.GetOutputs());
+        deviceDto.CanInputs = mapper.Map<List<CanInputDto>>(device.GetCanInputs());
+        deviceDto.VirtualInputs = mapper.Map<List<VirtualInputDto>>(device.GetVirtualInputs());
+        deviceDto.Flashers = mapper.Map<List<FlasherDto>>(device.GetFlashers());
+        deviceDto.Counters = mapper.Map<List<CounterDto>>(device.GetCounters());
+        deviceDto.Conditions = mapper.Map<List<ConditionDto>>(device.GetConditions());
 
-        deviceDto.Inputs = MapCollection<Input, InputDto>(deviceType, device, "Inputs");
-        deviceDto.Outputs = MapCollection<Output, OutputDto>(deviceType, device, "Outputs");
-        deviceDto.CanInputs = MapCollection<CanInput, CanInputDto>(deviceType, device, "CanInputs");
-        deviceDto.VirtualInputs = MapCollection<VirtualInput, VirtualInputDto>(deviceType, device, "VirtualInputs");
-        deviceDto.Flashers = MapCollection<Flasher, FlasherDto>(deviceType, device, "Flashers");
-        deviceDto.Counters = MapCollection<Counter, CounterDto>(deviceType, device, "Counters");
-        deviceDto.Conditions = MapCollection<Condition, ConditionDto>(deviceType, device, "Conditions");
-
-        var wiper = deviceType.GetProperty("Wipers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as Wiper;
-        deviceDto.Wipers = wiper != null ? mapper.Map<WiperDto>(wiper) : null;
-
-        var starterDisable = deviceType.GetProperty("StarterDisable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as StarterDisable;
-        deviceDto.StarterDisable = starterDisable != null ? mapper.Map<StarterDisableDto>(starterDisable) : null;
+        // Map single objects
+        deviceDto.Wipers = mapper.Map<WiperDto>(device.GetWipers());
+        deviceDto.StarterDisable = mapper.Map<StarterDisableDto>(device.GetStarterDisable());
 
         return Ok(deviceDto);
     }
@@ -78,32 +72,21 @@ public class PdmMaxDeviceController(DeviceManager deviceManager, IMapper mapper)
         // Map device-level properties
         mapper.Map(deviceDto, device);
 
-        // Map collections using reflection + AutoMapper
-        var deviceType = device.GetType();
+        // Map collections using accessor methods
+        MapCollectionToDevice(device.GetInputs(), deviceDto.Inputs);
+        MapCollectionToDevice(device.GetOutputs(), deviceDto.Outputs);
+        MapCollectionToDevice(device.GetCanInputs(), deviceDto.CanInputs);
+        MapCollectionToDevice(device.GetVirtualInputs(), deviceDto.VirtualInputs);
+        MapCollectionToDevice(device.GetFlashers(), deviceDto.Flashers);
+        MapCollectionToDevice(device.GetCounters(), deviceDto.Counters);
+        MapCollectionToDevice(device.GetConditions(), deviceDto.Conditions);
 
-        MapCollectionToDevice<InputDto, Input>(deviceType, device, "Inputs", deviceDto.Inputs);
-        MapCollectionToDevice<OutputDto, Output>(deviceType, device, "Outputs", deviceDto.Outputs);
-        MapCollectionToDevice<CanInputDto, CanInput>(deviceType, device, "CanInputs", deviceDto.CanInputs);
-        MapCollectionToDevice<VirtualInputDto, VirtualInput>(deviceType, device, "VirtualInputs", deviceDto.VirtualInputs);
-        MapCollectionToDevice<FlasherDto, Flasher>(deviceType, device, "Flashers", deviceDto.Flashers);
-        MapCollectionToDevice<CounterDto, Counter>(deviceType, device, "Counters", deviceDto.Counters);
-        MapCollectionToDevice<ConditionDto, Condition>(deviceType, device, "Conditions", deviceDto.Conditions);
-
+        // Map single objects
         if (deviceDto.Wipers != null)
-        {
-            var wiper = deviceType.GetProperty("Wipers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .GetValue(device) as Wiper;
-            if (wiper != null)
-                mapper.Map(deviceDto.Wipers, wiper);
-        }
+            mapper.Map(deviceDto.Wipers, device.GetWipers());
 
         if (deviceDto.StarterDisable != null)
-        {
-            var starterDisable = deviceType.GetProperty("StarterDisable", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .GetValue(device) as StarterDisable;
-            if (starterDisable != null)
-                mapper.Map(deviceDto.StarterDisable, starterDisable);
-        }
+            mapper.Map(deviceDto.StarterDisable, device.GetStarterDisable());
 
         // Download updated config to device
         deviceManager.DownloadUpdatedConfig(id);
@@ -111,26 +94,13 @@ public class PdmMaxDeviceController(DeviceManager deviceManager, IMapper mapper)
         return Ok(new { message = "Device data updated and download initiated" });
     }
 
-    // Helper methods
-    private List<TDto> MapCollection<TDomain, TDto>(Type deviceType, PdmMaxDevice device, string propertyName)
+    // Helper method to map DTO collections back to device collections
+    private void MapCollectionToDevice<TDto, TDomain>(IReadOnlyList<TDomain> deviceCollection, List<TDto>? dtoList)
     {
-        var collection = deviceType.GetProperty(propertyName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as List<TDomain>;
-
-        return collection != null ? mapper.Map<List<TDto>>(collection) : [];
-    }
-
-    private void MapCollectionToDevice<TDto, TDomain>(Type deviceType, PdmMaxDevice device, string propertyName, List<TDto> dtoList)
-    {
-        var collection = deviceType.GetProperty(propertyName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(device) as List<TDomain>;
-
-        if (collection != null && dtoList != null)
+        if (dtoList == null) return;
+        for (var i = 0; i < Math.Min(deviceCollection.Count, dtoList.Count); i++)
         {
-            for (int i = 0; i < Math.Min(collection.Count, dtoList.Count); i++)
-            {
-                mapper.Map(dtoList[i], collection[i]);
-            }
+            mapper.Map(dtoList[i], deviceCollection[i]);
         }
     }
 }

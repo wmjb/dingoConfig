@@ -992,7 +992,18 @@ public class PdmDevice : IDevice
             MsgDescription = "Version"
         };
     }
-    
+
+    // Collection accessors
+    public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();
+    public IReadOnlyList<Output> GetOutputs() => Outputs.AsReadOnly();
+    public IReadOnlyList<CanInput> GetCanInputs() => CanInputs.AsReadOnly();
+    public IReadOnlyList<VirtualInput> GetVirtualInputs() => VirtualInputs.AsReadOnly();
+    public IReadOnlyList<Flasher> GetFlashers() => Flashers.AsReadOnly();
+    public IReadOnlyList<Counter> GetCounters() => Counters.AsReadOnly();
+    public IReadOnlyList<Condition> GetConditions() => Conditions.AsReadOnly();
+    public Wiper GetWipers() => Wipers;
+    public StarterDisable GetStarterDisable() => StarterDisable;
+
     protected bool CheckVersion(int major, int minor, int build)
     {
         if (major > MinMajorVersion)
@@ -1003,7 +1014,7 @@ public class PdmDevice : IDevice
 
         if ((major == MinMajorVersion) && (minor == MinMinorVersion) && (build >= MinBuildVersion))
             return true;
-            
+
         return false;
     }
 }
