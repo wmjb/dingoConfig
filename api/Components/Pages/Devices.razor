@@ -106,13 +106,15 @@
                             </MudText>
                         </MudCardContent>
                         <MudCardActions>
-                            <MudButton Variant="Variant.Filled"
+                            <MudButton Class="mx-2"
+                                       Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        Size="Size.Small"
                                        OnClick="@(() => NavigateToDevice(device.Guid))">
                                 Monitor
                             </MudButton>
-                            <MudButton Variant="Variant.Outlined"
+                            <MudButton Class="mx-2"
+                                       Variant="Variant.Outlined"
                                        Color="Color.Error"
                                        Size="Size.Small"
                                        OnClick="@(() => DeleteDevice(device))">

@@ -644,7 +644,7 @@ public class PdmDevice : IDevice
         }
     }
 
-    public List<DeviceCanFrame> GetUploadMsgs()
+    public List<DeviceCanFrame> GetReadMsgs()
     {
         var id = BaseId - 1;
 
@@ -778,7 +778,7 @@ public class PdmDevice : IDevice
 		return msgs;
     }
 
-    public List<DeviceCanFrame> GetDownloadMsgs()
+    public List<DeviceCanFrame> GetWriteMsgs()
     {
         var id = BaseId - 1;
 
@@ -990,6 +990,46 @@ public class PdmDevice : IDevice
                 Payload = [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
             },
             MsgDescription = "Version"
+        };
+    }
+
+    public DeviceCanFrame GetWakeupMsg()
+    {
+        return new DeviceCanFrame
+        {
+            Sent = false,
+            Received = false,
+            Prefix = (int)MessagePrefix.Null, //No response = no prefix
+            Index = 0,
+            Frame = new CanFrame
+            {
+                Id = BaseId - 1,
+                Len = 1,
+                Payload = [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
+            },
+            MsgDescription = "Wakeup"
+        };
+    }
+
+    public DeviceCanFrame GetBootloaderMsg()
+    {
+        return new DeviceCanFrame
+        {
+            Sent = false,
+            Received = false,
+            Prefix = (int)MessagePrefix.Bootloader,
+            Index = 0,
+            Frame = new CanFrame
+            {
+                Id = BaseId - 1,
+                Len = 6,
+                Payload =
+                [
+                    Convert.ToByte(MessagePrefix.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
+                    0
+                ]
+            },
+            MsgDescription = "Bootloader"
         };
     }
 

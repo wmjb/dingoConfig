@@ -34,13 +34,13 @@ public class CanboardDevice : IDevice
         return false;
     }
 
-    public List<DeviceCanFrame> GetUploadMsgs()
+    public List<DeviceCanFrame> GetReadMsgs()
     {
         // TODO: Implement CANBoard upload messages
         return [];
     }
 
-    public List<DeviceCanFrame> GetDownloadMsgs()
+    public List<DeviceCanFrame> GetWriteMsgs()
     {
         // TODO: Implement CANBoard download messages
         return [];
@@ -73,6 +73,30 @@ public class CanboardDevice : IDevice
     public DeviceCanFrame GetVersionMsg()
     {
         // TODO: Implement CANBoard version message
+        return new DeviceCanFrame
+        {
+            Frame = new CanFrame
+            {
+                Payload = new byte[8]
+            }
+        };
+    }
+
+    public DeviceCanFrame GetWakeupMsg()
+    {
+        // TODO: Implement CANBoard wakeup message
+        return new DeviceCanFrame
+        {
+            Frame = new CanFrame
+            {
+                Payload = new byte[8]
+            }
+        };
+    }
+
+    public DeviceCanFrame GetBootloaderMsg()
+    {
+        // TODO: Implement CANBoard bootloader message
         return new DeviceCanFrame
         {
             Frame = new CanFrame

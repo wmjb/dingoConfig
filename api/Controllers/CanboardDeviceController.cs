@@ -36,13 +36,13 @@ public class CanboardDeviceController(DeviceManager deviceManager, IMapper mappe
     }
 
     /// <summary>
-    /// Update CANBoard device data (state and configuration) and download to device
+    /// Write CANBoard device data (state and configuration) and download to device
     /// </summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public ActionResult UpdateDevice(Guid id, [FromBody] CanboardDto deviceDto)
+    public ActionResult WriteDevice(Guid id, [FromBody] CanboardDto deviceDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -61,9 +61,9 @@ public class CanboardDeviceController(DeviceManager deviceManager, IMapper mappe
 
         // TODO: Map CANBoard-specific collections when CanboardDevice is implemented
 
-        // Download updated config to device
-        deviceManager.DownloadUpdatedConfig(id);
+        // Write updated config to device
+        deviceManager.WriteDeviceConfig(id);
 
-        return Ok(new { message = "Device data updated and download initiated" });
+        return Ok(new { message = "Device data updated and write initiated" });
     }
 }

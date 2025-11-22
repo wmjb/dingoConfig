@@ -8,20 +8,14 @@ using Microsoft.Extensions.Logging;
 
 namespace application.Services;
 
-public class DeviceManager
+public class DeviceManager(ILogger<DeviceManager> logger)
 {
     private readonly Dictionary<Guid, IDevice> _devices = new();
     private ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> _requestQueue = new();
-    private readonly ILogger<DeviceManager> _logger;
     private Action<CanFrame>? _transmitCallback;
 
     private const int MaxRetries = 3;
     private const int TimeoutMs = 500;
-
-    public DeviceManager(ILogger<DeviceManager> logger)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// Set the callback for transmitting frames (called by CommsDataPipeline during setup)
@@ -44,7 +38,7 @@ public class DeviceManager
         };
 
         _devices[device.Guid] = device;
-        _logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",
+        logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",
             deviceType, name, baseId, device.Guid);
 
         return device;
@@ -95,7 +89,7 @@ public class DeviceManager
     {
         if (_devices.Remove(deviceId, out var device))
         {
-            _logger.LogInformation("Device removed: {Name} (Guid: {Guid})", device.Name, deviceId);
+            logger.LogInformation("Device removed: {Name} (Guid: {Guid})", device.Name, deviceId);
         }
     }
 
@@ -108,7 +102,7 @@ public class DeviceManager
         {
             _devices[device.Guid] = device;
         }
-        _logger.LogInformation("Added {Count} devices", devices.Count);
+        logger.LogInformation("Added {Count} devices", devices.Count);
     }
 
     /// <summary>
@@ -138,17 +132,8 @@ public class DeviceManager
     /// <summary>
     /// Queue a message for transmission
     /// </summary>
-    private void QueueMessage(DeviceCanFrame frame)
+    private void QueueMessage(DeviceCanFrame frame, bool sendOnly = false)
     {
-        var key = (frame.DeviceBaseId, frame.Prefix, frame.Index);
-
-        if (!_requestQueue.TryAdd(key, frame))
-        {
-            _logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix}, Index={Index}",
-                key.Item1, key.Item2, key.Item3);
-            return;
-        }
-
         // Queue for transmission
         if (_transmitCallback != null)
         {
@@ -156,13 +141,27 @@ public class DeviceManager
         }
         else
         {
-            _logger.LogWarning("Transmit callback not set - message not transmitted");
+            logger.LogWarning("Transmit callback not set - message not transmitted");
+            return;
+        }
+
+        //Some messages have no response, don't queue
+        if (sendOnly) return;
+        
+        //Unique message key, used to find message in transmit queue later
+        var key = (frame.DeviceBaseId, frame.Prefix, frame.Index);
+
+        if (!_requestQueue.TryAdd(key, frame))
+        {
+            logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix}, Index={Index}",
+                key.Item1, key.Item2, key.Item3);
+            return;
         }
 
         // Start timeout timer
         StartMessageTimer(key, frame);
 
-        _logger.LogDebug("Message queued: {Description} (BaseId={BaseId}, Prefix={Prefix})",
+        logger.LogDebug("Message queued: {Description} (BaseId={BaseId}, Prefix={Prefix})",
             frame.MsgDescription, key.Item1, key.Item2);
     }
 
@@ -188,7 +187,7 @@ public class DeviceManager
             frame.TimeSentTimer?.Dispose();
 
             var device = GetDeviceByBaseId(key.BaseId);
-            _logger.LogError("Message failed after {MaxRetries} retries: {Description} on {DeviceName} (ID: {BaseId})",
+            logger.LogError("Message failed after {MaxRetries} retries: {Description} on {DeviceName} (ID: {BaseId})",
                 MaxRetries, frame.MsgDescription, device?.Name ?? "Unknown", key.BaseId);
         }
         else
@@ -200,7 +199,7 @@ public class DeviceManager
             }
             StartMessageTimer(key, frame);
 
-            _logger.LogWarning("Message retry {Attempt}/{MaxRetries}: {Description} (BaseId={BaseId})",
+            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: {Description} (BaseId={BaseId})",
                 frame.RxAttempts, MaxRetries, frame.MsgDescription, key.BaseId);
         }
     }
@@ -210,103 +209,138 @@ public class DeviceManager
     // ============================================
 
     /// <summary>
-    /// Upload configuration from device to host
+    /// Read configuration from device to host
     /// </summary>
-    public void UploadDeviceConfig(Guid deviceId)
+    public void ReadDeviceConfig(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
             return;
 
-        var uploadMsgs = device.GetUploadMsgs();
-        foreach (var msg in uploadMsgs)
+        var readMsgs = device.GetReadMsgs();
+        foreach (var msg in readMsgs)
         {
             QueueMessage(msg);
         }
 
-        _logger.LogInformation("Upload started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        logger.LogInformation("Read started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
     }
 
     /// <summary>
-    /// Download configuration to device
+    /// Write configuration to device
     /// </summary>
-    public void DownloadDeviceConfig(Guid deviceId)
+    /// <returns>
+    /// Send write config success
+    /// </returns>
+    public bool WriteDeviceConfig(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
-            return;
+            return false;
 
-        var downloadMsgs = device.GetDownloadMsgs();
+        var downloadMsgs = device.GetWriteMsgs();
         foreach (var msg in downloadMsgs)
         {
             QueueMessage(msg);
         }
 
-        _logger.LogInformation("Download started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        logger.LogInformation("Write started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
     }
 
     /// <summary>
     /// Burn settings to device flash memory
     /// </summary>
-    public void BurnDeviceSettings(Guid deviceId)
+    /// <returns>
+    /// Send burn request success
+    /// </returns>
+    public bool BurnSettings(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
-            return;
+            return false;
 
         var burnMsg = device.GetBurnMsg();
         QueueMessage(burnMsg);
 
-        _logger.LogInformation("Burn initiated for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        logger.LogInformation("Burn initiated for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
     }
 
     /// <summary>
-    /// Put device to sleep
+    /// Request device enter sleep
     /// </summary>
-    public void SleepDevice(Guid deviceId)
+    /// <returns>
+    /// Send sleep request success
+    /// </returns>
+    public bool RequestSleep(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
-            return;
+            return false;
 
         var sleepMsg = device.GetSleepMsg();
         QueueMessage(sleepMsg);
 
-        _logger.LogInformation("Sleep requested for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        logger.LogInformation("Sleep requested for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
     }
 
     /// <summary>
     /// Request device version/info
     /// </summary>
-    public void RequestDeviceVersion(Guid deviceId)
+    /// <returns>
+    /// Send request version success
+    /// </returns>
+    public bool RequestVersion(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
-            return;
+            return false;
 
         var versionMsg = device.GetVersionMsg();
         QueueMessage(versionMsg);
 
-        _logger.LogInformation("Version requested for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        logger.LogInformation("Version requested for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
     }
 
     /// <summary>
-    /// Download updated configuration to device
-    /// (Device properties should already be updated by controller before calling this)
+    /// Request device wakeup
     /// </summary>
-    public void DownloadUpdatedConfig(Guid deviceId)
+    /// <returns>
+    /// Send wakeup success
+    /// </returns>
+    public bool RequestWakeup(Guid deviceId)
     {
         var device = GetDevice(deviceId);
         if (device == null)
-            return;
-
-        var downloadMsgs = device.GetDownloadMsgs();
-        foreach (var msg in downloadMsgs)
-        {
-            QueueMessage(msg);
-        }
-
-        _logger.LogInformation("Configuration download initiated for {DeviceName} (Guid: {Guid})",
-            device.Name, deviceId);
+            return false;
+        
+        var wakeupMsg = device.GetWakeupMsg();
+        QueueMessage(wakeupMsg, true);
+        
+        logger.LogInformation("Wake up for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
     }
+
+    /// <summary>
+    /// Request enter bootloader
+    /// </summary>
+    /// <returns>
+    /// Send enter bootloader success
+    /// </returns>
+    public bool RequestBootloader(Guid deviceId)
+    {
+        var device = GetDevice(deviceId);
+        if (device == null)
+            return false;
+        
+        var bootloaderMsg = device.GetBootloaderMsg();
+        QueueMessage(bootloaderMsg, true);
+        
+        logger.LogInformation("Enter bootloader on {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
+    }
+    
 }

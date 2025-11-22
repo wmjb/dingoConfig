@@ -46,15 +46,42 @@ public class PdmDeviceController(DeviceManager deviceManager, IMapper mapper) : 
 
         return Ok(deviceDto);
     }
-
+    
     /// <summary>
-    /// Update PDM device data (state and configuration) and download to device
+    /// Initiate Read PDM device data (configuration) from device
     /// </summary>
-    [HttpPut("{id:guid}")]
+    [HttpPut("{id:guid}/read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public ActionResult UpdateDevice(Guid id, [FromBody] PdmDto deviceDto)
+    public ActionResult ReadDevice(Guid id, [FromBody] PdmDto deviceDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        deviceManager.ReadDeviceConfig(id);
+        //Properties will be updated as read responses come in
+
+        return Ok(new { message = "Device data updated and write initiated" });
+    }
+
+    /// <summary>
+    /// Write PDM device data (configuration) and write to device
+    /// </summary>
+    [HttpPut("{id:guid}/write")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult WriteDevice(Guid id, [FromBody] PdmDto deviceDto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -86,11 +113,10 @@ public class PdmDeviceController(DeviceManager deviceManager, IMapper mapper) : 
 
         if (deviceDto.StarterDisable != null)
             mapper.Map(deviceDto.StarterDisable, device.GetStarterDisable());
+        
+        deviceManager.WriteDeviceConfig(id);
 
-        // Download updated config to device
-        deviceManager.DownloadUpdatedConfig(id);
-
-        return Ok(new { message = "Device data updated and download initiated" });
+        return Ok(new { message = "Device data updated and write initiated" });
     }
 
     private void MapCollectionToDevice<TDto, TDomain>(IReadOnlyList<TDomain> deviceCollection, List<TDto>? dtoList)
@@ -98,5 +124,145 @@ public class PdmDeviceController(DeviceManager deviceManager, IMapper mapper) : 
         if (dtoList == null) return;
         for (var i = 0; i < Math.Min(deviceCollection.Count, dtoList.Count); i++)
             mapper.Map(dtoList[i], deviceCollection[i]);
+    }
+    
+    /// <summary>
+    /// Send burn settings request to PDM
+    /// </summary>
+    [HttpPut("{id:guid}/burn")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult SendBurn(Guid id)
+    {
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+
+        if (!deviceManager.BurnSettings(device.Guid))
+            return NotFound(new ProblemDetails
+            {
+                Title = "Request Burn Failed",
+                Detail = $"PDM device with ID '{id}'",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        return Ok(new { message = "Burn sent to device" });
+    }
+    
+    /// <summary>
+    /// Send request sleep to PDM
+    /// </summary>
+    [HttpPut("{id:guid}/sleep")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult SendSleep(Guid id)
+    {
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+
+        if (!deviceManager.RequestSleep(device.Guid))
+            return NotFound(new ProblemDetails
+            {
+                Title = "Request Sleep Failed",
+                Detail = $"PDM device with ID '{id}'",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        return Ok(new { message = "Sleep sent to device" });
+    }
+    
+    /// <summary>
+    /// Request PDM version
+    /// </summary>
+    [HttpPut("{id:guid}/version")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult RequestVersion(Guid id)
+    {
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+
+        if (!deviceManager.RequestVersion(device.Guid))
+            return NotFound(new ProblemDetails
+            {
+                Title = "Request Version Failed",
+                Detail = $"PDM device with ID '{id}'",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        return Ok(new { message = "Request version sent to device" });
+    }
+    
+    /// <summary>
+    /// Send device wakeup request to PDM
+    /// </summary>
+    [HttpPut("{id:guid}/wakeup")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult SendWakeup(Guid id)
+    {
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+
+        if (!deviceManager.RequestWakeup(device.Guid))
+            return NotFound(new ProblemDetails
+            {
+                Title = "Request Wakeup Failed",
+                Detail = $"PDM device with ID '{id}'",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        return Ok(new { message = "Wakeup sent to device" });
+    }
+    
+    /// <summary>
+    /// Send enter bootloader request to PDM
+    /// </summary>
+    [HttpPut("{id:guid}/bootloader")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public ActionResult EnterBootloader(Guid id)
+    {
+        var device = deviceManager.GetDevice<PdmDevice>(id);
+        if (device == null)
+            return NotFound(new ProblemDetails
+            {
+                Title = "Device Not Found",
+                Detail = $"PDM device with ID '{id}' was not found",
+                Status = StatusCodes.Status404NotFound
+            });
+
+        if (!deviceManager.RequestBootloader(device.Guid))
+            return NotFound(new ProblemDetails
+            {
+                Title = "Request Bootloader Failed",
+                Detail = $"PDM device with ID '{id}'",
+                Status = StatusCodes.Status404NotFound
+            });
+        
+        return Ok(new { message = "Enter bootloader sent to device" });
     }
 }
