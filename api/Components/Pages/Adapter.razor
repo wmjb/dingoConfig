@@ -1,0 +1,280 @@
+@page "/adapter"
+@using contracts.Adapters
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<PageTitle>Adapter</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" Class="mb-4">CAN Adapter Connection</MudText>
+
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <!-- Connection Status Card -->
+        <MudCard Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Connection Status</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudChip T="string"
+                             Size="Size.Medium"
+                             Color="@(status?.IsConnected == true ? Color.Success : Color.Error)"
+                             Icon="@(status?.IsConnected == true ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)">
+                        @(status?.IsConnected == true ? "Connected" : "Disconnected")
+                    </MudChip>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (status?.IsConnected == true)
+                {
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body1"><strong>Adapter:</strong> @status.ActiveAdapter</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body1"><strong>Port:</strong> @status.ActivePort</MudText>
+                        </MudItem>
+                    </MudGrid>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">No adapter connected</MudText>
+                }
+            </MudCardContent>
+            <MudCardActions>
+                @if (status?.IsConnected == true)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.LinkOff"
+                               OnClick="@DisconnectAdapter"
+                               Disabled="@disconnecting">
+                        @(disconnecting ? "Disconnecting..." : "Disconnect")
+                    </MudButton>
+                }
+            </MudCardActions>
+        </MudCard>
+
+        <!-- Connect to Adapter Card -->
+        @if (status?.IsConnected != true)
+        {
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Connect to Adapter</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="selectedAdapterType"
+                                       Label="Adapter Type"
+                                       Required="true"
+                                       Variant="Variant.Outlined"
+                                       T="string">
+                                @if (available?.Adapters != null)
+                                {
+                                    @foreach (var adapter in available.Adapters)
+                                    {
+                                        <MudSelectItem T="string" Value="@adapter">@adapter</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="selectedPort"
+                                       Label="Port"
+                                       Required="true"
+                                       Variant="Variant.Outlined"
+                                       T="string">
+                                @if (available?.Ports != null)
+                                {
+                                    @foreach (var port in available.Ports)
+                                    {
+                                        <MudSelectItem T="string" Value="@port">@port</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="selectedBitrate"
+                                       Label="Bitrate"
+                                       Required="true"
+                                       Variant="Variant.Outlined"
+                                       T="string">
+                                <MudSelectItem T="string" Value="@("1000K")">1000K</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("500K")">500K</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("250K")">250K</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("125K")">125K</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (available?.Adapters?.Length == 0 || available?.Ports?.Length == 0)
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-4">
+                            @if (available?.Adapters?.Length == 0)
+                            {
+                                <MudText>No adapters available. Please ensure adapter drivers are installed.</MudText>
+                            }
+                            @if (available?.Ports?.Length == 0)
+                            {
+                                <MudText>No ports detected. Please ensure your adapter is connected.</MudText>
+                            }
+                        </MudAlert>
+                    }
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Link"
+                               OnClick="@ConnectAdapter"
+                               Disabled="@(connecting || string.IsNullOrWhiteSpace(selectedAdapterType) || string.IsNullOrWhiteSpace(selectedPort) || string.IsNullOrWhiteSpace(selectedBitrate))">
+                        @(connecting ? "Connecting..." : "Connect")
+                    </MudButton>
+                    <MudButton Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Filled.Refresh"
+                               OnClick="@RefreshAvailable">
+                        Refresh
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        }
+    }
+</MudContainer>
+
+@code {
+    private AdapterStatusResponse? status;
+    private AdapterAvailableResponse? available;
+    private bool loading = true;
+    private bool connecting = false;
+    private bool disconnecting = false;
+
+    // Form fields
+    private string selectedAdapterType = string.Empty;
+    private string selectedPort = string.Empty;
+    private string selectedBitrate = "500K"; // Default to 500K
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        try
+        {
+            // Load status and available adapters in parallel
+            var statusTask = Http.GetFromJsonAsync<AdapterStatusResponse>("api/adapter/status");
+            var availableTask = Http.GetFromJsonAsync<AdapterAvailableResponse>("api/adapter/available");
+
+            await Task.WhenAll(statusTask, availableTask);
+
+            status = statusTask.Result;
+            available = availableTask.Result;
+
+            // Pre-select first available options if not connected
+            if (status?.IsConnected != true && available != null)
+            {
+                if (string.IsNullOrEmpty(selectedAdapterType) && available.Adapters?.Length > 0)
+                {
+                    selectedAdapterType = available.Adapters[0];
+                }
+                if (string.IsNullOrEmpty(selectedPort) && available.Ports?.Length > 0)
+                {
+                    selectedPort = available.Ports[0];
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading adapter data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task RefreshAvailable()
+    {
+        try
+        {
+            available = await Http.GetFromJsonAsync<AdapterAvailableResponse>("api/adapter/available");
+            Snackbar.Add("Adapter list refreshed", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error refreshing adapters: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ConnectAdapter()
+    {
+        connecting = true;
+        try
+        {
+            var request = new ConnectAdapterRequest
+            {
+                AdapterType = selectedAdapterType,
+                Port = selectedPort,
+                Bitrate = selectedBitrate
+            };
+
+            var response = await Http.PostAsJsonAsync("api/adapter/connect", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"Connected to {selectedAdapterType} on {selectedPort}", Severity.Success);
+                await LoadData(); // Refresh status
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to connect: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error connecting to adapter: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            connecting = false;
+        }
+    }
+
+    private async Task DisconnectAdapter()
+    {
+        disconnecting = true;
+        try
+        {
+            var response = await Http.PostAsync("api/adapter/disconnect", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Disconnected from adapter", Severity.Success);
+                await LoadData(); // Refresh status
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to disconnect: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error disconnecting from adapter: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            disconnecting = false;
+        }
+    }
+}

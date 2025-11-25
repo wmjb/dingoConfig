@@ -40,11 +40,8 @@ public class CommsDataPipeline(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Subscribe to adapter events
-        //if (adapterManager.ActiveAdapter == null) throw new NullReferenceException();
-
-        //adapterManager.ActiveAdapter.DataReceived += OnDataReceived;
-
+        adapterManager.Connected += OnConnect;
+        
         // Set up the transmit callback for DeviceManager
         deviceManager.SetTransmitCallback(QueueTransmit);
 
@@ -53,6 +50,14 @@ public class CommsDataPipeline(
         var txTask = ProcessTxPipelineAsync(stoppingToken);
 
         await Task.WhenAll(rxTask, txTask);
+    }
+
+    private void OnConnect(object? sender, EventArgs e)
+    {
+        // Subscribe to adapter events
+        if (adapterManager.ActiveAdapter == null) return;
+
+        adapterManager.ActiveAdapter.DataReceived += OnDataReceived;
     }
     
     // ============================================

@@ -19,6 +19,8 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     public bool IsConnected => _activeAdapter?.IsConnected ?? false;
 
     public event EventHandler<CanFrameEventArgs>? DataReceived;
+    public event EventHandler? Connected;
+    
 
     public (string[] adapters, string[] ports) GetAvailable()
     {
@@ -58,6 +60,8 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         
         _activeAdapter = commsAdapter;
         _activePort = port;
+        
+        OnConnect(commsAdapter);
         
         _activeAdapter.DataReceived += OnDataReceived;
 
@@ -105,6 +109,11 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     private void OnDataReceived(object sender, CanFrameEventArgs e)
     {
         DataReceived?.Invoke(this, e);
+    }
+
+    private void OnConnect(object sender)
+    {
+        Connected?.Invoke(this, EventArgs.Empty);
     }
     
 }
