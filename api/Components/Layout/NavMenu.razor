@@ -1,4 +1,10 @@
-﻿<MudNavMenu>
+@using contracts.Devices
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@implements IDisposable
+
+<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
         Home
     </MudNavLink>
@@ -8,12 +14,79 @@
     <MudNavLink Href="adapter" Icon="@Icons.Material.Filled.Cable">
         Adapter
     </MudNavLink>
+
     <MudNavLink Href="devices" Icon="@Icons.Material.Filled.Devices">
         Devices
     </MudNavLink>
+
+    @if (devices != null && devices.Any())
+    {
+        @foreach (var device in devices)
+        {
+            <MudNavLink Href="@($"device/{device.Guid}")"
+                        Icon="@GetDeviceIcon(device.DeviceType)"
+                        IconColor="@(device.Connected ? Color.Success : Color.Default)"
+                        Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-success);" : "")}")">
+                @device.Name
+                @if (device.Connected)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Circle"
+                             Color="Color.Success"
+                             Size="Size.Small"
+                             Style="margin-left: auto;" />
+                }
+            </MudNavLink>
+        }
+    }
 </MudNavMenu>
 
 @code
 {
+    private List<DeviceDto> devices = new();
+    private System.Threading.Timer? _refreshTimer;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDevices();
+
+        // Refresh device list every second to catch new devices and connection status changes
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadDevices();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private async Task LoadDevices()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<DeviceDto>>("api/devices");
+            devices = response ?? new List<DeviceDto>();
+        }
+        catch
+        {
+            // Silently fail - don't show errors in nav menu
+            devices = new List<DeviceDto>();
+        }
+    }
+
+    private string GetDeviceIcon(string deviceType)
+    {
+        return deviceType switch
+        {
+            "Pdm" => Icons.Material.Filled.PowerSettingsNew,
+            "PdmMax" => Icons.Material.Filled.ElectricBolt,
+            "Canboard" => Icons.Material.Filled.DeveloperBoard,
+            _ => Icons.Material.Filled.DeviceUnknown
+        };
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
 }
