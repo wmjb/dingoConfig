@@ -40,15 +40,15 @@ public class PdmDevice : IDevice
     [JsonIgnore] public bool CanFiltersEnabled { get; set; }
     [JsonIgnore] public CanBitRate BitRate { get; set; }
     
-    [JsonPropertyName("digitalInputs")] protected List<Input> Inputs { get; set; } = [];
-    [JsonPropertyName("outputs")] protected List<Output> Outputs { get; set; } = [];
-    [JsonPropertyName("canInputs")] protected List<CanInput> CanInputs { get; set; } = [];
-    [JsonPropertyName("virtualInputs")] protected List<VirtualInput> VirtualInputs { get; set; } = [];
-    [JsonPropertyName("wipers")] protected Wiper Wipers { get; set; } = new Wiper("wiper");
-    [JsonPropertyName("flashers")] protected List<Flasher> Flashers { get; set; } = [];
-    [JsonPropertyName("starterDisable")] protected StarterDisable StarterDisable { get; set; } = new StarterDisable("starterDisable");
-    [JsonPropertyName("counters")] protected  List<Counter> Counters { get; set; } = [];
-    [JsonPropertyName("conditions")] protected List<Condition> Conditions { get; set; } = [];
+    [JsonPropertyName("digitalInputs")] public List<Input> Inputs { get; set; } = [];
+    [JsonPropertyName("outputs")] public List<Output> Outputs { get; set; } = [];
+    [JsonPropertyName("canInputs")] public List<CanInput> CanInputs { get; set; } = [];
+    [JsonPropertyName("virtualInputs")] public List<VirtualInput> VirtualInputs { get; set; } = [];
+    [JsonPropertyName("wipers")] public Wiper Wipers { get; set; } = new Wiper("wiper");
+    [JsonPropertyName("flashers")] public List<Flasher> Flashers { get; set; } = [];
+    [JsonPropertyName("starterDisable")] public StarterDisable StarterDisable { get; set; } = new StarterDisable("starterDisable");
+    [JsonPropertyName("counters")] public List<Counter> Counters { get; set; } = [];
+    [JsonPropertyName("conditions")] public List<Condition> Conditions { get; set; } = [];
     
     public bool Connected
     {

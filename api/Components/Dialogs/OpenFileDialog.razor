@@ -1,0 +1,101 @@
+@using application.Services
+@using MudBlazor
+@inject ConfigFileManager FileManager
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Class="mr-2" />
+            Open File
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.caption" Class="mb-3">
+            Working Directory: @FileManager.WorkingDirectory
+        </MudText>
+
+        @if (files == null || !files.Any())
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">
+                No .json files found in the working directory.
+            </MudAlert>
+        }
+        else
+        {
+            <MudList @bind-SelectedValue="selectedFile" Dense="true">
+                @foreach (var file in files)
+                {
+                    <MudListItem Value="@file.Name" OnClick="@(() => OnFileClick(file.Name))">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2">
+                                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" Class="mr-1" />
+                                    @file.Name
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Modified: @file.LastWriteTime.ToString("g")
+                                </MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrEmpty(selectedFile))">
+            Open
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private List<FileInfo>? files;
+    private string? selectedFile;
+    private DateTime? lastClickTime;
+    private string? lastClickedFile;
+
+    protected override void OnInitialized()
+    {
+        files = FileManager.ListJsonFiles();
+    }
+
+    private void OnFileClick(string fileName)
+    {
+        var now = DateTime.Now;
+
+        // Check for double-click (within 300ms)
+        if (lastClickedFile == fileName &&
+            lastClickTime.HasValue &&
+            (now - lastClickTime.Value).TotalMilliseconds < 300)
+        {
+            selectedFile = fileName;
+            Submit();
+            return;
+        }
+
+        lastClickedFile = fileName;
+        lastClickTime = now;
+        selectedFile = fileName;
+    }
+
+    private void Submit()
+    {
+        if (!string.IsNullOrEmpty(selectedFile))
+        {
+            MudDialog.Close(DialogResult.Ok(selectedFile));
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

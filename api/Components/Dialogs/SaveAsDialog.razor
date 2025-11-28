@@ -1,0 +1,99 @@
+@using application.Services
+@using MudBlazor
+@inject ConfigFileManager FileManager
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.SaveAs" Class="mr-2" />
+            Save As
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="fileName"
+                      Label="Filename"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      Adornment="Adornment.End"
+                      AdornmentText=".json"
+                      OnKeyDown="HandleKeyDown"
+                      HelperText="Enter filename without extension"
+                      AutoFocus="true" />
+
+        @if (showOverwriteWarning)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                A file with this name already exists and will be overwritten.
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(fileName))">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public string? InitialFileName { get; set; }
+
+    private string? fileName;
+    private bool showOverwriteWarning;
+
+    protected override void OnInitialized()
+    {
+        // Pre-fill with current filename if provided, removing .json extension if present
+        if (!string.IsNullOrEmpty(InitialFileName))
+        {
+            fileName = InitialFileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+                ? InitialFileName[..^5]
+                : InitialFileName;
+        }
+
+        CheckFileExists();
+    }
+
+    private void CheckFileExists()
+    {
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            showOverwriteWarning = FileManager.FileExists(fileName);
+        }
+        else
+        {
+            showOverwriteWarning = false;
+        }
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        CheckFileExists();
+
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(fileName))
+        {
+            Submit();
+        }
+    }
+
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            // Return filename without .json extension (ConfigFileManager will add it)
+            MudDialog.Close(DialogResult.Ok(fileName));
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

@@ -1,0 +1,110 @@
+@using application.Services
+@using MudBlazor
+@inject ConfigFileManager FileManager
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+            File Manager Settings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="workingDirectory"
+                      Label="Working Directory"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      HelperText="Directory where configuration files are stored"
+                      Lines="1" />
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+            Current: @FileManager.WorkingDirectory
+        </MudText>
+
+        @if (showValidationError)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">
+                Please enter a valid directory path.
+            </MudAlert>
+        }
+
+        @if (showChangeWarning)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">
+                Changing the working directory will affect where files are saved and loaded from.
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(workingDirectory))">
+            Apply
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string? workingDirectory;
+    private bool showValidationError;
+    private bool showChangeWarning;
+
+    protected override void OnInitialized()
+    {
+        workingDirectory = FileManager.WorkingDirectory;
+        CheckForChanges();
+    }
+
+    private void CheckForChanges()
+    {
+        showChangeWarning = !string.IsNullOrWhiteSpace(workingDirectory) &&
+                           workingDirectory != FileManager.WorkingDirectory;
+        showValidationError = false;
+    }
+
+    private void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(workingDirectory))
+        {
+            showValidationError = true;
+            return;
+        }
+
+        try
+        {
+            // Expand environment variables and user path
+            var expandedPath = Environment.ExpandEnvironmentVariables(workingDirectory);
+
+            // Handle user home directory shorthand (~)
+            if (expandedPath.StartsWith("~"))
+            {
+                expandedPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    expandedPath[1..].TrimStart(Path.DirectorySeparatorChar));
+            }
+
+            // Validate path format
+            if (!Path.IsPathFullyQualified(expandedPath))
+            {
+                showValidationError = true;
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(expandedPath));
+        }
+        catch
+        {
+            showValidationError = true;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

@@ -47,6 +47,10 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Initialize ConfigFileManager to ensure working directory exists
+var configFileManager = app.Services.GetRequiredService<ConfigFileManager>();
+configFileManager.Initialize();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

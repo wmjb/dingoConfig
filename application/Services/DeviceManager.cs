@@ -106,6 +106,16 @@ public class DeviceManager(ILogger<DeviceManager> logger)
     }
 
     /// <summary>
+    /// Clear all devices
+    /// </summary>
+    public void ClearDevices()
+    {
+        _devices.Clear();
+        _requestQueue.Clear();
+        logger.LogInformation("All devices cleared");
+    }
+
+    /// <summary>
     /// Get all devices
     /// </summary>
     public List<IDevice> GetDevices() => _devices.Values.ToList();

@@ -1,0 +1,15 @@
+using domain.Devices.CanboardDevice;
+using domain.Devices.dingoPdm;
+using domain.Devices.dingoPdmMax;
+
+namespace application.Models;
+
+/// <summary>
+/// Configuration file model that contains separate lists for each device type
+/// </summary>
+public class ConfigFile
+{
+    public List<PdmDevice> PdmDevices { get; set; } = new();
+    public List<PdmMaxDevice> PdmMaxDevices { get; set; } = new();
+    public List<CanboardDevice> CanboardDevices { get; set; } = new();
+}

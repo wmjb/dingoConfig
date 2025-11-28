@@ -17,6 +17,11 @@
                        Edge="Edge.Start"
                        OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h5" Class="ml-3">dingoConfig</MudText>
+        <MudDivider Vertical="true" FlexItem="true" Class="mx-3" />
+        <FileToolbar OnNew="HandleNew"
+                     OnOpen="HandleOpen"
+                     OnSave="HandleSave"
+                     OnSaveAs="HandleSaveAs" />
         <MudSpacer />
         <AdapterToolbarControl />
         <MudIconButton Icon="@Icons.Material.Filled.Help"
@@ -41,11 +46,73 @@
 </div>
 
 @code {
+    [Inject] private application.Services.ConfigFileManager FileManager { get; set; } = null!;
+    [Inject] private application.Services.DeviceManager DeviceManager { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+
     private bool _drawerOpen = true;
     private MudTheme _theme = new();
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task HandleNew()
+    {
+        DeviceManager.ClearDevices();
+        FileManager.NewFile();
+        Snackbar.Add("New file created", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleOpen(string fileName)
+    {
+        try
+        {
+            var devices = await FileManager.LoadDevices(fileName);
+            if (devices != null && devices.Count > 0)
+            {
+                DeviceManager.ClearDevices();
+                DeviceManager.AddDevices(devices);
+                Snackbar.Add($"Opened {fileName} - {devices.Count} device(s) loaded", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"No devices found in {fileName}", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening file: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        try
+        {
+            var devices = DeviceManager.GetDevices();
+            await FileManager.SaveDevices(devices);
+            Snackbar.Add($"Saved {FileManager.CurrentFileName} - {devices.Count} device(s)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving file: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task HandleSaveAs(string fileName)
+    {
+        try
+        {
+            var devices = DeviceManager.GetDevices();
+            await FileManager.SaveDevices(devices, fileName);
+            Snackbar.Add($"Saved as {fileName} - {devices.Count} device(s)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving file: {ex.Message}", Severity.Error);
+        }
     }
 }
