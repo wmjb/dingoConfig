@@ -145,44 +145,59 @@ public class SlcanAdapter : ICommsAdapter
         foreach (var raw in ser.ReadExisting().Split('\r'))
         {
             if (raw.Length < 5) continue; //'t' msg is always at least 5 bytes long (t + ID ID ID + DLC)
-            if (raw.Substring(0, 1) != "t") return;
+            if (raw.Substring(0, 1) != "t") continue; // Skip non-message frames (e.g., acknowledgments, status)
 
-            RxTimeDelta = new TimeSpan(_rxStopwatch.ElapsedMilliseconds);
-            _rxStopwatch.Restart();
-
-            var id = int.Parse(raw.Substring(1, 3), System.Globalization.NumberStyles.HexNumber);
-            var len = int.Parse(raw.Substring(4, 1), System.Globalization.NumberStyles.HexNumber);
-
-            //Msg comes in as a hex string
-            //For example, an ID of 2008(0x7D8) will be sent as "t7D8...."
-            //The string needs to be parsed into an int using int.Parse
-            //The payload bytes are split across 2 bytes (a nibble each)
-            //For example, a payload byte of 28 (0001 1100) would be split into "1C"
-            byte[] payload;
-            if ((len > 0) && (raw.Length >= 5 + len * 2))
+            try
             {
-                payload = new byte[len];
-                for (int i = 0; i < payload.Length; i++)
+                RxTimeDelta = new TimeSpan(_rxStopwatch.ElapsedMilliseconds);
+                _rxStopwatch.Restart();
+
+                var id = int.Parse(raw.Substring(1, 3), System.Globalization.NumberStyles.HexNumber);
+                var len = int.Parse(raw.Substring(4, 1), System.Globalization.NumberStyles.HexNumber);
+
+                //Msg comes in as a hex string
+                //For example, an ID of 2008(0x7D8) will be sent as "t7D8...."
+                //The string needs to be parsed into an int using int.Parse
+                //The payload bytes are split across 2 bytes (a nibble each)
+                //For example, a payload byte of 28 (0001 1100) would be split into "1C"
+                byte[] payload;
+                if ((len > 0) && (raw.Length >= 5 + len * 2))
                 {
-                    int highNibble = int.Parse(raw.Substring(i * 2 + 5, 1), System.Globalization.NumberStyles.HexNumber);
-                    int lowNibble = int.Parse(raw.Substring(i * 2 + 6, 1), System.Globalization.NumberStyles.HexNumber);
-                    payload[i] = (byte)(((highNibble & 0x0F) << 4) + (lowNibble & 0x0F));
+                    payload = new byte[len];
+                    for (int i = 0; i < payload.Length; i++)
+                    {
+                        int highNibble = int.Parse(raw.Substring(i * 2 + 5, 1), System.Globalization.NumberStyles.HexNumber);
+                        int lowNibble = int.Parse(raw.Substring(i * 2 + 6, 1), System.Globalization.NumberStyles.HexNumber);
+                        payload[i] = (byte)(((highNibble & 0x0F) << 4) + (lowNibble & 0x0F));
+                    }
                 }
-            }
-            else
-            {
-                //Length was 0, create empty data
-                payload = new byte[8];
-            }
+                else
+                {
+                    //Length was 0, create empty data
+                    payload = new byte[8];
+                }
 
-            CanFrame frame = new CanFrame
-            {
-                Id = id,
-                Len = len,
-                Payload = payload
-            };
+                CanFrame frame = new CanFrame
+                {
+                    Id = id,
+                    Len = len,
+                    Payload = payload
+                };
 
-            DataReceived?.Invoke(this,new CanFrameEventArgs(frame));
+                DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
+            }
+            catch (FormatException ex)
+            {
+                // Skip malformed frames - log for debugging if needed
+                Console.WriteLine($"SlcanAdapter: Malformed frame skipped: '{raw}' - {ex.Message}");
+                continue;
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                // Skip frames with invalid indices
+                Console.WriteLine($"SlcanAdapter: Invalid frame format: '{raw}' - {ex.Message}");
+                continue;
+            }
         }
     }
 }

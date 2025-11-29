@@ -1,0 +1,105 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+@using domain.Enums
+
+<MudDataGrid Items="@VirtualInputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Mode">
+            <EditTemplate>
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
+                    @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                    {
+                        <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Not0" Title="NOT 0">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Not0" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Var0" Title="Var 0">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var0" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Cond0" Title="Cond 0">
+            <EditTemplate>
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond0" Variant="Variant.Outlined" Dense="true">
+                    @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
+                    {
+                        <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Not1" Title="NOT 1">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Not1" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Var1" Title="Var 1">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var1" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Cond1" Title="Cond 1">
+            <EditTemplate>
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond1" Variant="Variant.Outlined" Dense="true">
+                    @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
+                    {
+                        <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Not2" Title="NOT 2">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Not2" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Var2" Title="Var 2">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var2" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Cond2" Title="Cond 2">
+            <EditTemplate>
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond2" Variant="Variant.Outlined" Dense="true">
+                    @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
+                    {
+                        <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<VirtualInput> VirtualInputs { get; set; } = null!;
+}

@@ -1,0 +1,86 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+
+<MudDataGrid Items="@Counters" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.MinCount" Title="Min" />
+        <PropertyColumn Property="x => x.MaxCount" Title="Max" />
+        <PropertyColumn Property="x => x.WrapAround" Title="Wrap">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.WrapAround" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.IncInput" Title="Inc Input">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.IncInput" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.IncEdge" Title="Inc Edge">
+            <EditTemplate>
+                <MudSelect T="InputEdge" @bind-Value="context.Item.IncEdge" Variant="Variant.Outlined" Dense="true">
+                    @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
+                    {
+                        <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.DecInput" Title="Dec Input">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.DecInput" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.DecEdge" Title="Dec Edge">
+            <EditTemplate>
+                <MudSelect T="InputEdge" @bind-Value="context.Item.DecEdge" Variant="Variant.Outlined" Dense="true">
+                    @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
+                    {
+                        <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.ResetInput" Title="Reset Input">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.ResetInput" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.ResetEdge" Title="Reset Edge">
+            <EditTemplate>
+                <MudSelect T="InputEdge" @bind-Value="context.Item.ResetEdge" Variant="Variant.Outlined" Dense="true">
+                    @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
+                    {
+                        <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Counter> Counters { get; set; } = null!;
+}

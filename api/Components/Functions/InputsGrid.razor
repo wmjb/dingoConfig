@@ -1,0 +1,45 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Enums
+
+<MudDataGrid Items="@Inputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Mode">
+            <EditTemplate>
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
+                    @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                    {
+                        <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Invert">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Pull">
+            <EditTemplate>
+                <MudSelect T="domain.Enums.InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true">
+                    @foreach (domain.Enums.InputPull pull in Enum.GetValues(typeof(domain.Enums.InputPull)))
+                    {
+                        <MudSelectItem T="domain.Enums.InputPull" Value="@pull">@pull</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.DebounceTime" Title="Debounce (ms)" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Input> Inputs { get; set; } = null!;
+}

@@ -1,0 +1,36 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+
+<MudDataGrid Items="@Flashers" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Single" Title="Single Flash">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Single" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Input" Title="Input Source">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.OnTime" Title="ON Time (ms)" />
+        <PropertyColumn Property="x => x.OffTime" Title="OFF Time (ms)" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Flasher> Flashers { get; set; } = null!;
+}

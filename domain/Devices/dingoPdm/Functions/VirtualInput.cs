@@ -7,10 +7,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class VirtualInput(int num, string name) : IDeviceFunction
+public class VirtualInput(int number, string name) : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set;} = name;
-    [JsonPropertyName("number")] public int Number {get; set;} = num;
+    [JsonPropertyName("name")] public string Name {get; } = name;
+    [JsonPropertyName("number")] public int Number {get; } = number;
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("not0")] public bool Not0 {get; set;}
     [JsonPropertyName("var0")] public VarMap Var0 { get; set; }

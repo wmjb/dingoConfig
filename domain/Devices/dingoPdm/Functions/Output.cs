@@ -7,11 +7,11 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Output(int num, string name) : IDeviceFunction
+public class Output(int number, string name) : IDeviceFunction
 {
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
-    [JsonPropertyName("name")] public string Name { get; set; } = name;
-    [JsonPropertyName("number")] public int Number { get; set; } = num;
+    [JsonPropertyName("name")] public string Name { get;} = name;
+    [JsonPropertyName("number")] public int Number { get; } = number;
     [JsonPropertyName("currentLimit")] public int CurrentLimit { get; set; }
     [JsonPropertyName("resetCountLimit")] public int ResetCountLimit { get; set; }
     [JsonPropertyName("resetMode")] public ResetMode ResetMode { get; set; }

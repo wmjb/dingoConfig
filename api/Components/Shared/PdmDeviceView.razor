@@ -1,5 +1,9 @@
 @using contracts.Devices.Pdm
 @using domain.Devices.dingoPdm.Enums
+@using domain.Devices.dingoPdm
+@using application.Services
+@using api.Components.Functions
+@inject DeviceManager DeviceManager
 
 <MudCard>
     <MudCardHeader>
@@ -74,12 +78,101 @@
             </MudStack>
         }
 
+        @* Function Configurations *@
+        @if (device != null)
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h5" Class="mb-4">Function Configuration</MudText>
+
+            <MudExpansionPanels MultiExpansion="true">
+                @* Inputs *@
+                @if (device.Inputs.Any())
+                {
+                    <MudExpansionPanel Text="@($"Inputs ({device.Inputs.Count})")">
+                        <InputsGrid Inputs="device.Inputs" />
+                    </MudExpansionPanel>
+                }
+
+                @* Outputs *@
+                @if (device.Outputs.Any())
+                {
+                    <MudExpansionPanel Text="@($"Outputs ({device.Outputs.Count})")">
+                        <OutputsGrid Outputs="device.Outputs" />
+                    </MudExpansionPanel>
+                }
+
+                @* CAN Inputs *@
+                @if (device.CanInputs.Any())
+                {
+                    <MudExpansionPanel Text="@($"CAN Inputs ({device.CanInputs.Count})")">
+                        <CanInputsGrid CanInputs="device.CanInputs" />
+                    </MudExpansionPanel>
+                }
+
+                @* Virtual Inputs *@
+                @if (device.VirtualInputs.Any())
+                {
+                    <MudExpansionPanel Text="@($"Virtual Inputs ({device.VirtualInputs.Count})")">
+                        <VirtualInputsGrid VirtualInputs="device.VirtualInputs" />
+                    </MudExpansionPanel>
+                }
+
+                @* Conditions *@
+                @if (device.Conditions.Any())
+                {
+                    <MudExpansionPanel Text="@($"Conditions ({device.Conditions.Count})")">
+                        <ConditionsGrid Conditions="device.Conditions" />
+                    </MudExpansionPanel>
+                }
+
+                @* Counters *@
+                @if (device.Counters.Any())
+                {
+                    <MudExpansionPanel Text="@($"Counters ({device.Counters.Count})")">
+                        <CountersGrid Counters="device.Counters" />
+                    </MudExpansionPanel>
+                }
+
+                @* Flashers *@
+                @if (device.Flashers.Any())
+                {
+                    <MudExpansionPanel Text="@($"Flashers ({device.Flashers.Count})")">
+                        <FlashersGrid Flashers="device.Flashers" />
+                    </MudExpansionPanel>
+                }
+
+                @* Wiper *@
+                @if (device.Wipers != null)
+                {
+                    <MudExpansionPanel Text="Wiper">
+                        <WiperConfig Wiper="device.Wipers" />
+                    </MudExpansionPanel>
+                }
+
+                @* Starter Disable *@
+                @if (device.StarterDisable != null)
+                {
+                    <MudExpansionPanel Text="Starter Disable">
+                        <StarterDisableConfig StarterDisable="device.StarterDisable" />
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
+        }
+
     </MudCardContent>
 </MudCard>
 
 @code {
     [Parameter, EditorRequired]
     public PdmDto State { get; set; } = null!;
+
+    private PdmDevice? device;
+
+    protected override void OnParametersSet()
+    {
+        // Get the actual device from DeviceManager to access function collections
+        device = DeviceManager.GetDevice<PdmDevice>(State.Guid);
+    }
 
     private Color GetOutputColor(OutState state) => state switch
     {

@@ -1,0 +1,40 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+
+<MudDataGrid Items="@Conditions" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Input" Title="Input Source">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Operator">
+            <EditTemplate>
+                <MudSelect T="Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true">
+                    @foreach (Operator op in Enum.GetValues(typeof(Operator)))
+                    {
+                        <MudSelectItem T="Operator" Value="@op">@op</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Arg" Title="Argument" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Condition> Conditions { get; set; } = null!;
+}

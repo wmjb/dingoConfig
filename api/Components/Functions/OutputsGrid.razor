@@ -1,0 +1,56 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+
+<MudDataGrid Items="@Outputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Input" Title="Input Source">
+            <EditTemplate>
+                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true">
+                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                    {
+                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.CurrentLimit" Title="Current Limit (A)" />
+        <PropertyColumn Property="x => x.InrushCurrentLimit" Title="Inrush Limit (A)" />
+        <PropertyColumn Property="x => x.InrushTime" Title="Inrush Time (s)" />
+        <PropertyColumn Property="x => x.ResetMode">
+            <EditTemplate>
+                <MudSelect T="ResetMode" @bind-Value="context.Item.ResetMode" Variant="Variant.Outlined" Dense="true">
+                    @foreach (ResetMode resetMode in Enum.GetValues(typeof(ResetMode)))
+                    {
+                        <MudSelectItem T="ResetMode" Value="@resetMode">@resetMode</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.ResetCountLimit" Title="Reset Count" />
+        <PropertyColumn Property="x => x.ResetTime" Title="Reset Time (s)" />
+        <PropertyColumn Property="x => x.SoftStartEnabled" Title="Soft Start">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.SoftStartEnabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.VariableDutyCycle" Title="Variable PWM">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.VariableDutyCycle" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Frequency" Title="Freq (Hz)" />
+        <PropertyColumn Property="x => x.FixedDutyCycle" Title="Duty %" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Output> Outputs { get; set; } = null!;
+}

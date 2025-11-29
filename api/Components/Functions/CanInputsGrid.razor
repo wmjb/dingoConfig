@@ -1,0 +1,55 @@
+@using domain.Devices.dingoPdm.Functions
+@using domain.Devices.dingoPdm.Enums
+@using domain.Enums
+
+<MudDataGrid Items="@CanInputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Enabled">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Id" Title="CAN ID" />
+        <PropertyColumn Property="x => x.Ide" Title="Extended">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Ide" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Dlc" Title="DLC" />
+        <PropertyColumn Property="x => x.StartingByte" Title="Start Byte" />
+        <PropertyColumn Property="x => x.Operator">
+            <EditTemplate>
+                <MudSelect T="domain.Devices.dingoPdm.Enums.Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true">
+                    @foreach (domain.Devices.dingoPdm.Enums.Operator op in Enum.GetValues(typeof(domain.Devices.dingoPdm.Enums.Operator)))
+                    {
+                        <MudSelectItem T="domain.Devices.dingoPdm.Enums.Operator" Value="@op">@op</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.OnVal" Title="ON Value" />
+        <PropertyColumn Property="x => x.Mode">
+            <EditTemplate>
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
+                    @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                    {
+                        <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.TimeoutEnabled" Title="Timeout En">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Timeout" Title="Timeout (ms)" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<CanInput> CanInputs { get; set; } = null!;
+}

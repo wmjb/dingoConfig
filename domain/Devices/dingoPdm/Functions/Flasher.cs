@@ -6,10 +6,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Flasher(int num, string name) : IDeviceFunction
+public class Flasher(int number, string name) : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set;} = name;
-    [JsonPropertyName("number")] public int Number {get; set;} = num;
+    [JsonPropertyName("name")] public string Name {get;} = name;
+    [JsonPropertyName("number")] public int Number {get;} = number;
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("single")] public bool Single {get; set;}
     [JsonPropertyName("input")] public VarMap Input {get; set;}

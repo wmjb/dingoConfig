@@ -12,14 +12,14 @@ public class StarterDisable(string name) : IDeviceFunction
     [JsonIgnore] public int Number => 1; // Singleton function
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("input")] public VarMap Input {get; set;}
-    [JsonPropertyName("output1")] bool Output1 {get; set;}
-    [JsonPropertyName("output2")] bool Output2 {get; set;}
-    [JsonPropertyName("output3")] bool Output3 {get; set;}
-    [JsonPropertyName("output4")] bool Output4 {get; set;}
-    [JsonPropertyName("output5")] bool Output5 {get; set;}
-    [JsonPropertyName("output6")] bool Output6 {get; set;}
-    [JsonPropertyName("output7")] bool Output7 {get; set;}
-    [JsonPropertyName("output8")] bool Output8 {get; set;}
+    [JsonPropertyName("output1")] public bool Output1 {get; set;}
+    [JsonPropertyName("output2")] public bool Output2 {get; set;}
+    [JsonPropertyName("output3")] public bool Output3 {get; set;}
+    [JsonPropertyName("output4")] public bool Output4 {get; set;}
+    [JsonPropertyName("output5")] public bool Output5 {get; set;}
+    [JsonPropertyName("output6")] public bool Output6 {get; set;}
+    [JsonPropertyName("output7")] public bool Output7 {get; set;}
+    [JsonPropertyName("output8")] public bool Output8 {get; set;}
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
