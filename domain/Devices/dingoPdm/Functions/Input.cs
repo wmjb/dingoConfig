@@ -33,6 +33,7 @@ public class Input(int number, string name) : IDeviceFunction
 
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Inputs,
@@ -53,6 +54,7 @@ public class Input(int number, string name) : IDeviceFunction
         
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Inputs,

@@ -52,6 +52,7 @@ public class CanInput(int number, string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.CanInputs,
@@ -73,6 +74,7 @@ public class CanInput(int number, string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.CanInputsId,
@@ -97,6 +99,7 @@ public class CanInput(int number, string name) : IDeviceFunction
         {
             MessagePrefix.CanInputs => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.CanInputs,
@@ -106,6 +109,7 @@ public class CanInput(int number, string name) : IDeviceFunction
             },
             MessagePrefix.CanInputsId => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.CanInputsId,

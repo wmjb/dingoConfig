@@ -14,7 +14,7 @@ public class DeviceManager(ILogger<DeviceManager> logger)
     private ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> _requestQueue = new();
     private Action<CanFrame>? _transmitCallback;
 
-    private const int MaxRetries = 3;
+    private const int MaxRetries = 20;
     private const int TimeoutMs = 500;
 
     /// <summary>

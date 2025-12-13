@@ -41,7 +41,14 @@
                                  Step="1.0"/>
             </EditTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.InrushTime" Title="Inrush Time (s)" />
+        <TemplateColumn Property="x => x.InrushTime" Title="Inrush Time (s)">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.InrushTime"
+                                 Min ="0"
+                                 Max="25"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.ResetMode">
             <EditTemplate>
                 <MudSelect T="ResetMode" @bind-Value="context.Item.ResetMode" Variant="Variant.Outlined" Dense="true">

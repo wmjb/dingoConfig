@@ -12,7 +12,8 @@ public class PdmDeviceProfile : Profile
 {
     public PdmDeviceProfile()
     {
-        CreateMap<PdmDevice, PdmDto>();
+        CreateMap<PdmDevice, PdmDto>()
+            .ForMember(dest => dest.DeviceType, opt => opt.MapFrom(src => "Pdm"));
         CreateMap<PdmDto, PdmDevice>();
 
         //Functions

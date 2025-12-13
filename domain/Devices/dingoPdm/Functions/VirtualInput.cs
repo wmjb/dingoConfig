@@ -40,6 +40,7 @@ public class VirtualInput(int number, string name) : IDeviceFunction
 
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.VirtualInputs,
@@ -60,6 +61,7 @@ public class VirtualInput(int number, string name) : IDeviceFunction
         
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.VirtualInputs,

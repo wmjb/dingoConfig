@@ -19,6 +19,7 @@ public class Output(int number, string name) : IDeviceFunction
     [JsonPropertyName("inrushCurrentLimit")] public double InrushCurrentLimit { get; set; }
     [JsonPropertyName("inrushTime")] public int InrushTime { get; set; }
     [JsonPropertyName("input")] public VarMap Input { get; set; }
+    [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
     [JsonPropertyName("variableDutyCycle")] public bool VariableDutyCycle { get; set; }
     [JsonPropertyName("dutyCycleInput")] public VarMap DutyCycleInput { get; set; }
@@ -53,6 +54,7 @@ public class Output(int number, string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.Outputs,
@@ -74,6 +76,7 @@ public class Output(int number, string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.OutputsPwm,
@@ -102,7 +105,7 @@ public class Output(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.Outputs,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = Write() },
+                Frame = new CanFrame { Id = baseId, Len = 8, Payload = Write() },
                 MsgDescription = $"Output{Number}"
             },
             MessagePrefix.OutputsPwm => new DeviceCanFrame
@@ -111,7 +114,7 @@ public class Output(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.OutputsPwm,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = WritePwm() },
+                Frame = new CanFrame { Id = baseId, Len = 8, Payload = WritePwm() },
                 MsgDescription = $"OutputPwm{Number}"
             },
             _ => null
@@ -130,16 +133,16 @@ public class Output(int number, string name) : IDeviceFunction
                 CurrentLimit = (int)ExtractSignalInt(data, 24, 8);
                 ResetMode = (ResetMode)ExtractSignalInt(data, 32, 4);
                 ResetCountLimit = (int)ExtractSignalInt(data, 36, 4);
-                ResetTime = (int)ExtractSignalInt(data, 40, 8, factor: 0.1);
+                ResetTime = (int)ExtractSignalInt(data, 40, 8, factor: 10);
                 InrushCurrentLimit = (int)ExtractSignalInt(data, 48, 8);
-                InrushTime = (int)ExtractSignalInt(data, 56, 8, factor: 0.1);
+                InrushTime = (int)ExtractSignalInt(data, 56, 8, factor: 10);
 
                 return true;
             case MessagePrefix.OutputsPwm when data.Length != 8:
                 return false;
             case MessagePrefix.OutputsPwm:
             {
-                Enabled = ExtractSignalInt(data, 8, 1) == 1;
+                PwmEnabled = ExtractSignalInt(data, 8, 1) == 1;
                 SoftStartEnabled = ExtractSignalInt(data, 9, 1) == 1;
                 VariableDutyCycle = ExtractSignalInt(data, 10, 1) == 1;
                 DutyCycleInput = (VarMap)ExtractSignalInt(data, 16, 8);
@@ -180,7 +183,7 @@ public class Output(int number, string name) : IDeviceFunction
     {
         var data = new byte[8];
         InsertSignalInt(data, (long)MessagePrefix.OutputsPwm, 0, 8);
-        InsertBool(data, Enabled, 8);
+        InsertBool(data, PwmEnabled, 8);
         InsertBool(data, SoftStartEnabled, 9);
         InsertBool(data, VariableDutyCycle, 10);
         InsertSignalInt(data, Number - 1, 12, 4);

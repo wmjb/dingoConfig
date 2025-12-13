@@ -143,7 +143,7 @@ public class PdmDevice : IDevice
     
     public bool InIdRange(int id)
     {
-        return (id >= BaseId) && (id <= BaseId + 31);
+        return (id >= BaseId - 1) && (id <= BaseId + 31);
     }
     
     public bool Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
@@ -661,7 +661,7 @@ public class PdmDevice : IDevice
 
     public List<DeviceCanFrame> GetReadMsgs()
     {
-        var id = BaseId - 1;
+        var id = BaseId;
 
         var msgs = new List<DeviceCanFrame>
         {
@@ -669,13 +669,14 @@ public class PdmDevice : IDevice
             //Version
             new DeviceCanFrame
             {
+                DeviceBaseId = BaseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Version,
                 Index = 0,
                 Frame = new CanFrame
                 {
-                    Id = id,
+                    Id = id - 1,
                     Len = 1,
                     Payload = [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
                 },
@@ -684,13 +685,14 @@ public class PdmDevice : IDevice
             //CAN settings
             new DeviceCanFrame
             {
+                DeviceBaseId = BaseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
                 Frame = new CanFrame
                 {
-                    Id = id,
+                    Id = id - 1,
                     Len = 1,
                     Payload = [Convert.ToByte(MessagePrefix.Can), 0, 0, 0, 0, 0, 0, 0]
                 },
@@ -795,19 +797,20 @@ public class PdmDevice : IDevice
 
     public List<DeviceCanFrame> GetWriteMsgs()
     {
-        var id = BaseId - 1;
+        var id = BaseId;
 
         List<DeviceCanFrame> msgs =
         [
             new DeviceCanFrame
             {
+                DeviceBaseId = BaseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
                 Frame = new CanFrame
                 {
-                    Id = id,
+                    Id = id - 1,
                     Len = 4,
                     Payload =
                     [
@@ -920,12 +923,13 @@ public class PdmDevice : IDevice
 
     public List<DeviceCanFrame> GetUpdateMsgs(int newId)
     {
-        var id = BaseId - 1;
+        var id = BaseId;
 
         List<DeviceCanFrame> msgs =
         [
             new DeviceCanFrame
             {
+                DeviceBaseId = BaseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Can,
@@ -957,6 +961,7 @@ public class PdmDevice : IDevice
     {
         return new DeviceCanFrame
         {
+            DeviceBaseId = BaseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.BurnSettings,
@@ -975,6 +980,7 @@ public class PdmDevice : IDevice
     {
         return new DeviceCanFrame
         {
+            DeviceBaseId = BaseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Sleep,
@@ -994,6 +1000,7 @@ public class PdmDevice : IDevice
     {
         return new DeviceCanFrame
         {
+            DeviceBaseId = BaseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Version,
@@ -1012,6 +1019,7 @@ public class PdmDevice : IDevice
     {
         return new DeviceCanFrame
         {
+            DeviceBaseId = BaseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Null, //No response = no prefix
@@ -1030,6 +1038,7 @@ public class PdmDevice : IDevice
     {
         return new DeviceCanFrame
         {
+            DeviceBaseId = BaseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Bootloader,

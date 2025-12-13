@@ -4,6 +4,8 @@
 @using application.Services
 @using api.Components.Functions
 @inject DeviceManager DeviceManager
+@inject HttpClient Http
+@inject ISnackbar Snackbar
 @typeparam TDto where TDto : PdmDto
 @typeparam TDevice where TDevice : PdmDevice
 
@@ -21,6 +23,70 @@
             <MudText Typo="Typo.caption">GUID: @State.Guid</MudText>
         </CardHeaderActions>
     </MudCardHeader>
+
+    @* Device Control Buttons *@
+    <div class="pa-3">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Info"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnReadDeviceAsync">
+                Read
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnWriteDeviceAsync">
+                Write
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Warning"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnBurnSettingsAsync">
+                Burn
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Info"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnRequestVersionAsync">
+                Version
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Bedtime"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnSleepAsync">
+                Sleep
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Success"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.WbSunny"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnWakeupAsync">
+                Wakeup
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.DeveloperMode"
+                       Disabled="@(!State.Connected)"
+                       OnClick="@OnEnterBootloaderAsync">
+                Bootloader
+            </MudButton>
+        </MudStack>
+        <MudDivider Class="my-2" />
+    </div>
+
     <MudCardContent>
         @* Device-level metrics *@
         <MudGrid>
@@ -235,4 +301,177 @@
         OutState.Fault => "RESETTING",
         _ => "OFF"
     };
+
+    // Helper method to get API route prefix based on device type
+    private string GetApiRoutePrefix()
+    {
+        return State.DeviceType switch
+        {
+            "Pdm" => "api/pdm-device",
+            "PdmMax" => "api/pdm-max-device",
+            _ => throw new InvalidOperationException($"Unknown device type: {State.DeviceType}")
+        };
+    }
+
+    // Device operation methods
+    private async Task OnReadDeviceAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/read", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Device read initiated - configuration will be updated as responses arrive", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to read device: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error reading device: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnWriteDeviceAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/write", State);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Device configuration write initiated", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to write device: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error writing device: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnBurnSettingsAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/burn", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Burn settings command sent to device", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to burn settings: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error burning settings: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnRequestVersionAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/version", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Version request sent to device", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to request version: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error requesting version: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnSleepAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/sleep", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Sleep command sent to device", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to send sleep command: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error sending sleep command: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnWakeupAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/wakeup", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Wakeup command sent to device", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to send wakeup command: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error sending wakeup command: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnEnterBootloaderAsync()
+    {
+        try
+        {
+            var prefix = GetApiRoutePrefix();
+            var response = await Http.PutAsJsonAsync($"{prefix}/{State.Guid}/bootloader", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Enter bootloader command sent to device", Severity.Success);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Failed to send bootloader command: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error sending bootloader command: {ex.Message}", Severity.Error);
+        }
+    }
 }

@@ -45,6 +45,7 @@ public class Wiper(string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.Wiper,
@@ -63,6 +64,7 @@ public class Wiper(string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.WiperSpeed,
@@ -81,6 +83,7 @@ public class Wiper(string name) : IDeviceFunction
 
                 return new DeviceCanFrame
                 {
+                    DeviceBaseId = baseId,
                     Sent = false,
                     Received = false,
                     Prefix = (int)MessagePrefix.WiperDelays,
@@ -105,6 +108,7 @@ public class Wiper(string name) : IDeviceFunction
         {
             MessagePrefix.Wiper => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Wiper,
@@ -114,6 +118,7 @@ public class Wiper(string name) : IDeviceFunction
             },
             MessagePrefix.WiperSpeed => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.WiperSpeed,
@@ -123,6 +128,7 @@ public class Wiper(string name) : IDeviceFunction
             },
             MessagePrefix.WiperDelays => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.WiperDelays,

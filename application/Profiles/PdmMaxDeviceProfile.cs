@@ -8,7 +8,8 @@ public class PdmMaxDeviceProfile : Profile
 {
     public PdmMaxDeviceProfile()
     {
-        CreateMap<PdmMaxDevice, PdmMaxDto>();
+        CreateMap<PdmMaxDevice, PdmMaxDto>()
+            .ForMember(dest => dest.DeviceType, opt => opt.MapFrom(src => "PdmMax"));
         CreateMap<PdmMaxDto, PdmMaxDevice>();
     }
 }

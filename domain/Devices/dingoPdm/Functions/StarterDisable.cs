@@ -35,6 +35,7 @@ public class StarterDisable(string name) : IDeviceFunction
 
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.StarterDisable,
@@ -55,6 +56,7 @@ public class StarterDisable(string name) : IDeviceFunction
         
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.StarterDisable,

@@ -8,7 +8,8 @@ public class CanboardDeviceProfile : Profile
 {
     public CanboardDeviceProfile()
     {
-        CreateMap<CanboardDevice, CanboardDto>();
+        CreateMap<CanboardDevice, CanboardDto>()
+            .ForMember(dest => dest.DeviceType, opt => opt.MapFrom(src => "Canboard"));
         CreateMap<CanboardDto, CanboardDevice>();
     }
 }

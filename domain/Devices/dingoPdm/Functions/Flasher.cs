@@ -33,6 +33,7 @@ public class Flasher(int number, string name) : IDeviceFunction
 
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Flashers,
@@ -53,6 +54,7 @@ public class Flasher(int number, string name) : IDeviceFunction
         
         return new DeviceCanFrame
         {
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Flashers,
