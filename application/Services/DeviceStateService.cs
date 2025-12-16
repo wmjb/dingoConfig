@@ -1,42 +1,42 @@
 using System.Collections.Concurrent;
-using contracts.Devices;
+using domain.Interfaces;
 
 namespace application.Services;
 
 /// <summary>
-/// State container service for managing device state and config updates across all device types.
-/// Used by Blazor components to receive real-time updates.
+/// State container service for managing device state updates across all device types.
+/// Used by Blazor components to receive real-time updates via domain models (no DTOs).
 /// </summary>
 public class DeviceStateService
 {
-    // Store combined DTOs by device ID (regardless of type)
-    private readonly ConcurrentDictionary<Guid, DeviceDto> _deviceStates = new();
+    // Store domain models by device ID (regardless of type)
+    private readonly ConcurrentDictionary<Guid, IDevice> _deviceStates = new();
 
-    // Generic events for state changes
-    public event Action<Guid, DeviceDto>? OnStateChanged;
+    // Generic events for state changes - broadcasts domain models directly
+    public event Action<Guid, IDevice>? OnStateChanged;
 
     /// <summary>
     /// Update device state and notify subscribers
     /// </summary>
-    public void UpdateDeviceState(Guid deviceId, DeviceDto state)
+    public void UpdateDeviceState(Guid deviceId, IDevice device)
     {
-        _deviceStates[deviceId] = state;
-        OnStateChanged?.Invoke(deviceId, state);
+        _deviceStates[deviceId] = device;
+        OnStateChanged?.Invoke(deviceId, device);
     }
 
     /// <summary>
     /// Get current state for a device
     /// </summary>
-    public DeviceDto? GetDeviceState(Guid deviceId)
+    public IDevice? GetDeviceState(Guid deviceId)
     {
-        _deviceStates.TryGetValue(deviceId, out var state);
-        return state;
+        _deviceStates.TryGetValue(deviceId, out var device);
+        return device;
     }
 
     /// <summary>
     /// Get all device states
     /// </summary>
-    public IEnumerable<DeviceDto> GetAllDeviceStates()
+    public IEnumerable<IDevice> GetAllDeviceStates()
     {
         return _deviceStates.Values;
     }

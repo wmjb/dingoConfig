@@ -1,5 +1,6 @@
-@using contracts.Adapters
-@inject HttpClient Http
+@using domain.Interfaces
+@using domain.Enums
+@inject ICommsAdapterManager CommsAdapterManager
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 @implements IDisposable
@@ -8,7 +9,7 @@
           Dot="true"
           Overlap="true"
           Bordered="true"
-          Visible="@(_available?.Ports?.Length == 0)">
+          Visible="@(_available.Ports?.Length == 0)">
     <MudChip T="string"
              Icon="@Icons.Material.Filled.Cable"
              Color="@GetAdapterChipColor()"
@@ -36,7 +37,7 @@
                 Adapter
             </MudText>
 
-            @if (_status?.IsConnected == true)
+            @if (_status.IsConnected)
             {
                 <!-- Connected State -->
                 <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true">
@@ -68,7 +69,7 @@
                            Dense="true"
                            Class="mb-2"
                            T="string">
-                    @if (_available?.Adapters != null)
+                    @if (_available.Adapters != null)
                     {
                         @foreach (var adapter in _available.Adapters)
                         {
@@ -86,7 +87,7 @@
                                Dense="true"
                                Class="mb-2"
                                T="string">
-                        @if (_available?.Ports != null)
+                        @if (_available.Ports != null)
                         {
                             @foreach (var port in _available.Ports)
                             {
@@ -117,14 +118,14 @@
                     <div class="mb-3"></div>
                 }
 
-                @if (_available?.Adapters?.Length == 0 || _available?.Ports?.Length == 0)
+                @if (_available.Adapters?.Length == 0 || _available.Ports?.Length == 0)
                 {
                     <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true">
-                        @if (_available?.Adapters?.Length == 0)
+                        @if (_available.Adapters?.Length == 0)
                         {
                             <MudText Typo="Typo.caption">No adapters available</MudText>
                         }
-                        @if (_available?.Ports?.Length == 0)
+                        @if (_available.Ports?.Length == 0)
                         {
                             <MudText Typo="Typo.caption">No ports detected</MudText>
                         }
@@ -152,8 +153,8 @@
 
 @code {
     private bool _isOpen;
-    private AdapterStatusResponse? _status;
-    private AdapterAvailableResponse? _available;
+    private (bool IsConnected, string? ActiveAdapter, string? ActivePort) _status;
+    private (string[] Adapters, string[] Ports) _available;
     private bool _loading = true;
     private bool _connecting = false;
     private bool _disconnecting = false;
@@ -163,16 +164,16 @@
     private string _selectedPort = string.Empty;
     private string _selectedBitrate = "500K";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadData();
+        LoadData();
 
         // Refresh status every second
-        _refreshTimer = new System.Threading.Timer(async _ =>
+        _refreshTimer = new System.Threading.Timer(_ =>
         {
-            await InvokeAsync(async () =>
+            InvokeAsync(() =>
             {
-                await LoadData();
+                LoadData();
                 StateHasChanged();
             });
         }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
@@ -183,20 +184,15 @@
         _isOpen = !_isOpen;
     }
 
-    private async Task LoadData()
+    private void LoadData()
     {
         _loading = true;
         try
         {
-            var statusTask = Http.GetFromJsonAsync<AdapterStatusResponse>("api/adapter/status");
-            var availableTask = Http.GetFromJsonAsync<AdapterAvailableResponse>("api/adapter/available");
+            _status = CommsAdapterManager.GetStatus();
+            _available = CommsAdapterManager.GetAvailable();
 
-            await Task.WhenAll(statusTask, availableTask);
-
-            _status = statusTask.Result;
-            _available = availableTask.Result;
-
-            if (_status?.IsConnected != true && _available != null)
+            if (!_status.IsConnected)
             {
                 if (string.IsNullOrEmpty(_selectedAdapterType) && _available.Adapters?.Length > 0)
                 {
@@ -218,11 +214,11 @@
         }
     }
 
-    private async Task RefreshAvailable()
+    private void RefreshAvailable()
     {
         try
         {
-            _available = await Http.GetFromJsonAsync<AdapterAvailableResponse>("api/adapter/available");
+            _available = CommsAdapterManager.GetAvailable();
             Snackbar.Add("Adapter list refreshed", Severity.Info);
         }
         catch (Exception ex)
@@ -245,29 +241,33 @@
             };
 
             // Set bitrate based on adapter type
-            var bitrate = _selectedAdapterType is "Sim" or "USB"
+            var bitrateString = _selectedAdapterType is "Sim" or "USB"
                 ? "1000K"
                 : _selectedBitrate;
 
-            var request = new ConnectAdapterRequest
+            // Parse bitrate enum
+            CanBitRate bitrate = bitrateString switch
             {
-                AdapterType = _selectedAdapterType,
-                Port = port,
-                Bitrate = bitrate
+                "1000K" => CanBitRate.BitRate1000K,
+                "500K" => CanBitRate.BitRate500K,
+                "250K" => CanBitRate.BitRate250K,
+                "125K" => CanBitRate.BitRate125K,
+                _ => CanBitRate.BitRate500K
             };
 
-            var response = await Http.PostAsJsonAsync("api/adapter/connect", request);
+            // Get adapter instance
+            var adapter = CommsAdapterManager.ToAdapter(_selectedAdapterType);
+            var success = await CommsAdapterManager.ConnectAsync(adapter, port, bitrate, CancellationToken.None);
 
-            if (response.IsSuccessStatusCode)
+            if (success)
             {
                 Snackbar.Add($"Connected to {_selectedAdapterType}", Severity.Success);
-                await LoadData();
+                LoadData();
                 _isOpen = false; // Close popover on success
             }
             else
             {
-                var error = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Failed to connect: {error}", Severity.Error);
+                Snackbar.Add($"Failed to connect to {_selectedAdapterType}", Severity.Error);
             }
         }
         catch (Exception ex)
@@ -285,19 +285,10 @@
         _disconnecting = true;
         try
         {
-            var response = await Http.PostAsync("api/adapter/disconnect", null);
-
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Disconnected from adapter", Severity.Success);
-                await LoadData();
-                _isOpen = false; // Close popover on success
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Failed to disconnect: {error}", Severity.Error);
-            }
+            await CommsAdapterManager.DisconnectAsync();
+            Snackbar.Add("Disconnected from adapter", Severity.Success);
+            LoadData();
+            _isOpen = false; // Close popover on success
         }
         catch (Exception ex)
         {
@@ -332,7 +323,7 @@
 
     private Color GetAdapterChipColor()
     {
-        if (_status?.IsConnected == true)
+        if (_status.IsConnected)
         {
             return Color.Success; // Green when connected
         }
@@ -341,7 +332,7 @@
 
     private string GetAdapterText()
     {
-        if (_status?.IsConnected == true)
+        if (_status.IsConnected)
         {
             return $"Adapter: {_status.ActiveAdapter}";
         }

@@ -1,17 +1,17 @@
-@using contracts.Devices.Canboard
+@using domain.Devices.CanboardDevice
 
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudText Typo="Typo.h5">CANBoard Device</MudText>
-                <MudChip T="string" Color="@(State.Connected ? Color.Success : Color.Error)" Size="Size.Small">
-                    @(State.Connected ? "Connected" : "Disconnected")
+                <MudChip T="string" Color="@(Device.Connected ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(Device.Connected ? "Connected" : "Disconnected")
                 </MudChip>
             </MudStack>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudText Typo="Typo.caption">GUID: @State.Guid</MudText>
+            <MudText Typo="Typo.caption">GUID: @Device.Guid</MudText>
         </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent>
@@ -34,5 +34,5 @@
 
 @code {
     [Parameter, EditorRequired]
-    public CanboardDto State { get; set; } = null!;
+    public CanboardDevice Device { get; set; } = null!;
 }

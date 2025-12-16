@@ -1,8 +1,8 @@
 @page "/device/{DeviceId:guid}"
-@using contracts.Devices
-@using contracts.Devices.Pdm
-@using contracts.Devices.PdmMax
-@using contracts.Devices.Canboard
+@using domain.Interfaces
+@using domain.Devices.dingoPdm
+@using domain.Devices.dingoPdmMax
+@using domain.Devices.CanboardDevice
 @using application.Services
 @using api.Components.Shared
 @inject DeviceStateService StateService
@@ -11,26 +11,26 @@
 <PageTitle>Device Monitor</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    @if (currentState != null)
+    @if (currentDevice != null)
     {
         @* Render appropriate view based on device type *@
-        @switch (currentState)
+        @switch (currentDevice)
         {
-            case PdmMaxDto pdmMaxState:
-                <PdmMaxDeviceView State="pdmMaxState"/>
+            case PdmMaxDevice pdmMaxDevice:
+                <PdmMaxDeviceView Device="pdmMaxDevice"/>
                 break;
-                
-            case PdmDto pdmState:
-                <PdmDeviceView State="pdmState"/>
+
+            case PdmDevice pdmDevice:
+                <PdmDeviceView Device="pdmDevice"/>
                 break;
-                
-            case CanboardDto canboardState:
-                <CanboardDeviceView State="canboardState" />
+
+            case CanboardDevice canboardDevice:
+                <CanboardDeviceView Device="canboardDevice" />
                 break;
 
             default:
                 <MudAlert Severity="Severity.Warning">
-                    Unknown device type: @currentState.GetType().Name
+                    Unknown device type: @currentDevice.GetType().Name
                 </MudAlert>
                 break;
         }
@@ -50,7 +50,7 @@
     [Parameter]
     public Guid DeviceId { get; set; }
 
-    private DeviceDto? currentState;
+    private IDevice? currentDevice;
 
     protected override void OnInitialized()
     {
@@ -58,14 +58,14 @@
         StateService.OnStateChanged += HandleStateChanged;
 
         // Get initial state
-        currentState = StateService.GetDeviceState(DeviceId);
+        currentDevice = StateService.GetDeviceState(DeviceId);
     }
 
-    private void HandleStateChanged(Guid deviceId, DeviceDto state)
+    private void HandleStateChanged(Guid deviceId, IDevice device)
     {
         if (deviceId == DeviceId)
         {
-            currentState = state;
+            currentDevice = device;
 
             // Tell Blazor to re-render this component
             // InvokeAsync is required because this is called from a background thread

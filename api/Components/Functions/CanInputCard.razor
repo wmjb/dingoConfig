@@ -1,4 +1,4 @@
-@using contracts.Devices.Pdm.Functions
+@using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
 
 <MudCard Elevation="2">
@@ -26,17 +26,19 @@
 
 @code {
     [Parameter, EditorRequired]
-    public CanInputDto Item { get; set; } = null!;
+    public CanInput Item { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public Guid DeviceId { get; set; }
 
     [Inject] private IDialogService DialogService { get; set; } = null!;
-    
-    private CanInputDto _editModel = new(0);
 
     private async Task OpenDialog()
     {
         var parameters = new DialogParameters<CanInputDialog>
         {
-            { x => x.Model, Item }
+            { x => x.Model, Item },
+            { x => x.DeviceId, DeviceId }
         };
 
         var options = new DialogOptions
@@ -44,11 +46,11 @@
             MaxWidth = MaxWidth.Medium,
             FullWidth = true
         };
-        
+
         var dialog = await DialogService.ShowAsync<CanInputDialog>(
             $"CAN Input {Item.Number}",
-                parameters, 
-                options);
+            parameters,
+            options);
 
         var result = await dialog.Result;
 

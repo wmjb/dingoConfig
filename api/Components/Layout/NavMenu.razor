@@ -1,5 +1,6 @@
-@using contracts.Devices
-@inject HttpClient Http
+@using domain.Interfaces
+@using application.Services
+@inject DeviceManager DeviceManager
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 @implements IDisposable
@@ -20,7 +21,7 @@
         @foreach (var device in devices)
         {
             <MudNavLink Href="@($"device/{device.Guid}")"
-                        Icon="@GetDeviceIcon(device.DeviceType)"
+                        Icon="@GetDeviceIcon(device.GetType().Name)"
                         IconColor="@(device.Connected ? Color.Success : Color.Default)"
                         Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-success);" : "")}")">
                 @device.Name
@@ -38,35 +39,34 @@
 
 @code
 {
-    private List<DeviceDto> devices = new();
+    private List<IDevice> devices = new();
     private System.Threading.Timer? _refreshTimer;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadDevices();
+        LoadDevices();
 
         // Refresh device list every second to catch new devices and connection status changes
-        _refreshTimer = new System.Threading.Timer(async _ =>
+        _refreshTimer = new System.Threading.Timer(_ =>
         {
-            await InvokeAsync(async () =>
+            InvokeAsync(() =>
             {
-                await LoadDevices();
+                LoadDevices();
                 StateHasChanged();
             });
         }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     }
 
-    private async Task LoadDevices()
+    private void LoadDevices()
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<List<DeviceDto>>("api/devices");
-            devices = response ?? new List<DeviceDto>();
+            devices = DeviceManager.GetAllDevices().ToList();
         }
         catch
         {
             // Silently fail - don't show errors in nav menu
-            devices = new List<DeviceDto>();
+            devices = new List<IDevice>();
         }
     }
 
@@ -74,9 +74,9 @@
     {
         return deviceType switch
         {
-            "Pdm" => Icons.Material.Filled.PowerSettingsNew,
-            "PdmMax" => Icons.Material.Filled.ElectricBolt,
-            "Canboard" => Icons.Material.Filled.DeveloperBoard,
+            "PdmDevice" => Icons.Material.Filled.PowerSettingsNew,
+            "PdmMaxDevice" => Icons.Material.Filled.ElectricBolt,
+            "CanboardDevice" => Icons.Material.Filled.DeveloperBoard,
             _ => Icons.Material.Filled.DeviceUnknown
         };
     }

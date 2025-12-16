@@ -38,9 +38,6 @@ builder.Services.AddSingleton<DeviceStateService>();
 builder.Services.AddHostedService<CommsDataPipeline>();
 builder.Services.AddHostedService<DeviceStateBroadcaster>();
 
-// Add AutoMapper (scans assembly for all profiles)
-builder.Services.AddAutoMapper(typeof(application.Profiles.PdmDeviceProfile).Assembly);
-
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();

@@ -1,12 +1,10 @@
-@using contracts.Devices.Pdm
 @using domain.Devices.dingoPdm
 
-<BasePdmDeviceView TDto="PdmDto"
-               TDevice="PdmDevice"
-               State="@State"
+<BasePdmDeviceView TDevice="PdmDevice"
+               Device="@Device"
                DeviceName="dingoPDM" />
 
 @code {
     [Parameter, EditorRequired]
-    public PdmDto State { get; set; } = null!;
+    public PdmDevice Device { get; set; } = null!;
 }

@@ -1,12 +1,10 @@
-@using contracts.Devices.PdmMax
 @using domain.Devices.dingoPdmMax
 
-<BasePdmDeviceView TDto="PdmMaxDto"
-               TDevice="PdmMaxDevice"
-               State="@State"
+<BasePdmDeviceView TDevice="PdmMaxDevice"
+               Device="@Device"
                DeviceName="dingoPDM-Max" />
 
 @code {
     [Parameter, EditorRequired]
-    public PdmMaxDto State { get; set; } = null!;
+    public PdmMaxDevice Device { get; set; } = null!;
 }

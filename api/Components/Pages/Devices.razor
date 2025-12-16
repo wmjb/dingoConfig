@@ -1,6 +1,7 @@
 @page "/devices"
-@using contracts.Devices
-@inject HttpClient Http
+@using domain.Interfaces
+@using application.Services
+@inject DeviceManager DeviceManager
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -96,7 +97,7 @@
                         </MudCardHeader>
                         <MudCardContent>
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                Type: @device.DeviceType
+                                Type: @device.GetType().Name
                             </MudText>
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
                                 Base ID: @device.BaseId
@@ -129,7 +130,7 @@
 </MudContainer>
 
 @code {
-    private List<DeviceDto> devices = new();
+    private List<IDevice> devices = new();
     private bool loading = true;
     private bool showCreateForm = false;
 
@@ -138,23 +139,22 @@
     private string newDeviceType = string.Empty;
     private int newDeviceBaseId = 0;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadDevices();
+        LoadDevices();
     }
 
-    private async Task LoadDevices()
+    private void LoadDevices()
     {
         loading = true;
         try
         {
-            var response = await Http.GetFromJsonAsync<List<DeviceDto>>("api/devices");
-            devices = response ?? new List<DeviceDto>();
+            devices = DeviceManager.GetAllDevices().ToList();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading devices: {ex.Message}", Severity.Error);
-            devices = new List<DeviceDto>();
+            devices = new List<IDevice>();
         }
         finally
         {
@@ -174,30 +174,15 @@
         }
     }
 
-    private async Task CreateDevice()
+    private void CreateDevice()
     {
         try
         {
-            var request = new CreateDeviceRequest
-            {
-                DeviceType = newDeviceType,
-                Name = newDeviceName,
-                BaseId = newDeviceBaseId
-            };
+            var device = DeviceManager.AddDevice(newDeviceType, newDeviceName, newDeviceBaseId);
 
-            var response = await Http.PostAsJsonAsync("api/devices", request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add($"Device '{newDeviceName}' created successfully", Severity.Success);
-                showCreateForm = false;
-                await LoadDevices();
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Failed to create device: {error}", Severity.Error);
-            }
+            Snackbar.Add($"Device '{newDeviceName}' created successfully", Severity.Success);
+            showCreateForm = false;
+            LoadDevices();
         }
         catch (Exception ex)
         {
@@ -205,22 +190,13 @@
         }
     }
 
-    private async Task DeleteDevice(DeviceDto device)
+    private void DeleteDevice(IDevice device)
     {
         try
         {
-            var response = await Http.DeleteAsync($"api/devices/{device.Guid}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add($"Device '{device.Name}' deleted successfully", Severity.Success);
-                await LoadDevices();
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Failed to delete device: {error}", Severity.Error);
-            }
+            DeviceManager.RemoveDevice(device.Guid);
+            Snackbar.Add($"Device '{device.Name}' deleted successfully", Severity.Success);
+            LoadDevices();
         }
         catch (Exception ex)
         {

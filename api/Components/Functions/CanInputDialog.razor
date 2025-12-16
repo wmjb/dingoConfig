@@ -1,5 +1,7 @@
-@using contracts.Devices.Pdm.Functions
+@using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
+@using domain.Devices.dingoPdm
+@using application.Services
 
 <MudDialog>
     <DialogContent>
@@ -37,41 +39,84 @@
         </EditForm>
         </DialogContent>
     <DialogActions>
-        
+
         <MudButton OnClick="@Cancel">Cancel</MudButton>
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
-                   OnClick="@Save">Save</MudButton>
+                   OnClick="@Save">
+            Save
+        </MudButton>
     </DialogActions>
 </MudDialog>
 @code {
-    [CascadingParameter] 
+    [CascadingParameter]
     IMudDialogInstance MudDialog { get; set; } = null!;
 
-    [Parameter, EditorRequired] 
-    public CanInputDto Model { get; set; } = null!;
+    [Parameter, EditorRequired]
+    public CanInput Model { get; set; } = null!;
 
-    private CanInputDto _editModel = new(0);
-    
+    [Parameter, EditorRequired]
+    public Guid DeviceId { get; set; }
+
+    [Inject]
+    private DeviceManager DeviceManager { get; set; } = null!;
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = null!;
+
+    private CanInput _editModel = null!;
+
     protected override void OnParametersSet()
     {
-        _editModel = new CanInputDto(Model);
+        // Create a working copy for editing
+        _editModel = new CanInput(Model.Number, Model.Name)
+        {
+            Enabled = Model.Enabled,
+            TimeoutEnabled = Model.TimeoutEnabled,
+            Timeout = Model.Timeout,
+            Ide = Model.Ide,
+            StartingByte = Model.StartingByte,
+            Dlc = Model.Dlc,
+            Operator = Model.Operator,
+            OnVal = Model.OnVal,
+            Mode = Model.Mode,
+            Id = Model.Id
+        };
     }
-    
+
     private void Cancel()
     {
         MudDialog.Cancel();
     }
-    
-    private async Task Save()
-    {
-        Model.CopyFrom(_editModel);
 
-        MudDialog.Close(DialogResult.Ok(true));
-    }
-    
-    private Task HandleValidSubmit()
+    private void Save()
     {
-        return Save();
+        try
+        {
+            // Update the domain model directly with edited values
+            Model.Enabled = _editModel.Enabled;
+            Model.Name = _editModel.Name;
+            Model.TimeoutEnabled = _editModel.TimeoutEnabled;
+            Model.Timeout = _editModel.Timeout;
+            Model.Ide = _editModel.Ide;
+            Model.StartingByte = _editModel.StartingByte;
+            Model.Dlc = _editModel.Dlc;
+            Model.Operator = _editModel.Operator;
+            Model.OnVal = _editModel.OnVal;
+            Model.Mode = _editModel.Mode;
+            Model.Id = _editModel.Id;
+
+            Snackbar.Add($"CAN Input {Model.Number} updated", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void HandleValidSubmit()
+    {
+        Save();
     }
 }
