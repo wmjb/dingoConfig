@@ -25,26 +25,26 @@
     <div class="pa-3">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
             <MudButton Variant="Variant.Outlined"
-                       Color="Color.Info"
+                       Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Download"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnReadDeviceAsync">
                 Read
             </MudButton>
             <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
+                       Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Upload"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnWriteDeviceAsync">
                 Write
             </MudButton>
             <MudButton Variant="Variant.Outlined"
-                       Color="Color.Warning"
+                       Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Save"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnBurnSettingsAsync">
                 Burn
             </MudButton>
@@ -52,7 +52,7 @@
                        Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Info"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnRequestVersionAsync">
                 Version
             </MudButton>
@@ -60,23 +60,23 @@
                        Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Bedtime"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnSleepAsync">
                 Sleep
             </MudButton>
             <MudButton Variant="Variant.Outlined"
-                       Color="Color.Success"
+                       Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.WbSunny"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(Device.Connected && AdapterConnected)"
                        OnClick="@OnWakeupAsync">
                 Wakeup
             </MudButton>
             <MudButton Variant="Variant.Outlined"
-                       Color="Color.Error"
+                       Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.DeveloperMode"
-                       Disabled="@(!Device.Connected)"
+                       Disabled="@(!Device.Connected || !AdapterConnected)"
                        OnClick="@OnEnterBootloaderAsync">
                 Bootloader
             </MudButton>
@@ -268,6 +268,9 @@
 
     [Parameter, EditorRequired]
     public string DeviceName { get; set; } = null!;
+    
+    [Parameter, EditorRequired]
+    public bool AdapterConnected { get; set; }
 
     // Expansion panel state tracking for lazy loading
     private bool _inputsExpanded = false;

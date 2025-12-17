@@ -11,31 +11,34 @@ public class SimAdapter : ICommsAdapter
 
     public Task<bool> InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        IsConnected = false;
+        return Task.FromResult(true);
     }
 
     public Task<bool> StartAsync(CancellationToken ct)
     {
-        throw new NotImplementedException();
+        IsConnected = true;
+        return Task.FromResult(true);
     }
 
     public Task<bool> StopAsync()
     {
-        throw new NotImplementedException();
+        IsConnected = false;
+        return Task.FromResult(true);
     }
 
     public Task<bool> WriteAsync(CanFrame frame, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(true);
     }
 
     public event DataReceivedHandler? DataReceived;
     public TimeSpan RxTimeDelta()
     {
-        throw new NotImplementedException();
+        return TimeSpan.Zero;
     }
 
     TimeSpan ICommsAdapter.RxTimeDelta => _rxTimeDelta;
 
-    public bool IsConnected { get; }
+    public bool IsConnected { get; set; }
 }

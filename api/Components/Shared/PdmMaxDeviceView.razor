@@ -1,8 +1,11 @@
 @using domain.Devices.dingoPdmMax
+@using domain.Interfaces
+@inject ICommsAdapterManager AdapterManager
 
 <BasePdmDeviceView TDevice="PdmMaxDevice"
                Device="@Device"
-               DeviceName="dingoPDM-Max" />
+               DeviceName="dingoPDM-Max"
+               AdapterConnected="@AdapterManager.IsConnected" />
 
 @code {
     [Parameter, EditorRequired]

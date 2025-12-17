@@ -1,8 +1,11 @@
 @using domain.Devices.dingoPdm
+@using domain.Interfaces
+@inject ICommsAdapterManager AdapterManager
 
 <BasePdmDeviceView TDevice="PdmDevice"
                Device="@Device"
-               DeviceName="dingoPDM" />
+               DeviceName="dingoPDM"
+               AdapterConnected="@AdapterManager.IsConnected" />
 
 @code {
     [Parameter, EditorRequired]
