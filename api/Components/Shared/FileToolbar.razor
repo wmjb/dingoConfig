@@ -12,20 +12,20 @@
     </MudTooltip>
 
     <MudTooltip Text="Open">
-        <MudIconButton Icon="@Icons.Material.Filled.FolderOpen"
+        <MudIconButton Icon="@Icons.Material.Outlined.FolderOpen"
                        Color="Color.Default"
                        OnClick="HandleOpen" />
     </MudTooltip>
 
     <MudTooltip Text="Save">
-        <MudIconButton Icon="@Icons.Material.Filled.Save"
+        <MudIconButton Icon="@Icons.Material.Outlined.Save"
                        Color="Color.Default"
                        OnClick="HandleSave"
                        Disabled="@(string.IsNullOrEmpty(FileManager.CurrentFileName))" />
     </MudTooltip>
 
     <MudTooltip Text="Save As">
-        <MudIconButton Icon="@Icons.Material.Filled.SaveAs"
+        <MudIconButton Icon="@Icons.Material.Outlined.SaveAs"
                        Color="Color.Default"
                        OnClick="HandleSaveAs" />
     </MudTooltip>
@@ -33,7 +33,7 @@
     <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
 
     <MudTooltip Text="Settings">
-        <MudIconButton Icon="@Icons.Material.Filled.Settings"
+        <MudIconButton Icon="@Icons.Material.Outlined.Settings"
                        Color="Color.Default"
                        OnClick="HandleSettings" />
     </MudTooltip>

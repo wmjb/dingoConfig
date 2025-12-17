@@ -1,15 +1,8 @@
 @using domain.Interfaces
 @using application.Services
 @inject DeviceManager DeviceManager
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 @implements IDisposable
-
-<style>
-    .mud-nav-link.active {
-        color: inherit !important;
-    }
-</style>
 
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
@@ -22,14 +15,14 @@
         Devices
     </MudNavLink>
 
-    @if (devices != null && devices.Any())
+    @if (_devices.Any())
     {
-        @foreach (var device in devices)
+        @foreach (var device in _devices)
         {
             <MudNavLink Href="@($"device/{device.Guid}")"
                         Icon="@GetDeviceIcon(device.GetType().Name)"
-                        IconColor= "@(device.Connected ? Color.Primary : Color.Default)"
-                        Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-primary);" : "")}")">
+                        IconColor= "@(device.Connected ? Color.Success : Color.Default)"
+                        Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-success);" : "")}")">
                 @device.Name
                 @if (device.Connected)
                 {
@@ -45,15 +38,15 @@
 
 @code
 {
-    private List<IDevice> devices = new();
-    private System.Threading.Timer? _refreshTimer;
+    private List<IDevice> _devices = new();
+    private Timer? _refreshTimer;
 
     protected override void OnInitialized()
     {
         LoadDevices();
 
         // Refresh device list every second to catch new devices and connection status changes
-        _refreshTimer = new System.Threading.Timer(_ =>
+        _refreshTimer = new Timer(_ =>
         {
             InvokeAsync(() =>
             {
@@ -67,12 +60,12 @@
     {
         try
         {
-            devices = DeviceManager.GetAllDevices().ToList();
+            _devices = DeviceManager.GetAllDevices().ToList();
         }
         catch
         {
             // Silently fail - don't show errors in nav menu
-            devices = new List<IDevice>();
+            _devices = new List<IDevice>();
         }
     }
 
