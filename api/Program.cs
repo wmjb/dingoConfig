@@ -6,13 +6,22 @@ using api.Components;
 using MudBlazor.Services;
 using domain.Interfaces;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Blazor services
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+
+    config.SnackbarConfiguration.PreventDuplicates = true;
+    config.SnackbarConfiguration.NewestOnTop = true;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.SnackbarVariant = Variant.Outlined;
+});
 
 // Add HttpClient for Blazor Server to call local API
 builder.Services.AddScoped(sp =>
