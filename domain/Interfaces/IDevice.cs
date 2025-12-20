@@ -7,14 +7,12 @@ public interface IDevice
 {
     Guid Guid { get; }
     string Type { get; }
-    string Name { get; set; }
-    int BaseId {get; set;}
-    bool Connected {get; set;}
+    string Name { get; }
+    int BaseId {get;}
+    bool Connected {get;}
     DateTime LastRxTime {get; set;}
-
-    void UpdateConnected();
+    
     bool Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue);
-    void Clear();
     bool InIdRange(int id);
     List<DeviceCanFrame> GetReadMsgs();
     List<DeviceCanFrame> GetWriteMsgs();

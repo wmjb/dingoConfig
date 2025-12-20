@@ -54,14 +54,14 @@ public class PdmDevice : IDevice
     public bool Connected
     {
         get;
-        set
+        private set
         {
-            if (field != value)
+            if (field && !value)
             {
                 Clear();
-                
-                field = value;
             }
+            
+            field = value;
         }
     }
     

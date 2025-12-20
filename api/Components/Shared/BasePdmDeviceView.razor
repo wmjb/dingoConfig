@@ -11,7 +11,7 @@
         <CardHeaderContent>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudText Typo="Typo.h5">@DeviceName - @Device.Name</MudText>
-                <MudChip T="string" Color="@(Device.Connected ? Color.Success : Color.Error)" Size="Size.Small">
+                <MudChip T="string" Variant="Variant.Outlined" Color="@(Device.Connected ? Color.Success : Color.Error)" Size="Size.Small">
                     @(Device.Connected ? "Connected" : "Disconnected")
                 </MudChip>
             </MudStack>
@@ -68,7 +68,7 @@
                        Color="Color.Default"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.WbSunny"
-                       Disabled="@(Device.Connected && AdapterConnected)"
+                       Disabled="@(Device.Connected || !AdapterConnected)"
                        OnClick="@OnWakeupAsync">
                 Wakeup
             </MudButton>
@@ -116,8 +116,8 @@
                     <MudCard Outlined="true" Class="pa-2">
                         <MudCardContent Class="pa-2">
                             <MudStack Spacing="1">
-                                <MudText Typo="Typo.body1">Output @(index + 1)</MudText>
-                                <MudChip T="string" Color="@GetOutputColor(output.State)" Size="Size.Small">
+                                <MudText Typo="Typo.body1">@output.Name</MudText>
+                                <MudChip T="string"  Variant="Variant.Outlined" Color="@GetOutputColor(output.State)" Size="Size.Small">
                                     @GetOutputStateText(output.State)
                                 </MudChip>
                                 <MudText Typo="Typo.body2">@output.Current.ToString("F1") A</MudText>
@@ -136,7 +136,7 @@
             <MudStack Row="true" Spacing="2">
                 @foreach (var (input, index) in Device.GetInputs().Select((i, idx) => (i, idx)))
                 {
-                    <MudChip T="string" Color="@(input.State ? Color.Success : Color.Default)" Size="Size.Small">
+                    <MudChip T="string" Variant="Variant.Outlined" Color="@(input.State ? Color.Success : Color.Default)" Size="Size.Small">
                         Input @(index + 1): @(input.State ? "ON" : "OFF")
                     </MudChip>
                 }

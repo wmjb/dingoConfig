@@ -24,13 +24,6 @@
                         IconColor= "@(device.Connected ? Color.Success : Color.Default)"
                         Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-success);" : "")}")">
                 @device.Name
-                @if (device.Connected)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.Circle"
-                             Color="Color.Success"
-                             Size="Size.Small"
-                             Style="margin-left: auto;" />
-                }
             </MudNavLink>
         }
     }

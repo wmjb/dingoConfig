@@ -90,7 +90,7 @@
                                 <MudText Typo="Typo.h6">@device.Name</MudText>
                             </CardHeaderContent>
                             <CardHeaderActions>
-                                <MudChip T="string" Size="Size.Small" Color="@(device.Connected ? Color.Success : Color.Error)">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(device.Connected ? Color.Success : Color.Error)">
                                     @(device.Connected ? "Connected" : "Disconnected")
                                 </MudChip>
                             </CardHeaderActions>
