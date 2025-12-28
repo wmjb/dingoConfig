@@ -91,7 +91,7 @@ public class Input(int number, string name) : IDeviceFunction
         InsertSignalInt(data, (long)Mode, 9, 2);
         InsertBool(data, Invert, 11);
         InsertSignalInt(data, Number - 1, 12, 4);
-        InsertSignal(data, DebounceTime, 16, 8, factor: 0.1); // ms/10
+        InsertSignal(data, DebounceTime, 16, 8, factor: 10.0); // ms/10
         InsertSignalInt(data, (long)Pull, 24, 2);
         return data;
     }

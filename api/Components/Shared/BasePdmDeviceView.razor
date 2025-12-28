@@ -190,6 +190,8 @@
                                    ExpandedChanged="@((bool expanded) => _canInputsExpanded = expanded)">
                     @if (_canInputsExpanded)
                     {
+                        <CanInputsGrid CanInputs="Device.CanInputs" />
+                        @*
                         <MudGrid>
                             @foreach (var canInput in Device.GetCanInputs())
                             {
@@ -199,6 +201,7 @@
                                 </MudItem>
                             }
                         </MudGrid>
+                        *@
                     }
                 </MudExpansionPanel>
             }

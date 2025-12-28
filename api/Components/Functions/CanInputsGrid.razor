@@ -2,9 +2,10 @@
 @using domain.Devices.dingoPdm.Enums
 @using domain.Enums
 
-<MudDataGrid Items="@CanInputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+<MudDataGrid Items="@CanInputs" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Number" Title="No." Editable="false"/>
         <PropertyColumn Property="x => x.Name">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -33,7 +34,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.OnVal" Title="ON Value" />
+        <PropertyColumn Property="x => x.OnVal" Title="On Value" />
         <PropertyColumn Property="x => x.Mode">
             <EditTemplate>
                 <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
@@ -49,7 +50,7 @@
                 <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Timeout" Title="Timeout (ms)" />
+        <PropertyColumn Property="x => x.Timeout" Title="Timeout (s)" />
     </Columns>
 </MudDataGrid>
 

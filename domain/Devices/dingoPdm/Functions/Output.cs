@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
@@ -12,7 +13,11 @@ public class Output(int number, string name) : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; } = name;
     [JsonPropertyName("number")] public int Number { get; } = number;
-    [JsonPropertyName("currentLimit")] public double CurrentLimit { get; set; }
+    
+    [JsonPropertyName("currentLimit")]
+    [Range(0.0, 18.0)]
+    public double CurrentLimit { get; set; }
+    
     [JsonPropertyName("resetCountLimit")] public int ResetCountLimit { get; set; }
     [JsonPropertyName("resetMode")] public ResetMode ResetMode { get; set; }
     [JsonPropertyName("resetTime")] public int ResetTime { get; set; }  //seconds
@@ -173,9 +178,9 @@ public class Output(int number, string name) : IDeviceFunction
         InsertSignal(data, CurrentLimit, 24, 8);
         InsertSignalInt(data, (int)ResetMode, 32, 4);
         InsertSignalInt(data, ResetCountLimit, 36, 4);
-        InsertSignal(data, ResetTime, 40, 8, factor: 10.0);
+        InsertSignal(data, ResetTime, 40, 8, factor: 0.1);
         InsertSignal(data, InrushCurrentLimit, 48, 8);
-        InsertSignal(data, InrushTime, 56, 8, factor: 10.0);
+        InsertSignal(data, InrushTime, 56, 8, factor: 0.1);
         return data;
     }
 

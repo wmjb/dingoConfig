@@ -1,9 +1,10 @@
 @using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
 
-<MudDataGrid Items="@Flashers" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false">
+<MudDataGrid Items="@Flashers" Dense="true" Hover="true" Striped="true" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="No." />
+        <PropertyColumn Property="x => x.Number" Title="No." Editable="false" />
         <PropertyColumn Property="x => x.Name">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -29,8 +30,8 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.OnTime" Title="ON Time (ms)" />
-        <PropertyColumn Property="x => x.OffTime" Title="OFF Time (ms)" />
+        <PropertyColumn Property="x => x.OnTime" Title="On Time (ms)" />
+        <PropertyColumn Property="x => x.OffTime" Title="Off Time (ms)" />
     </Columns>
 </MudDataGrid>
 

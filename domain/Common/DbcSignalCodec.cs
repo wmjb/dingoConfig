@@ -108,7 +108,7 @@ public class DbcSignalCodec
         double factor = 1.0,
         double offset = 0.0)
     {
-        return (long)ExtractSignal(data, startBit, length, byteOrder, isSigned, 1.0, 0.0);
+        return (long)ExtractSignal(data, startBit, length, byteOrder, isSigned, factor, offset);
     }
 
     #endregion
