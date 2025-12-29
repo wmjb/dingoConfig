@@ -1,3 +1,4 @@
+@using System.Reflection
 @using domain.Interfaces
 @using application.Services
 @inject DeviceManager DeviceManager
@@ -28,6 +29,8 @@
         }
     }
 </MudNavMenu>
+
+<MudText Align="Align.Left" style="margin-top: auto; padding: 16px;">@GetVersion()</MudText>
 
 @code
 {
@@ -78,6 +81,13 @@
                 // Keypad = @Icons.Material.Filled.GridOn
                 // PDM Alt = @Icons.Material.Filled.ElectricBolt or ElectricalServices
         };
+    }
+    
+    private static string GetVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version?.ToString(3) ?? "Unknown";
+        return $"v{version}";
     }
 
     public void Dispose()

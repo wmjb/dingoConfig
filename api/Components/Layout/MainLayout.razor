@@ -52,7 +52,8 @@
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
     private bool _drawerOpen = true;
-    MudTheme _theme = new MudTheme()
+
+    readonly MudTheme _theme = new MudTheme()
     {
         PaletteDark = new PaletteDark()
         {
@@ -80,7 +81,7 @@
         try
         {
             var devices = await FileManager.LoadDevices(fileName);
-            if (devices != null && devices.Count > 0)
+            if (devices is { Count: > 0 })
             {
                 DeviceManager.ClearDevices();
                 DeviceManager.AddDevices(devices);
