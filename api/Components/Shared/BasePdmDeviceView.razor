@@ -6,7 +6,7 @@
 @inject ISnackbar Snackbar
 @typeparam TDevice where TDevice : PdmDevice
 
-<MudCard Style="display: flex; flex-direction: column; height: calc(100vh - 100px);">
+<MudContainer MaxWidth="MaxWidth.False" Style="display: flex; flex-direction: column; height: calc(100vh - 100px); width: 100%; padding: 0;">
     @* Device Control Buttons *@
     <div class="pa-3">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
@@ -76,198 +76,207 @@
         <MudDivider Class="my-2" />
     </div>
 
-    @* Scrollable Content Section *@
-    <MudCardContent Style="flex: 1; overflow-y: auto;">
-        @* Device-level metrics *@
-        <MudGrid>
-            <MudItem xs="12" md="3">
-                <MudText Typo="Typo.h6">@Device.BatteryVoltage.ToString("F1") V</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Battery Voltage</MudText>
-            </MudItem>
-            <MudItem xs="12" md="3">
-                <MudText Typo="Typo.h6">@Device.TotalCurrent.ToString("F1") A</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Total Current</MudText>
-            </MudItem>
-            <MudItem xs="12" md="3">
-                <MudText Typo="Typo.h6">@Device.BoardTempC.ToString("F1") °C</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Board Temperature</MudText>
-            </MudItem>
-            <MudItem xs="12" md="3">
-                <MudText Typo="Typo.h6">@Device.DeviceState</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Device State</MudText>
-            </MudItem>
-        </MudGrid>
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="Status" Icon="@Icons.Material.Filled.ViewList">
+            <div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+            <MudGrid>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.h6">@Device.BatteryVoltage.ToString("F1") V</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Battery Voltage</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.h6">@Device.TotalCurrent.ToString("F1") A</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total Current</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.h6">@Device.BoardTempC.ToString("F1") °C</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Board Temperature</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.h6">@Device.DeviceState</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Device State</MudText>
+                    </MudItem>
+                </MudGrid>
+                
+                <MudDivider Class="my-4"/>
 
-        <MudDivider Class="my-4" />
+                @* Outputs *@
+                <MudText Typo="Typo.h6" Class="mb-2">Outputs</MudText>
+                <MudGrid>
+                    @foreach (var (output, index) in Device.GetOutputs().Select((o, i) => (o, i)))
+                    {
+                        <MudItem xs="6" md="3">
+                            <MudCard Outlined="true" Class="pa-2">
+                                <MudCardContent Class="pa-2">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.body1">@output.Name</MudText>
+                                        <MudChip T="string" Variant="Variant.Outlined" Color="@GetOutputColor(output.State)" Size="Size.Small">
+                                            @GetOutputStateText(output.State)
+                                        </MudChip>
+                                        <MudText Typo="Typo.body2">@output.Current.ToString("F1") A</MudText>
+                                    </MudStack>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
 
-        @* Outputs *@
-        <MudText Typo="Typo.h6" Class="mb-2">Outputs</MudText>
-        <MudGrid>
-            @foreach (var (output, index) in Device.GetOutputs().Select((o, i) => (o, i)))
-            {
-                <MudItem xs="6" md="3">
-                    <MudCard Outlined="true" Class="pa-2">
-                        <MudCardContent Class="pa-2">
-                            <MudStack Spacing="1">
-                                <MudText Typo="Typo.body1">@output.Name</MudText>
-                                <MudChip T="string"  Variant="Variant.Outlined" Color="@GetOutputColor(output.State)" Size="Size.Small">
-                                    @GetOutputStateText(output.State)
-                                </MudChip>
-                                <MudText Typo="Typo.body2">@output.Current.ToString("F1") A</MudText>
-                            </MudStack>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-            }
-        </MudGrid>
-
-        @* Digital Inputs *@
-        @if (Device.GetInputs().Any())
-        {
-            <MudDivider Class="my-4" />
-            <MudText Typo="Typo.h6" Class="mb-2">Digital Inputs</MudText>
-            <MudStack Row="true" Spacing="2">
-                @foreach (var (input, index) in Device.GetInputs().Select((i, idx) => (i, idx)))
+                @* Digital Inputs *@
+                @if (Device.GetInputs().Any())
                 {
-                    <MudChip T="string" Variant="Variant.Outlined" Color="@(input.State ? Color.Success : Color.Default)" Size="Size.Small">
-                        Input @(index + 1): @(input.State ? "ON" : "OFF")
-                    </MudChip>
+                    <MudDivider Class="my-4"/>
+                    <MudText Typo="Typo.h6" Class="mb-2">Digital Inputs</MudText>
+                    <MudStack Row="true" Spacing="2">
+                        @foreach (var (input, index) in Device.GetInputs().Select((i, idx) => (i, idx)))
+                        {
+                            <MudChip T="string" Variant="Variant.Outlined" Color="@(input.State ? Color.Success : Color.Default)" Size="Size.Small">
+                                Input @(index + 1): @(input.State ? "ON" : "OFF")
+                            </MudChip>
+                        }
+                    </MudStack>
                 }
-            </MudStack>
-        }
+            </div>
+        </MudTabPanel>
 
-        @* Function Configurations *@
-        <MudDivider Class="my-4" />
-        <MudText Typo="Typo.h5" Class="mb-4">Configuration</MudText>
-
-        <MudExpansionPanels MultiExpansion="true">
-            @* Inputs *@
-            @if (Device.Inputs.Any())
-            {
-                <MudExpansionPanel Text="@($"Inputs ({Device.Inputs.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _inputsExpanded = expanded)">
-                    @if (_inputsExpanded)
+        <MudTabPanel Text="Configuration" Icon="@Icons.Material.Filled.Settings">
+            <div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+                <MudExpansionPanels MultiExpansion="true">
+                    @* Inputs *@
+                    @if (Device.Inputs.Any())
                     {
-                        <InputsGrid Inputs="Device.Inputs"/>
-                    }
-                </MudExpansionPanel>
-            }
-
-            @* Outputs *@
-            @if (Device.Outputs.Any())
-            {
-                <MudExpansionPanel Text="@($"Outputs ({Device.Outputs.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _outputsExpanded = expanded)">
-                    @if (_outputsExpanded)
-                    {
-                        <OutputsGrid Outputs="Device.Outputs" />
-                    }
-                </MudExpansionPanel>
-            }
-
-            @* Outputs PWM *@
-            @if (Device.Outputs.Any())
-            {
-                <MudExpansionPanel Text="@($"Outputs PWM ({Device.Outputs.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _outputsPwmExpanded = expanded)">
-                    @if (_outputsPwmExpanded)
-                    {
-                        <OutputsPwmGrid Outputs="Device.Outputs" />
-                    }
-                </MudExpansionPanel>
-            }
-            @* CAN Inputs *@
-            @if (Device.CanInputs.Any())
-            {
-                <MudExpansionPanel Text="@($"CAN Inputs ({Device.CanInputs.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _canInputsExpanded = expanded)">
-                    @if (_canInputsExpanded)
-                    {
-                        <CanInputsGrid CanInputs="Device.CanInputs" />
-                        @*
-                        <MudGrid>
-                            @foreach (var canInput in Device.GetCanInputs())
+                        <MudExpansionPanel Text="@($"Inputs ({Device.Inputs.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _inputsExpanded = expanded)">
+                            @if (_inputsExpanded)
                             {
-                                <MudItem md="2">
-                                    <CanInputCard Item="canInput"
-                                                  DeviceId="@Device.Guid"/>
-                                </MudItem>
+                                <InputsGrid Inputs="Device.Inputs"/>
                             }
-                        </MudGrid>
-                        *@
+                        </MudExpansionPanel>
                     }
-                </MudExpansionPanel>
-            }
 
-            @* Virtual Inputs *@
-            @if (Device.VirtualInputs.Any())
-            {
-                <MudExpansionPanel Text="@($"Virtual Inputs ({Device.VirtualInputs.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _virtualInputsExpanded = expanded)">
-                    @if (_virtualInputsExpanded)
+                    @* Outputs *@
+                    @if (Device.Outputs.Any())
                     {
-                        <VirtualInputsGrid VirtualInputs="Device.VirtualInputs" />
+                        <MudExpansionPanel Text="@($"Outputs ({Device.Outputs.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _outputsExpanded = expanded)">
+                            @if (_outputsExpanded)
+                            {
+                                <OutputsGrid Outputs="Device.Outputs"/>
+                            }
+                        </MudExpansionPanel>
                     }
-                </MudExpansionPanel>
-            }
 
-            @* Conditions *@
-            @if (Device.Conditions.Any())
-            {
-                <MudExpansionPanel Text="@($"Conditions ({Device.Conditions.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _conditionsExpanded = expanded)">
-                    @if (_conditionsExpanded)
+                    @* Outputs PWM *@
+                    @if (Device.Outputs.Any())
                     {
-                        <ConditionsGrid Conditions="Device.Conditions" />
+                        <MudExpansionPanel Text="@($"Outputs PWM ({Device.Outputs.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _outputsPwmExpanded = expanded)">
+                            @if (_outputsPwmExpanded)
+                            {
+                                <OutputsPwmGrid Outputs="Device.Outputs"/>
+                            }
+                        </MudExpansionPanel>
                     }
-                </MudExpansionPanel>
-            }
-
-            @* Counters *@
-            @if (Device.Counters.Any())
-            {
-                <MudExpansionPanel Text="@($"Counters ({Device.Counters.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _countersExpanded = expanded)">
-                    @if (_countersExpanded)
+                    @* CAN Inputs *@
+                    @if (Device.CanInputs.Any())
                     {
-                        <CountersGrid Counters="Device.Counters" />
+                        <MudExpansionPanel Text="@($"CAN Inputs ({Device.CanInputs.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _canInputsExpanded = expanded)">
+                            @if (_canInputsExpanded)
+                            {
+                                <CanInputsGrid CanInputs="Device.CanInputs"/>
+                                @*
+                                <MudGrid>
+                                    @foreach (var canInput in Device.GetCanInputs())
+                                    {
+                                        <MudItem md="2">
+                                            <CanInputCard Item="canInput"
+                                                          DeviceId="@Device.Guid"/>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                                *@
+                            }
+                        </MudExpansionPanel>
                     }
-                </MudExpansionPanel>
-            }
 
-            @* Flashers *@
-            @if (Device.Flashers.Any())
-            {
-                <MudExpansionPanel Text="@($"Flashers ({Device.Flashers.Count})")"
-                                   ExpandedChanged="@((bool expanded) => _flashersExpanded = expanded)">
-                    @if (_flashersExpanded)
+                    @* Virtual Inputs *@
+                    @if (Device.VirtualInputs.Any())
                     {
-                        <FlashersGrid Flashers="Device.Flashers" />
+                        <MudExpansionPanel Text="@($"Virtual Inputs ({Device.VirtualInputs.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _virtualInputsExpanded = expanded)">
+                            @if (_virtualInputsExpanded)
+                            {
+                                <VirtualInputsGrid VirtualInputs="Device.VirtualInputs"/>
+                            }
+                        </MudExpansionPanel>
                     }
-                </MudExpansionPanel>
-            }
 
-            @* Wiper *@
-            <MudExpansionPanel Text="Wiper"
-                               ExpandedChanged="@((bool expanded) => _wiperExpanded = expanded)">
-                @if (_wiperExpanded)
-                {
-                    <WiperConfig Wiper="Device.Wipers" />
-                }
-            </MudExpansionPanel>
+                    @* Conditions *@
+                    @if (Device.Conditions.Any())
+                    {
+                        <MudExpansionPanel Text="@($"Conditions ({Device.Conditions.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _conditionsExpanded = expanded)">
+                            @if (_conditionsExpanded)
+                            {
+                                <ConditionsGrid Conditions="Device.Conditions"/>
+                            }
+                        </MudExpansionPanel>
+                    }
 
-            @* Starter Disable *@
-            <MudExpansionPanel Text="Starter Disable"
-                               ExpandedChanged="@((bool expanded) => _starterDisableExpanded = expanded)">
-                @if (_starterDisableExpanded)
-                {
-                    <StarterDisableConfig StarterDisable="Device.StarterDisable" />
-                }
-            </MudExpansionPanel>
-        </MudExpansionPanels>
+                    @* Counters *@
+                    @if (Device.Counters.Any())
+                    {
+                        <MudExpansionPanel Text="@($"Counters ({Device.Counters.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _countersExpanded = expanded)">
+                            @if (_countersExpanded)
+                            {
+                                <CountersGrid Counters="Device.Counters"/>
+                            }
+                        </MudExpansionPanel>
+                    }
 
-    </MudCardContent>
-</MudCard>
+                    @* Flashers *@
+                    @if (Device.Flashers.Any())
+                    {
+                        <MudExpansionPanel Text="@($"Flashers ({Device.Flashers.Count})")"
+                                           ExpandedChanged="@((bool expanded) => _flashersExpanded = expanded)">
+                            @if (_flashersExpanded)
+                            {
+                                <FlashersGrid Flashers="Device.Flashers"/>
+                            }
+                        </MudExpansionPanel>
+                    }
+
+                    @* Wiper *@
+                    <MudExpansionPanel Text="Wiper"
+                                       ExpandedChanged="@((bool expanded) => _wiperExpanded = expanded)">
+                        @if (_wiperExpanded)
+                        {
+                            <WiperConfig Wiper="Device.Wipers"/>
+                        }
+                    </MudExpansionPanel>
+
+                    @* Starter Disable *@
+                    <MudExpansionPanel Text="Starter Disable"
+                                       ExpandedChanged="@((bool expanded) => _starterDisableExpanded = expanded)">
+                        @if (_starterDisableExpanded)
+                        {
+                            <StarterDisableConfig StarterDisable="Device.StarterDisable"/>
+                        }
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </div>
+        </MudTabPanel>
+        <MudTabPanel Text="Plot" Icon="@Icons.Material.Filled.StackedLineChart">
+            <MudIcon Size="Size.Large" Icon="@Icons.Custom.Uncategorized.Radioactive"/>
+            <MudText Typo="Typo.h5">Under construction</MudText>
+        </MudTabPanel>
+        <MudTabPanel Text="Flow" Icon="@Icons.Material.Filled.DataExploration">
+            <MudIcon Size="Size.Large" Icon="@Icons.Custom.Uncategorized.BioHazard"/>
+            <MudText Typo="Typo.h5">Under construction</MudText> 
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
 
 @code {
     [Parameter, EditorRequired]
