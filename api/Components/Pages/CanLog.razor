@@ -1,0 +1,233 @@
+@page "/can-log"
+@using application.Services
+@using application.Models
+@inject CanMsgLogger MessageLogger
+@rendermode InteractiveServer
+
+<PageTitle>CAN Log</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Row="true" Spacing="2">
+            <MudSwitch @bind-Value="@_autoRefresh" Color="Color.Primary" Label="Auto Refresh" />
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="@RefreshData"
+                        Disabled="@_autoRefresh">
+                Refresh
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       OnClick="@ClearHistory">
+                Clear
+            </MudButton>
+        </MudStack>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudSwitch @bind-Value="@_logToFile"
+                       @bind-Value:after="OnLogToFileChanged"
+                       Color="Color.Success"
+                       Label="Log to File" />
+
+            <MudDivider Vertical="true" FlexItem="true" />
+
+            <MudText Typo="Typo.body2">ID Format:</MudText>
+            <MudSelect @bind-Value="@_idFormat"
+                       @bind-Value:after="OnIdFormatChanged"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Style="max-width: 120px;">
+                <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
+                <MudSelectItem Value="NumberFormat.Decimal">Decimal</MudSelectItem>
+            </MudSelect>
+
+            <MudText Typo="Typo.body2">Data Format:</MudText>
+            <MudSelect @bind-Value="@_payloadFormat"
+                       @bind-Value:after="OnPayloadFormatChanged"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Style="max-width: 120px;">
+                <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
+                <MudSelectItem Value="NumberFormat.Decimal">Decimal</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </MudStack>
+
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <MudTabPanel Text="Message Summary" Icon="@Icons.Material.Filled.ViewList">
+            <MudDataGrid T="CanLogEntry"
+                         Items="@_messageSummary"
+                         Striped="false"
+                         Hover="true"
+                         Dense="true"
+                         FixedHeader="true"
+                         Height="calc(100vh - 300px)"
+                         Virtualize="true"
+                         SortMode="SortMode.Multiple">
+                <Columns>
+                    <PropertyColumn Property="x => x.Direction" Title="Dir" Sortable="false"/>
+                    <PropertyColumn Property="x => x.Id" Title="CAN ID">
+                        <CellTemplate>
+                            <MudText>@GetIdString(context.Item.Id)</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Len" Title="DLC" Sortable="false"/>
+                    <TemplateColumn T="CanLogEntry" Title="Data" Sortable="false">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-family: monospace;">
+                                @GetPayloadString(context.Item.Payload)
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Count" Title="Count" />
+                </Columns>
+            </MudDataGrid>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Full History" Icon="@Icons.Material.Filled.History">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                <MudText Typo="Typo.body1">Show last:</MudText>
+                <MudSelect @bind-Value="@_historyLimit"
+                           @bind-Value:after="OnHistoryLimitChanged"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="max-width: 150px;">
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                    <MudSelectItem Value="500">500</MudSelectItem>
+                    <MudSelectItem Value="1000">1,000</MudSelectItem>
+                    <MudSelectItem Value="5000">5,000</MudSelectItem>
+                    <MudSelectItem Value="10000">10,000</MudSelectItem>
+                </MudSelect>
+                <MudText Typo="Typo.body1">messages</MudText>
+            </MudStack>
+
+            <MudDataGrid T="CanLogEntry"
+                         Items="@_fullHistory"
+                         Striped="false"
+                         Hover="true"
+                         Dense="true"
+                         FixedHeader="true"
+                         Height="calc(100vh - 350px)"
+                         Virtualize="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.Timestamp" Title="Timestamp" Format="HH:mm:ss.fff" Sortable="false" />
+                    <PropertyColumn Property="x => x.Direction" Title="Dir" Sortable="false" />
+                    <PropertyColumn Property="x => x.Id" Title="CAN ID" Sortable="false">
+                        <CellTemplate>
+                            <MudText>@GetIdString(context.Item.Id)</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Len" Title="DLC" Sortable="false" />
+                    <TemplateColumn T="CanLogEntry" Title="Data" Sortable="false">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-family: monospace;">
+                                @GetPayloadString(context.Item.Payload)
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+@code {
+    private List<CanLogEntry> _messageSummary = new();
+    private List<CanLogEntry> _fullHistory = new();
+    private Timer? _refreshTimer;
+    private bool _autoRefresh = true;
+    private int _historyLimit = 1000;
+    private bool _logToFile = false;
+    private NumberFormat _idFormat = NumberFormat.Hex;
+    private NumberFormat _payloadFormat = NumberFormat.Hex;
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+
+        // Auto-refresh every 100ms (10 Hz)
+        _refreshTimer = new Timer(_ =>
+        {
+            if (_autoRefresh)
+            {
+                InvokeAsync(() =>
+                {
+                    LoadData();
+                    StateHasChanged();
+                });
+            }
+        }, null, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+    }
+
+    private void LoadData()
+    {
+        _messageSummary = MessageLogger.GetMessageSum();
+        _fullHistory = MessageLogger.GetRecentHistory(_historyLimit)
+            .OrderByDescending(x => x.Timestamp)
+            .ToList();
+    }
+
+    private void RefreshData()
+    {
+        LoadData();
+        StateHasChanged();
+    }
+
+    private void OnHistoryLimitChanged()
+    {
+        LoadData();
+        StateHasChanged();
+    }
+
+    private void OnLogToFileChanged()
+    {
+        MessageLogger.LogToFile = _logToFile;
+        if(MessageLogger.LogToFile)
+            MessageLogger.CreateLogFile();
+    }
+
+    private void OnIdFormatChanged()
+    {
+        MessageLogger.IdFormat = _idFormat;
+    }
+
+    private void OnPayloadFormatChanged()
+    {
+        MessageLogger.PayloadFormat = _payloadFormat;
+    }
+
+    private void ClearHistory()
+    {
+        MessageLogger.Clear();
+        LoadData();
+        StateHasChanged();
+    }
+
+    private string GetIdString(int id)
+    {
+        return _idFormat == NumberFormat.Hex
+            ? $"0x{id:X}"
+            : id.ToString();
+    }
+
+    private string GetPayloadString(byte[]? payload)
+    {
+        if (payload == null) return "";
+
+        if (_payloadFormat == NumberFormat.Hex)
+        {
+            return BitConverter.ToString(payload).Replace("-", " ");
+        }
+        else
+        {
+            return string.Join(" ", payload);
+        }
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}

@@ -1,6 +1,7 @@
 // infrastructure/BackgroundServices/CanDataPipeline.cs
 
 using System.Threading.Channels;
+using application.Models;
 using application.Services;
 using domain.Models;
 using domain.Interfaces;
@@ -12,6 +13,7 @@ namespace infrastructure.BackgroundServices;
 public class CommsDataPipeline(
     ICommsAdapterManager adapterManager,
     DeviceManager deviceManager,
+    CanMsgLogger msgLogger,
     ILogger<CommsDataPipeline> logger)
     : BackgroundService
 {
@@ -78,6 +80,8 @@ public class CommsDataPipeline(
         {
             try
             {
+                msgLogger.Log(DataDirection.Rx, frame);
+                
                 // Route frame to DeviceManager
                 // DeviceManager passes to all devices so they can update their state/config
                 deviceManager.OnCanDataReceived(frame);
@@ -134,6 +138,8 @@ public class CommsDataPipeline(
             }
 
             await adapterManager.ActiveAdapter.WriteAsync(frame, ct);
+            
+            msgLogger.Log(DataDirection.Tx, frame);
 
             logger.LogDebug(
                 "TX frame sent: CanId={Id:X}, Length={Len}",

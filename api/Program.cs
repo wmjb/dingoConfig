@@ -46,6 +46,7 @@ builder.Services.AddTransient<SimAdapter>();
 builder.Services.AddSingleton<ICommsAdapterManager, CommsAdapterManager>();
 builder.Services.AddSingleton<ConfigFileManager>();
 builder.Services.AddSingleton<DeviceManager>();
+builder.Services.AddSingleton<CanMsgLogger>();
 
 // Add background services
 builder.Services.AddHostedService<CommsDataPipeline>();
