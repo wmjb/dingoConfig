@@ -45,12 +45,7 @@ public class VirtualInput(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.VirtualInputs,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 2,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
             MsgDescription = $"VirtualInput{Number}"
         };
     }
@@ -66,12 +61,7 @@ public class VirtualInput(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.VirtualInputs,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 7,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 7, Payload: Write()),
             MsgDescription = $"VirtualInput{Number}"
         };
     }

@@ -40,12 +40,7 @@ public class StarterDisable(string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.StarterDisable,
             Index = 0,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 1,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 1, Payload: data),
             MsgDescription = "StarterDisable"
         };
     }
@@ -61,12 +56,7 @@ public class StarterDisable(string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.StarterDisable,
             Index = 0,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 4,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 4, Payload: Write()),
             MsgDescription = "StarterDisable"
         };
     }

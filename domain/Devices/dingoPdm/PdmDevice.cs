@@ -675,12 +675,7 @@ public class PdmDevice : IDevice
                 Received = false,
                 Prefix = (int)MessagePrefix.Version,
                 Index = 0,
-                Frame = new CanFrame
-                {
-                    Id = id - 1,
-                    Len = 1,
-                    Payload = [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
-                },
+                Frame = new CanFrame(Id: id - 1, Len: 1, Payload: [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]),
                 MsgDescription="Version"
             },
             //CAN settings
@@ -691,12 +686,7 @@ public class PdmDevice : IDevice
                 Received = false,
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
-                Frame = new CanFrame
-                {
-                    Id = id - 1,
-                    Len = 1,
-                    Payload = [Convert.ToByte(MessagePrefix.Can), 0, 0, 0, 0, 0, 0, 0]
-                },
+                Frame = new CanFrame(Id: id - 1, Len: 1, Payload: [Convert.ToByte(MessagePrefix.Can), 0, 0, 0, 0, 0, 0, 0]),
                 MsgDescription="CANSettings"
             }
         };
@@ -810,11 +800,10 @@ public class PdmDevice : IDevice
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
                 Frame = new CanFrame
-                {
-                    Id = id - 1,
-                    Len = 4,
-                    Payload =
-                    [
+                (
+                    Id: id - 1,
+                    Len: 4,
+                    Payload: [
                         Convert.ToByte(MessagePrefix.Can), //Byte 0
                         Convert.ToByte(Convert.ToByte(SleepEnabled) +
                                        (Convert.ToByte(CanFiltersEnabled) << 1) +
@@ -823,7 +812,7 @@ public class PdmDevice : IDevice
                         Convert.ToByte(BaseId & 0x00FF), //Byte 3
                         0, 0, 0, 0
                     ]
-                },
+                ),
                 MsgDescription = "CANSettings"
             }
         ];
@@ -936,11 +925,10 @@ public class PdmDevice : IDevice
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
                 Frame = new CanFrame
-                {
-                    Id = id,
-                    Len = 4,
-                    Payload =
-                    [
+                (
+                    Id: id,
+                    Len: 4,
+                    Payload: [
                         Convert.ToByte(MessagePrefix.Can), //Byte 0
                         Convert.ToByte(Convert.ToByte(SleepEnabled) +
                                        (Convert.ToByte(CanFiltersEnabled) << 1) +
@@ -949,7 +937,7 @@ public class PdmDevice : IDevice
                         Convert.ToByte(newId & 0x00FF), //Byte 3
                         0, 0, 0, 0
                     ]
-                },
+                ),
                 MsgDescription = "CANSettings"
             }
 
@@ -968,11 +956,11 @@ public class PdmDevice : IDevice
             Prefix = (int)MessagePrefix.BurnSettings,
             Index = 0,
             Frame = new CanFrame
-            {
-                Id = BaseId - 1,
-                Len = 4,
-                Payload = [Convert.ToByte(MessagePrefix.BurnSettings), 1, 3, 8, 0, 0, 0, 0]
-            },
+            (
+                Id: BaseId - 1,
+                Len: 4,
+                Payload: [Convert.ToByte(MessagePrefix.BurnSettings), 1, 3, 8, 0, 0, 0, 0]
+            ),
             MsgDescription = "Burn Settings"
         };
     }
@@ -987,12 +975,12 @@ public class PdmDevice : IDevice
             Prefix = (int)MessagePrefix.Sleep,
             Index = 0,
             Frame = new CanFrame
-            {
-                Id = BaseId - 1,
-                Len = 5,
-                Payload = [Convert.ToByte(MessagePrefix.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
+            (
+                Id: BaseId - 1,
+                Len: 5,
+                Payload: [Convert.ToByte(MessagePrefix.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
                 ]
-            },
+            ),
             MsgDescription = "Sleep Request"
         };
     }
@@ -1007,11 +995,11 @@ public class PdmDevice : IDevice
             Prefix = (int)MessagePrefix.Version,
             Index = 0,
             Frame = new CanFrame
-            {
-                Id = BaseId - 1,
-                Len = 1,
-                Payload = [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
-            },
+            (
+                Id: BaseId - 1,
+                Len: 1,
+                Payload: [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
+            ),
             MsgDescription = "Version"
         };
     }
@@ -1026,11 +1014,11 @@ public class PdmDevice : IDevice
             Prefix = (int)MessagePrefix.Null, //No response = no prefix
             Index = 0,
             Frame = new CanFrame
-            {
-                Id = BaseId - 1,
-                Len = 1,
-                Payload = [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
-            },
+            (
+                Id: BaseId - 1,
+                Len: 1,
+                Payload: [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
+            ),
             MsgDescription = "Wakeup"
         };
     }
@@ -1045,15 +1033,14 @@ public class PdmDevice : IDevice
             Prefix = (int)MessagePrefix.Bootloader,
             Index = 0,
             Frame = new CanFrame
-            {
-                Id = BaseId - 1,
-                Len = 6,
-                Payload =
-                [
+            (
+                Id: BaseId - 1,
+                Len: 6,
+                Payload: [
                     Convert.ToByte(MessagePrefix.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
                     0
                 ]
-            },
+            ),
             MsgDescription = "Bootloader"
         };
     }

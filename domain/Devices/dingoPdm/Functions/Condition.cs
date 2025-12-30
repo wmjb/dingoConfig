@@ -38,12 +38,7 @@ public class Condition(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Conditions,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 2,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
             MsgDescription = $"Condition{Number}"
         };
     }
@@ -59,12 +54,7 @@ public class Condition(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Conditions,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 6,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 6, Payload: Write()),
             MsgDescription = $"Condition{Number}"
         };
     }

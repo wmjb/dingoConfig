@@ -57,12 +57,7 @@ public class CanInput(int number, string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.CanInputs,
                     Index = Number - 1,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 2,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
                     MsgDescription = $"CANInput{Number}"
                 };
             }
@@ -79,12 +74,7 @@ public class CanInput(int number, string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.CanInputsId,
                     Index = Number - 1,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 2,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
                     MsgDescription = $"CANInputId{Number}"
                 };
             }
@@ -104,7 +94,7 @@ public class CanInput(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.CanInputs,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 7, Payload = Write() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 7, Payload: Write()),
                 MsgDescription = $"CANInput{Number}"
             },
             MessagePrefix.CanInputsId => new DeviceCanFrame
@@ -114,7 +104,7 @@ public class CanInput(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.CanInputsId,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = WriteId() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: WriteId()),
                 MsgDescription = $"CANInputId{Number}"
             },
             _ => null

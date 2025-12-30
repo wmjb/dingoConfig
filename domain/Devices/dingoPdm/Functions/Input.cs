@@ -38,12 +38,7 @@ public class Input(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Inputs,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 2,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
             MsgDescription = $"Input{Number}"
         };
     }
@@ -59,12 +54,7 @@ public class Input(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Inputs,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 4,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 4, Payload: Write()),
             MsgDescription = $"Input{Number}"
         };
     }

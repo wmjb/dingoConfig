@@ -54,9 +54,11 @@ public class CanboardDevice : IDevice
         return new DeviceCanFrame
         {
             Frame = new CanFrame
-            {
-                Payload = new byte[8]
-            }
+            (
+                0,
+                0,
+                new byte[8]
+            )
         };
     }
 
@@ -66,9 +68,11 @@ public class CanboardDevice : IDevice
         return new DeviceCanFrame
         {
             Frame = new CanFrame
-            {
-                Payload = new byte[8]
-            }
+            (
+                0,
+                0,
+                new byte[8]
+            )
         };
     }
 
@@ -78,9 +82,11 @@ public class CanboardDevice : IDevice
         return new DeviceCanFrame
         {
             Frame = new CanFrame
-            {
-                Payload = new byte[8]
-            }
+            (
+                0,
+                0,
+                new byte[8]
+            )
         };
     }
 
@@ -90,9 +96,11 @@ public class CanboardDevice : IDevice
         return new DeviceCanFrame
         {
             Frame = new CanFrame
-            {
-                Payload = new byte[8]
-            }
+            (
+                0,
+                0,
+                new byte[8]
+            )
         };
     }
 
@@ -102,9 +110,11 @@ public class CanboardDevice : IDevice
         return new DeviceCanFrame
         {
             Frame = new CanFrame
-            {
-                Payload = new byte[8]
-            }
+            (
+                0,
+                0,
+                new byte[8]
+            )
         };
     }
 

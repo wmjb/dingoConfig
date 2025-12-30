@@ -64,12 +64,7 @@ public class Output(int number, string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.Outputs,
                     Index = Number - 1,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 2,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
                     MsgDescription = $"Output{Number}"
                 };
             }
@@ -86,12 +81,7 @@ public class Output(int number, string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.OutputsPwm,
                     Index = Number - 1,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 2,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
                     MsgDescription = $"OutputPwm{Number}"
                 };
             }
@@ -111,7 +101,7 @@ public class Output(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.Outputs,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = Write() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: Write()),
                 MsgDescription = $"Output{Number}"
             },
             MessagePrefix.OutputsPwm => new DeviceCanFrame
@@ -121,7 +111,7 @@ public class Output(int number, string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.OutputsPwm,
                 Index = Number - 1,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = WritePwm() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: WritePwm()),
                 MsgDescription = $"OutputPwm{Number}"
             },
             _ => null

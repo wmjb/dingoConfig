@@ -43,12 +43,7 @@ public class Counter(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Counter,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 2,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
             MsgDescription = $"Counter{Number}"
         };
     }
@@ -64,12 +59,7 @@ public class Counter(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Counter,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 8,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: Write()),
             MsgDescription = $"Counter{Number}"
         };
     }

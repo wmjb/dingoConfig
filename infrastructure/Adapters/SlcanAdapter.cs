@@ -177,12 +177,7 @@ public class SlcanAdapter : ICommsAdapter
                     payload = new byte[8];
                 }
 
-                CanFrame frame = new CanFrame
-                {
-                    Id = id,
-                    Len = len,
-                    Payload = payload
-                };
+                CanFrame frame = new CanFrame(id, len, payload);
 
                 DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
             }

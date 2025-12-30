@@ -38,12 +38,7 @@ public class Flasher(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Flashers,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 2,
-                Payload = data
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
             MsgDescription = $"Flasher{Number}"
         };
     }
@@ -59,12 +54,7 @@ public class Flasher(int number, string name) : IDeviceFunction
             Received = false,
             Prefix = (int)MessagePrefix.Flashers,
             Index = Number - 1,
-            Frame = new CanFrame
-            {
-                Id = baseId - 1,
-                Len = 6,
-                Payload = Write()
-            },
+            Frame = new CanFrame(Id: baseId - 1, Len: 6, Payload: Write()),
             MsgDescription = $"Flasher{Number}"
         };
     }

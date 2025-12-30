@@ -50,12 +50,7 @@ public class Wiper(string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.Wiper,
                     Index = 0,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 1,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 1, Payload: data),
                     MsgDescription = "Wiper"
                 };
             
@@ -69,12 +64,7 @@ public class Wiper(string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.WiperSpeed,
                     Index = 0,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 1,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 1, Payload: data),
                     MsgDescription = "WiperSpeed"
                 };
             
@@ -88,12 +78,7 @@ public class Wiper(string name) : IDeviceFunction
                     Received = false,
                     Prefix = (int)MessagePrefix.WiperDelays,
                     Index = 0,
-                    Frame = new CanFrame
-                    {
-                        Id = baseId - 1,
-                        Len = 1,
-                        Payload = data
-                    },
+                    Frame = new CanFrame(Id: baseId - 1, Len: 1, Payload: data),
                     MsgDescription = "WiperDelay"
                 };
             
@@ -113,7 +98,7 @@ public class Wiper(string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.Wiper,
                 Index = 0,
-                Frame = new CanFrame { Id = baseId - 1, Len = 8, Payload = Write() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: Write()),
                 MsgDescription = "Wiper"
             },
             MessagePrefix.WiperSpeed => new DeviceCanFrame
@@ -123,7 +108,7 @@ public class Wiper(string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.WiperSpeed,
                 Index = 0,
-                Frame = new CanFrame { Id = baseId - 1, Len = 7, Payload = WriteSpeed() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 7, Payload: WriteSpeed()),
                 MsgDescription = "WiperSpeed"
             },
             MessagePrefix.WiperDelays => new DeviceCanFrame
@@ -133,7 +118,7 @@ public class Wiper(string name) : IDeviceFunction
                 Received = false,
                 Prefix = (int)MessagePrefix.WiperDelays,
                 Index = 0,
-                Frame = new CanFrame { Id = baseId - 1, Len = 7, Payload = WriteDelays() },
+                Frame = new CanFrame(Id: baseId - 1, Len: 7, Payload: WriteDelays()),
                 MsgDescription = "WiperDelay"
             },
             _ => null
