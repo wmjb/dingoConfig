@@ -17,7 +17,7 @@ public class CommsDataPipeline(
 {
     // RX Channel - Incoming CAN frames from adapter
     private readonly Channel<CanFrame> _rxChannel = Channel.CreateBounded<CanFrame>(
-        new BoundedChannelOptions(50000)
+        new BoundedChannelOptions(10000)
         {
             FullMode = BoundedChannelFullMode.DropOldest, // Don't block adapter
             SingleReader = true,

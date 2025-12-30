@@ -106,6 +106,7 @@ public class Output(int number, string name) : IDeviceFunction
         {
             MessagePrefix.Outputs => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Outputs,
@@ -115,6 +116,7 @@ public class Output(int number, string name) : IDeviceFunction
             },
             MessagePrefix.OutputsPwm => new DeviceCanFrame
             {
+                DeviceBaseId = baseId,
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.OutputsPwm,

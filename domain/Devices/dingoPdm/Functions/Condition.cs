@@ -54,14 +54,14 @@ public class Condition(int number, string name) : IDeviceFunction
         
         return new DeviceCanFrame
         {
-            DeviceBaseId = baseId - 1,
+            DeviceBaseId = baseId,
             Sent = false,
             Received = false,
             Prefix = (int)MessagePrefix.Conditions,
             Index = Number - 1,
             Frame = new CanFrame
             {
-                Id = baseId,
+                Id = baseId - 1,
                 Len = 6,
                 Payload = Write()
             },
