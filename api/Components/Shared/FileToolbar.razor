@@ -1,6 +1,6 @@
 @using application.Services
-@using api.Components.Dialogs
 @inject ConfigFileManager FileManager
+@inject  DeviceManager DeviceManager
 @inject IDialogService DialogService
 @implements IDisposable
 
@@ -8,26 +8,26 @@
     <MudTooltip Text="New">
         <MudIconButton Icon="@Icons.Material.Outlined.Add"
                        Color="Color.Default"
-                       OnClick="HandleNew" />
+                       OnClick="@HandleNew" />
     </MudTooltip>
 
     <MudTooltip Text="Open">
         <MudIconButton Icon="@Icons.Material.Outlined.FolderOpen"
                        Color="Color.Default"
-                       OnClick="HandleOpen" />
+                       OnClick="@HandleOpen" />
     </MudTooltip>
 
     <MudTooltip Text="Save">
         <MudIconButton Icon="@Icons.Material.Outlined.Save"
                        Color="Color.Default"
-                       OnClick="HandleSave"
+                       OnClick="@HandleSave"
                        Disabled="@(string.IsNullOrEmpty(FileManager.CurrentFileName))" />
     </MudTooltip>
 
     <MudTooltip Text="Save As">
         <MudIconButton Icon="@Icons.Material.Outlined.SaveAs"
                        Color="Color.Default"
-                       OnClick="HandleSaveAs" />
+                       OnClick="@HandleSaveAs" />
     </MudTooltip>
 
     <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
@@ -35,7 +35,7 @@
     <MudTooltip Text="Settings">
         <MudIconButton Icon="@Icons.Material.Outlined.Settings"
                        Color="Color.Default"
-                       OnClick="HandleSettings" />
+                       OnClick="@HandleSettings" />
     </MudTooltip>
 
     <MudSpacer />
@@ -70,17 +70,16 @@
             return "No file open";
         }
 
-        var asterisk = FileManager.HasUnsavedChanges ? "*" : "";
-        return $"{FileManager.CurrentFileName}{asterisk}";
+        return $"{FileManager.CurrentFileName}";
     }
 
     private async Task HandleNew()
     {
-        if (FileManager.HasUnsavedChanges)
+        if (DeviceManager.GetDevices().Count > 0)
         {
             var result = await DialogService.ShowMessageBox(
-                "Unsaved Changes",
-                "You have unsaved changes. Do you want to continue without saving?",
+                "New file",
+                "New file will remove all existing devices. Create a new file?",
                 yesText: "Continue",
                 cancelText: "Cancel");
 
@@ -93,11 +92,11 @@
 
     private async Task HandleOpen()
     {
-        if (FileManager.HasUnsavedChanges)
+        if (DeviceManager.GetDevices().Count > 0)
         {
             var result = await DialogService.ShowMessageBox(
-                "Unsaved Changes",
-                "You have unsaved changes. Do you want to continue without saving?",
+                "Open file",
+                "Open file will remove all existing devices. Open a new file?",
                 yesText: "Continue",
                 cancelText: "Cancel");
 
@@ -115,7 +114,7 @@
         var dialog = await DialogService.ShowAsync<OpenFileDialog>("Open File", parameters, options);
         var dialogResult = await dialog.Result;
 
-        if (dialogResult is not null && !dialogResult.Canceled && dialogResult.Data is string fileName)
+        if (dialogResult is { Canceled: false, Data: string fileName })
         {
             await OnOpen.InvokeAsync(fileName);
         }
@@ -142,7 +141,7 @@
         var dialog = await DialogService.ShowAsync<SaveAsDialog>("Save As", parameters, options);
         var dialogResult = await dialog.Result;
 
-        if (dialogResult is not null && !dialogResult.Canceled && dialogResult.Data is string fileName)
+        if (dialogResult is { Canceled: false, Data: string fileName })
         {
             await OnSaveAs.InvokeAsync(fileName);
         }
@@ -159,7 +158,7 @@
         var dialog = await DialogService.ShowAsync<SettingsDialog>("Settings", options);
         var dialogResult = await dialog.Result;
 
-        if (dialogResult is not null && !dialogResult.Canceled && dialogResult.Data is string newDirectory)
+        if (dialogResult is { Canceled: false, Data: string newDirectory })
         {
             FileManager.WorkingDirectory = newDirectory;
         }

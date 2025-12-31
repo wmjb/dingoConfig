@@ -1,46 +1,21 @@
-@page "/global-log"
+@page "/system-log"
 @using application.Services
 @using application.Models
-@inject GlobalLogger Logger
+@inject SystemLogger Logger
+@inject IDialogService DialogService
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>Global Log</PageTitle>
+<PageTitle>System Log</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False" Style="padding: 16px;">
-    <MudText Typo="Typo.h5" Class="mb-4">Global Log</MudText>
-
-    @* Controls *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Row="true" Spacing="2">
-            <MudSwitch @bind-Value="_autoRefresh" Color="Color.Primary" Label="Auto Refresh" />
-            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="LoadData" StartIcon="@Icons.Material.Filled.Refresh">
-                Refresh
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ClearLogs" StartIcon="@Icons.Material.Filled.Clear">
-                Clear
-            </MudButton>
-        </MudStack>
-
-        <MudStack Row="true" Spacing="2">
-            <MudSwitch @bind-Value="@Logger.LogToFile"
-                       @bind-Value:after="OnLogToFileChanged"
-                       Color="Color.Primary"
-                       Label="Log to File" />
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                @_filteredLogs.Count / @_allLogs.Count logs
-            </MudText>
-        </MudStack>
-    </MudStack>
-
-    @* Filters *@
-    <MudStack Row="true" Spacing="2" Class="mb-3">
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
         <MudSelect @bind-Value="_levelFilter"
                    @bind-Value:after="LoadData"
                    Label="Level"
                    Dense="true"
                    Variant="Variant.Outlined"
-                   Style="min-width: 150px;">
+                   Style="min-width: 50px;">
             <MudSelectItem Value="@((LogLevel?)null)">All</MudSelectItem>
             <MudSelectItem Value="@((LogLevel?)LogLevel.Debug)">Debug</MudSelectItem>
             <MudSelectItem Value="@((LogLevel?)LogLevel.Info)">Info</MudSelectItem>
@@ -53,18 +28,36 @@
                    Label="Source"
                    Dense="true"
                    Variant="Variant.Outlined"
-                   Style="min-width: 200px;">
+                   Style="min-width: 100px;">
             <MudSelectItem Value="@((string?)null)">All</MudSelectItem>
             @foreach (var source in _availableSources)
             {
                 <MudSelectItem Value="@source">@source</MudSelectItem>
             }
         </MudSelect>
-
+        
+        <MudSpacer/>
+        
+        <MudDivider Vertical="true" FlexItem="true"/>
+        
+        <MudSwitch @bind-Value="@Logger.LogToFile"
+                   @bind-Value:after="OnLogToFileChanged"
+                   Color="Color.Primary"
+                   Label="Log to File" />
+        
         <MudCheckBox @bind-Value="_showDebug"
                      @bind-Value:after="LoadData"
                      Label="Show Debug"
-                     Dense="true" />
+                     Dense="true"/>
+        
+        <MudDivider Vertical="true" FlexItem="true"/>
+        
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Error" 
+                   OnClick="@ClearLogs" 
+                   StartIcon="@Icons.Material.Filled.Delete">
+            Clear
+        </MudButton>
     </MudStack>
 
     @* Data Grid *@
@@ -104,14 +97,13 @@
 </MudContainer>
 
 @code {
-    private List<LogEntry> _allLogs = new();
-    private List<LogEntry> _filteredLogs = new();
-    private List<string> _availableSources = new();
+    private List<LogEntry> _allLogs = [];
+    private List<LogEntry> _filteredLogs = [];
+    private List<string> _availableSources = [];
     private Timer? _refreshTimer;
-    private bool _autoRefresh = true;
-    private LogLevel? _levelFilter = null;
-    private string? _sourceFilter = null;
-    private bool _showDebug = false;
+    private LogLevel? _levelFilter;
+    private string? _sourceFilter;
+    private bool _showDebug;
 
     protected override void OnInitialized()
     {
@@ -120,14 +112,11 @@
         // Auto-refresh at 10 Hz (100ms interval)
         _refreshTimer = new Timer(_ =>
         {
-            if (_autoRefresh)
+            InvokeAsync(() =>
             {
-                InvokeAsync(() =>
-                {
-                    LoadData();
-                    StateHasChanged();
-                });
-            }
+                LoadData();
+                StateHasChanged();
+            });
         }, null, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
     }
 
@@ -180,11 +169,14 @@
         };
     }
 
-    private void ShowException(LogEntry entry)
+    private async Task ShowException(LogEntry entry)
     {
-        // TODO: Show exception in a dialog
-        // For now, just log to console
-        Console.WriteLine($"Exception: {entry.Exception}");
+        if (entry.Exception != null)
+        {
+            await DialogService.ShowMessageBox(
+                entry.Source,
+                entry.Exception);
+        }
     }
 
     public void Dispose()

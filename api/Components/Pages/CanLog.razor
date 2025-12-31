@@ -8,53 +8,46 @@
 
 <PageTitle>CAN Log</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Row="true" Spacing="2">
-            <MudSwitch @bind-Value="@_autoRefresh" Color="Color.Primary" Label="Auto Refresh" />
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Secondary"
-                       StartIcon="@Icons.Material.Filled.Refresh"
-                       OnClick="@RefreshData"
-                        Disabled="@_autoRefresh">
-                Refresh
-            </MudButton>
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Error"
-                       StartIcon="@Icons.Material.Filled.Delete"
-                       OnClick="@ClearHistory">
-                Clear
-            </MudButton>
-        </MudStack>
+<MudContainer MaxWidth="MaxWidth.False" Style="padding: 16px;">
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+        
+        <MudText Typo="Typo.body2">ID Format:</MudText>
+        <MudSelect @bind-Value="@_idFormat"
+                   @bind-Value:after="OnIdFormatChanged"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   FitContent="true"
+                   Style="min-width: 120px;">
+            <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
+            <MudSelectItem Value="NumberFormat.Decimal">Dec</MudSelectItem>
+        </MudSelect>
 
-        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-            <MudSwitch @bind-Value="@_logToFile"
-                       @bind-Value:after="OnLogToFileChanged"
-                       Color="Color.Success"
-                       Label="Log to File" />
+        <MudText Typo="Typo.body2">Data Format:</MudText>
+        <MudSelect @bind-Value="@_payloadFormat"
+                   @bind-Value:after="OnPayloadFormatChanged"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   FitContent="true"
+                   Style="min-width: 120px;">
+            <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
+            <MudSelectItem Value="NumberFormat.Decimal">Dec</MudSelectItem>
+        </MudSelect>
 
-            <MudDivider Vertical="true" FlexItem="true" />
+        <MudSpacer/>
+        <MudDivider Vertical="true" FlexItem="true"/>
+        <MudSwitch @bind-Value="@_logToFile"
+                   @bind-Value:after="OnLogToFileChanged"
+                   Color="Color.Success"
+                   Label="Log to File"/>
 
-            <MudText Typo="Typo.body2">ID Format:</MudText>
-            <MudSelect @bind-Value="@_idFormat"
-                       @bind-Value:after="OnIdFormatChanged"
-                       Variant="Variant.Outlined"
-                       Dense="true"
-                       Style="max-width: 120px;">
-                <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
-                <MudSelectItem Value="NumberFormat.Decimal">Decimal</MudSelectItem>
-            </MudSelect>
+        <MudDivider Vertical="true" FlexItem="true"/>
 
-            <MudText Typo="Typo.body2">Data Format:</MudText>
-            <MudSelect @bind-Value="@_payloadFormat"
-                       @bind-Value:after="OnPayloadFormatChanged"
-                       Variant="Variant.Outlined"
-                       Dense="true"
-                       Style="max-width: 120px;">
-                <MudSelectItem Value="NumberFormat.Hex">Hex</MudSelectItem>
-                <MudSelectItem Value="NumberFormat.Decimal">Decimal</MudSelectItem>
-            </MudSelect>
-        </MudStack>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Delete"
+                   OnClick="@ClearHistory">
+            Clear
+        </MudButton>
     </MudStack>
 
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
@@ -102,7 +95,6 @@
                     <MudSelectItem Value="5000">5,000</MudSelectItem>
                     <MudSelectItem Value="10000">10,000</MudSelectItem>
                 </MudSelect>
-                <MudText Typo="Typo.body1">messages</MudText>
             </MudStack>
 
             <MudDataGrid T="CanLogEntry"

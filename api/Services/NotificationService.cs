@@ -4,7 +4,7 @@ using application.Services;
 
 namespace api.Services;
 
-public class NotificationService(ISnackbar snackbar, GlobalLogger logger)
+public class NotificationService(ISnackbar snackbar, SystemLogger logger)
 {
     public void NewInfo(string message, bool logOnly = false)
     {

@@ -8,15 +8,13 @@ using Microsoft.Extensions.Logging;
 
 namespace application.Services;
 
-public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager> logger)
+public class ConfigFileManager(ILogger<ConfigFileManager> logger)
 {
     private readonly JsonSerializerOptions _options = new() { WriteIndented = true, PropertyNameCaseInsensitive = true};
 
     private string _workingDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         "dingoConfig");
-    private string? _currentFileName;
-    private bool _hasUnsavedChanges;
 
     public event Action? OnStateChanged;
 
@@ -36,43 +34,22 @@ public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager>
 
     public string? CurrentFileName
     {
-        get => _currentFileName;
+        get;
         private set
         {
-            if (_currentFileName != value)
+            if (field != value)
             {
-                _currentFileName = value;
+                field = value;
                 OnStateChanged?.Invoke();
             }
         }
-    }
-
-    public bool HasUnsavedChanges
-    {
-        get => _hasUnsavedChanges;
-        set
-        {
-            if (_hasUnsavedChanges != value)
-            {
-                _hasUnsavedChanges = value;
-                OnStateChanged?.Invoke();
-            }
-        }
-    }
-
-    public ConfigFileManager Initialize()
-    {
-        EnsureWorkingDirectoryExists();
-        return this;
     }
 
     private void EnsureWorkingDirectoryExists()
     {
-        if (!Directory.Exists(_workingDirectory))
-        {
-            Directory.CreateDirectory(_workingDirectory);
-            logger.LogInformation($"Created working directory: {_workingDirectory}");
-        }
+        if (Directory.Exists(_workingDirectory)) return;
+        Directory.CreateDirectory(_workingDirectory);
+        logger.LogInformation($"Created working directory: {_workingDirectory}");
     }
 
     public List<FileInfo> ListJsonFiles()
@@ -90,66 +67,9 @@ public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager>
         return File.Exists(fullPath);
     }
 
-    public async Task<T?> OpenFile<T>(string fileName)
-    {
-        var fullPath = GetFullPath(fileName);
-
-        if (!File.Exists(fullPath))
-        {
-            logger.LogError($"File not found: {fullPath}");
-            return default;
-        }
-
-        try
-        {
-            var jsonString = await File.ReadAllTextAsync(fullPath);
-            var result = JsonSerializer.Deserialize<T>(jsonString, _options);
-
-            CurrentFileName = fileName;
-            HasUnsavedChanges = false;
-
-            logger.LogInformation($"Opened file: {fileName}");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, $"Error opening file: {fileName}");
-            throw;
-        }
-    }
-
-    public async Task SaveFile<T>(T data, string? fileName = null)
-    {
-        var targetFileName = fileName ?? CurrentFileName;
-
-        if (string.IsNullOrWhiteSpace(targetFileName))
-        {
-            throw new InvalidOperationException("No filename specified");
-        }
-
-        var fullPath = GetFullPath(targetFileName);
-
-        try
-        {
-            var jsonString = JsonSerializer.Serialize(data, _options);
-            await File.WriteAllTextAsync(fullPath, jsonString);
-
-            CurrentFileName = targetFileName;
-            HasUnsavedChanges = false;
-
-            logger.LogInformation($"Saved file: {targetFileName}");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, $"Error saving file: {targetFileName}");
-            throw;
-        }
-    }
-
     public void NewFile()
     {
         CurrentFileName = null;
-        HasUnsavedChanges = false;
         logger.LogInformation("New file started");
     }
 
@@ -180,7 +100,6 @@ public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager>
             await File.WriteAllTextAsync(fullPath, jsonString);
 
             CurrentFileName = targetFileName;
-            HasUnsavedChanges = false;
 
             logger.LogInformation($"Saved {devices.Count} devices to {targetFileName}");
         }
@@ -215,7 +134,6 @@ public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager>
             }
 
             CurrentFileName = fileName;
-            HasUnsavedChanges = false;
 
             var allDevices = new List<IDevice>();
             allDevices.AddRange(config.PdmDevices);
@@ -248,30 +166,5 @@ public class ConfigFileManager(DeviceManager manager, ILogger<ConfigFileManager>
 
         // Otherwise, combine with working directory
         return Path.Combine(_workingDirectory, fileName);
-    }
-
-    // Legacy methods for backward compatibility with existing code
-    public async Task Open(string filename)
-    {
-        var jsonString = await File.ReadAllTextAsync(filename);
-
-        List<IDevice>? devices = JsonSerializer.Deserialize<List<IDevice>>(jsonString, _options);
-
-        if (devices != null)
-        {
-            manager.AddDevices(devices);
-            logger.LogInformation($"Added {devices.Count} devices");
-        }
-        else
-        {
-            logger.LogError($"No devices found in {filename}");
-        }
-    }
-
-    public async Task Save(string filename)
-    {
-        await File.WriteAllTextAsync(filename, JsonSerializer.Serialize(manager.GetDevices(), _options));
-
-        logger.LogInformation($"Config file saved to {filename}");
     }
 }

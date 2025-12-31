@@ -13,6 +13,7 @@
                       AdornmentIcon="@Icons.Material.Filled.Refresh"
                       OnAdornmentClick="RefreshDirectory" />
         <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                       Variant="Variant.Outlined"
                        OnClick="NavigateUp"
                        Disabled="@(Directory.GetParent(_currentPath) == null)" />
     </MudStack>

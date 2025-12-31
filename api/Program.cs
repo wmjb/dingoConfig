@@ -8,7 +8,6 @@ using api.Services;
 using MudBlazor.Services;
 using domain.Interfaces;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 using Microsoft.AspNetCore.Connections;
 
@@ -53,20 +52,16 @@ builder.Services.AddSingleton<ICommsAdapterManager, CommsAdapterManager>();
 builder.Services.AddSingleton<ConfigFileManager>();
 builder.Services.AddSingleton<DeviceManager>();
 builder.Services.AddSingleton<CanMsgLogger>();
-builder.Services.AddSingleton<GlobalLogger>();
+builder.Services.AddSingleton<SystemLogger>();
 
 // Add background services
 builder.Services.AddHostedService<CommsDataPipeline>();
 
 // Add GlobalLogger to logging pipeline using factory to avoid creating duplicate singleton
 builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
-    new GlobalLoggerProvider(sp.GetRequiredService<GlobalLogger>()));
+    new SystemLoggerProvider(sp.GetRequiredService<SystemLogger>()));
 
 var app = builder.Build();
-
-// Initialize ConfigFileManager to ensure working directory exists
-var configFileManager = app.Services.GetRequiredService<ConfigFileManager>();
-configFileManager.Initialize();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

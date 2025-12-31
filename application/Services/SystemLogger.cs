@@ -3,7 +3,7 @@ using application.Models;
 
 namespace application.Services;
 
-public class GlobalLogger : IDisposable
+public class SystemLogger : IDisposable
 {
     private const int MaxBufferSize = 50000;
     private readonly ConcurrentQueue<LogEntry> _logBuffer = new();
@@ -14,7 +14,7 @@ public class GlobalLogger : IDisposable
     public bool LogToFile { get; set; }
     public LogLevel MinimumDisplayLevel { get; set; } = LogLevel.Info;
 
-    public GlobalLogger(string logDirectory = "./logs")
+    public SystemLogger(string logDirectory = "./logs")
     {
         _logDirectory = logDirectory;
         Directory.CreateDirectory(_logDirectory);

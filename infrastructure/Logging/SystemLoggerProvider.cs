@@ -4,11 +4,11 @@ using LogLevel = application.Models.LogLevel;
 
 namespace infrastructure.Logging;
 
-public class GlobalLoggerProvider(GlobalLogger globalLogger) : ILoggerProvider
+public class SystemLoggerProvider(SystemLogger systemLogger) : ILoggerProvider
 {
     public ILogger CreateLogger(string categoryName)
     {
-        return new GlobalLoggerAdapter(categoryName, globalLogger);
+        return new SystemLoggerAdapter(categoryName, systemLogger);
     }
 
     public void Dispose()
@@ -17,7 +17,7 @@ public class GlobalLoggerProvider(GlobalLogger globalLogger) : ILoggerProvider
     }
 }
 
-internal class GlobalLoggerAdapter(string categoryName, GlobalLogger globalLogger) : ILogger
+internal class SystemLoggerAdapter(string categoryName, SystemLogger systemLogger) : ILogger
 {
     public void Log<TState>(
         Microsoft.Extensions.Logging.LogLevel logLevel,
@@ -38,7 +38,7 @@ internal class GlobalLoggerAdapter(string categoryName, GlobalLogger globalLogge
         var message = formatter(state, exception);
         var exceptionStr = exception?.ToString();
 
-        globalLogger.Log(mappedLevel, source, message, exceptionStr, categoryName);
+        systemLogger.Log(mappedLevel, source, message, exceptionStr, categoryName);
     }
 
     public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel)
