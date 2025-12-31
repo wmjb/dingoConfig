@@ -78,7 +78,7 @@ public class PcanAdapter  : ICommsAdapter
         var frame = new CanFrame
         (
             Id: Convert.ToInt16(msg.ID),
-            Len: msg.Length,
+            Len: Convert.ToInt16(msg.DLC),
             Payload: msg.Data
         );
         DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
