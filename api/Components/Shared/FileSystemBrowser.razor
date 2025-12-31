@@ -1,0 +1,199 @@
+@using System.IO
+@using api.Services
+@inject NotificationService Notification
+
+<MudStack Spacing="2">
+    @* Current Path with Navigation *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+        <MudTextField @bind-Value="_currentPath"
+                      Label="Path"
+                      Variant="Variant.Outlined"
+                      FullWidth="true"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Refresh"
+                      OnAdornmentClick="RefreshDirectory" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                       OnClick="NavigateUp"
+                       Disabled="@(Directory.GetParent(_currentPath) == null)" />
+    </MudStack>
+
+    @* Quick Access Shortcuts *@
+    <MudStack Row="true" Spacing="1">
+        <MudChip T="string"
+                 Icon="@Icons.Material.Filled.Home"
+                 Size="Size.Small"
+                 OnClick="@(() => NavigateToPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))">
+            Home
+        </MudChip>
+        <MudChip T="string"
+                 Icon="@Icons.Material.Filled.Description"
+                 Size="Size.Small"
+                 OnClick="@(() => NavigateToPath(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)))">
+            Documents
+        </MudChip>
+        <MudChip T="string"
+                 Icon="@Icons.Material.Filled.GetApp"
+                 Size="Size.Small"
+                 OnClick="NavigateToDownloads">
+            Downloads
+        </MudChip>
+        <MudChip T="string"
+                 Icon="@Icons.Material.Filled.DesktopWindows"
+                 Size="Size.Small"
+                 OnClick="@(() => NavigateToPath(Environment.GetFolderPath(Environment.SpecialFolder.Desktop)))">
+            Desktop
+        </MudChip>
+    </MudStack>
+
+    @* File/Directory List *@
+    <MudPaper Style="max-height: 400px; overflow-y: auto;" Outlined="true">
+        <MudList T="string" Dense="true">
+            @* Directories *@
+            @foreach (var dir in _directories)
+            {
+                <MudListItem T="string"
+                             Icon="@Icons.Material.Filled.Folder"
+                             IconColor="Color.Primary"
+                             OnClick="@(() => NavigateToDirectory(dir))">
+                    @Path.GetFileName(dir)
+                </MudListItem>
+            }
+
+            @* Files *@
+            @foreach (var file in _files)
+            {
+                var isSelected = file == SelectedFile;
+                <MudListItem T="string"
+                             Icon="@Icons.Material.Filled.InsertDriveFile"
+                             IconColor="@(isSelected ? Color.Success : Color.Default)"
+                             Style="@(isSelected ? "background-color: var(--mud-palette-action-default-hover);" : "")"
+                             OnClick="@(() => SelectFile(file))">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText>@Path.GetFileName(file)</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @FormatFileSize(new FileInfo(file).Length)
+                        </MudText>
+                    </MudStack>
+                </MudListItem>
+            }
+
+            @if (!_directories.Any() && !_files.Any())
+            {
+                <MudListItem T="string">
+                    <MudText Color="Color.Secondary" Align="Align.Center">
+                        No files or folders
+                    </MudText>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    @* Selected File Display *@
+    @if (!string.IsNullOrEmpty(SelectedFile))
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">
+            Selected: @Path.GetFileName(SelectedFile)
+        </MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string InitialPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    [Parameter] public string FileFilter { get; set; } = "*.json";
+    [Parameter] public string? SelectedFile { get; set; }
+    [Parameter] public EventCallback<string> SelectedFileChanged { get; set; }
+
+    private string _currentPath = "";
+    private List<string> _directories = new();
+    private List<string> _files = new();
+
+    protected override void OnInitialized()
+    {
+        _currentPath = InitialPath;
+        LoadDirectory(_currentPath);
+    }
+
+    private void LoadDirectory(string path)
+    {
+        try
+        {
+            // Validate path exists
+            if (!Directory.Exists(path))
+            {
+                Notification.NewWarning($"Directory does not exist: {path}");
+                return;
+            }
+
+            _currentPath = Path.GetFullPath(path);
+
+            // Load directories
+            _directories = Directory.GetDirectories(_currentPath)
+                .OrderBy(d => Path.GetFileName(d))
+                .ToList();
+
+            // Load files matching filter
+            _files = Directory.GetFiles(_currentPath, FileFilter)
+                .OrderBy(f => Path.GetFileName(f))
+                .ToList();
+
+            StateHasChanged();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Notification.NewWarning("Access denied to this folder");
+        }
+        catch (Exception ex)
+        {
+            Notification.NewError("Failed to load directory", ex);
+        }
+    }
+
+    private void NavigateToDirectory(string path)
+    {
+        LoadDirectory(path);
+    }
+
+    private void NavigateUp()
+    {
+        var parent = Directory.GetParent(_currentPath);
+        if (parent != null)
+        {
+            LoadDirectory(parent.FullName);
+        }
+    }
+
+    private void NavigateToPath(string path)
+    {
+        LoadDirectory(path);
+    }
+
+    private void RefreshDirectory()
+    {
+        LoadDirectory(_currentPath);
+    }
+
+    private void NavigateToDownloads()
+    {
+        var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        LoadDirectory(downloadsPath);
+    }
+
+    private async Task SelectFile(string file)
+    {
+        SelectedFile = file;
+        await SelectedFileChanged.InvokeAsync(file);
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

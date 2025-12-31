@@ -1,5 +1,5 @@
 @using application.Services
-@using MudBlazor
+@using System.IO
 @inject ConfigFileManager FileManager
 
 <MudDialog>
@@ -10,42 +10,63 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudText Typo="Typo.caption" Class="mb-3">
-            Working Directory: @FileManager.WorkingDirectory
-        </MudText>
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
+            @* Recent Files Tab *@
+            <MudTabPanel Text="Recent Files" Icon="@Icons.Material.Filled.History">
+                <MudText Typo="Typo.caption" Class="mb-3">
+                    Working Directory: @FileManager.WorkingDirectory
+                </MudText>
 
-        @if (files == null || !files.Any())
-        {
-            <MudAlert Severity="Severity.Info" Dense="true">
-                No .json files found in the working directory.
-            </MudAlert>
-        }
-        else
-        {
-            <MudList @bind-SelectedValue="selectedFile" Dense="true">
-                @foreach (var file in files)
+                @if (files == null || !files.Any())
                 {
-                    <MudListItem Value="@file.Name" OnClick="@(() => OnFileClick(file.Name))">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2">
-                                    <MudIcon Icon="@Icons.Material.Outlined.InsertDriveFile" Size="Size.Small" Class="mr-1" />
-                                    @file.Name
-                                </MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                    Modified: @file.LastWriteTime.ToString("g")
-                                </MudText>
-                            </MudStack>
-                        </MudStack>
-                    </MudListItem>
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        No .json files found in the working directory.
+                    </MudAlert>
                 }
-            </MudList>
-        }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var file in files)
+                        {
+                            var isSelected = selectedFile == file.FullName;
+                            <MudListItem T="string" OnClick="@(() => OnFileClick(file.FullName))"
+                                         Style="@(isSelected ? "background-color: var(--mud-palette-action-default-hover);" : "")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">
+                                            <MudIcon Icon="@Icons.Material.Outlined.InsertDriveFile"
+                                                     Size="Size.Small"
+                                                     Class="mr-1"
+                                                     Color="@(isSelected ? Color.Success : Color.Default)" />
+                                            @file.Name
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            Modified: @file.LastWriteTime.ToString("g")
+                                        </MudText>
+                                    </MudStack>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @FormatFileSize(file.Length)
+                                    </MudText>
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudTabPanel>
+
+            @* Browse Files Tab *@
+            <MudTabPanel Text="Browse..." Icon="@Icons.Material.Filled.Search">
+                <FileSystemBrowser InitialPath="@FileManager.WorkingDirectory"
+                                   FileFilter="*.json"
+                                   SelectedFile="@selectedFile"
+                                   SelectedFileChanged="@((file) => selectedFile = file)" />
+            </MudTabPanel>
+        </MudTabs>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Color="Color.Primary"
-                   Variant="Variant.Outlined"
+                   Variant="Variant.Filled"
                    OnClick="Submit"
                    Disabled="@(string.IsNullOrEmpty(selectedFile))">
             Open
@@ -67,23 +88,23 @@
         files = FileManager.ListJsonFiles();
     }
 
-    private void OnFileClick(string fileName)
+    private void OnFileClick(string filePath)
     {
         var now = DateTime.Now;
 
         // Check for double-click (within 300ms)
-        if (lastClickedFile == fileName &&
+        if (lastClickedFile == filePath &&
             lastClickTime.HasValue &&
             (now - lastClickTime.Value).TotalMilliseconds < 300)
         {
-            selectedFile = fileName;
+            selectedFile = filePath;
             Submit();
             return;
         }
 
-        lastClickedFile = fileName;
+        lastClickedFile = filePath;
         lastClickTime = now;
-        selectedFile = fileName;
+        selectedFile = filePath;
     }
 
     private void Submit()
@@ -97,5 +118,18 @@
     private void Cancel()
     {
         MudDialog.Cancel();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
     }
 }

@@ -1,5 +1,5 @@
 @using application.Services
-@using MudBlazor
+@using System.IO
 @inject ConfigFileManager FileManager
 
 <MudDialog>
@@ -10,29 +10,89 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="fileName"
-                      Label="Filename"
-                      Variant="Variant.Outlined"
-                      Immediate="true"
-                      Adornment="Adornment.End"
-                      AdornmentText=".json"
-                      OnKeyDown="HandleKeyDown"
-                      HelperText="Enter filename without extension"
-                      AutoFocus="true" />
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
+            @* Quick Save Tab *@
+            <MudTabPanel Text="Quick Save" Icon="@Icons.Material.Filled.Save">
+                <MudText Typo="Typo.caption" Class="mb-3">
+                    Save to: @FileManager.WorkingDirectory
+                </MudText>
 
-        @if (showOverwriteWarning)
-        {
-            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
-                A file with this name already exists and will be overwritten.
-            </MudAlert>
-        }
+                <MudTextField @bind-Value="fileName"
+                              Label="Filename"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              Adornment="Adornment.End"
+                              AdornmentText=".json"
+                              OnKeyDown="HandleKeyDown"
+                              HelperText="Enter filename without extension"
+                              AutoFocus="true" />
+
+                @if (showOverwriteWarning && !_useBrowseMode)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                        A file with this name already exists and will be overwritten.
+                    </MudAlert>
+                }
+            </MudTabPanel>
+
+            @* Browse Tab *@
+            <MudTabPanel Text="Browse..." Icon="@Icons.Material.Filled.Search" @onclick="() => _useBrowseMode = true">
+                <FileSystemBrowser InitialPath="@FileManager.WorkingDirectory"
+                                   FileFilter="*.json"
+                                   SelectedFile="@_selectedPath"
+                                   SelectedFileChanged="@OnBrowseFileSelected" />
+
+                <MudDivider Class="my-3" />
+
+                <MudTextField @bind-Value="_customFileName"
+                              Label="Save as filename"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentText=".json"
+                              HelperText="Or enter a new filename in the current directory"
+                              Immediate="true" />
+
+                @if (showOverwriteWarning && _useBrowseMode)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                        A file with this name already exists and will be overwritten.
+                    </MudAlert>
+                }
+            </MudTabPanel>
+
+            @* Absolute Path Tab *@
+            <MudTabPanel Text="Custom Path" Icon="@Icons.Material.Filled.Edit">
+                <MudTextField @bind-Value="_absolutePath"
+                              Label="Full path"
+                              Variant="Variant.Outlined"
+                              Lines="2"
+                              Immediate="true"
+                              HelperText="Enter full path including filename (e.g., /home/user/myfile.json)"
+                              Placeholder="@_placeholderPath" />
+
+                <MudButton OnClick="ValidateAbsolutePath"
+                           Variant="Variant.Text"
+                           StartIcon="@Icons.Material.Filled.CheckCircle"
+                           Size="Size.Small"
+                           Class="mt-2">
+                    Validate Path
+                </MudButton>
+
+                @if (!string.IsNullOrEmpty(_pathValidationMessage))
+                {
+                    <MudAlert Severity="@_pathValidationSeverity" Dense="true" Class="mt-3">
+                        @_pathValidationMessage
+                    </MudAlert>
+                }
+            </MudTabPanel>
+        </MudTabs>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Color="Color.Primary"
-                   Variant="Variant.Outlined"
-                   OnClick="@(Submit)"
-                   Disabled="@(string.IsNullOrWhiteSpace(fileName))">
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(!CanSubmit())">
             Save
         </MudButton>
     </DialogActions>
@@ -46,11 +106,18 @@
     public string? InitialFileName { get; set; }
 
     private string? fileName;
+    private string? _selectedPath;
+    private string? _customFileName;
+    private string? _absolutePath;
+    private bool _useBrowseMode;
     private bool showOverwriteWarning;
+    private string? _pathValidationMessage;
+    private Severity _pathValidationSeverity = Severity.Info;
+    private string _placeholderPath = "";
 
     protected override void OnInitialized()
     {
-        // Pre-fill with current filename if provided, removing .json extension if present
+        // Pre-fill with current filename if provided
         if (!string.IsNullOrEmpty(InitialFileName))
         {
             fileName = InitialFileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
@@ -58,7 +125,15 @@
                 : InitialFileName;
         }
 
+        _placeholderPath = Path.Combine(FileManager.WorkingDirectory, "example.json");
         CheckFileExists();
+    }
+
+    private void OnBrowseFileSelected(string filePath)
+    {
+        _selectedPath = filePath;
+        _customFileName = Path.GetFileNameWithoutExtension(filePath);
+        CheckBrowseFileExists();
     }
 
     private void CheckFileExists()
@@ -73,6 +148,71 @@
         }
     }
 
+    private void CheckBrowseFileExists()
+    {
+        if (!string.IsNullOrEmpty(_customFileName) || !string.IsNullOrEmpty(_selectedPath))
+        {
+            var path = !string.IsNullOrEmpty(_customFileName)
+                ? Path.Combine(Path.GetDirectoryName(_selectedPath ?? FileManager.WorkingDirectory) ?? FileManager.WorkingDirectory,
+                               _customFileName + ".json")
+                : _selectedPath;
+
+            showOverwriteWarning = File.Exists(path);
+        }
+        else
+        {
+            showOverwriteWarning = false;
+        }
+    }
+
+    private void ValidateAbsolutePath()
+    {
+        if (string.IsNullOrWhiteSpace(_absolutePath))
+        {
+            _pathValidationMessage = "Please enter a path";
+            _pathValidationSeverity = Severity.Warning;
+            return;
+        }
+
+        try
+        {
+            var fullPath = Path.GetFullPath(_absolutePath);
+            var directory = Path.GetDirectoryName(fullPath);
+
+            if (string.IsNullOrEmpty(directory))
+            {
+                _pathValidationMessage = "Invalid path";
+                _pathValidationSeverity = Severity.Error;
+                return;
+            }
+
+            if (!Directory.Exists(directory))
+            {
+                _pathValidationMessage = $"Directory does not exist: {directory}";
+                _pathValidationSeverity = Severity.Warning;
+                return;
+            }
+
+            if (File.Exists(fullPath))
+            {
+                _pathValidationMessage = "File exists and will be overwritten";
+                _pathValidationSeverity = Severity.Warning;
+                showOverwriteWarning = true;
+            }
+            else
+            {
+                _pathValidationMessage = "Path is valid";
+                _pathValidationSeverity = Severity.Success;
+                showOverwriteWarning = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _pathValidationMessage = $"Invalid path: {ex.Message}";
+            _pathValidationSeverity = Severity.Error;
+        }
+    }
+
     private void HandleKeyDown(KeyboardEventArgs e)
     {
         CheckFileExists();
@@ -83,12 +223,63 @@
         }
     }
 
+    private bool CanSubmit()
+    {
+        if (!string.IsNullOrWhiteSpace(_absolutePath))
+        {
+            try
+            {
+                var directory = Path.GetDirectoryName(Path.GetFullPath(_absolutePath));
+                return !string.IsNullOrEmpty(directory) && Directory.Exists(directory);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        if (_useBrowseMode)
+        {
+            return !string.IsNullOrEmpty(_customFileName) || !string.IsNullOrEmpty(_selectedPath);
+        }
+
+        return !string.IsNullOrWhiteSpace(fileName);
+    }
+
     private void Submit()
     {
-        if (!string.IsNullOrWhiteSpace(fileName))
+        string? result = null;
+
+        // Priority: Absolute Path > Browse Mode > Quick Save
+        if (!string.IsNullOrWhiteSpace(_absolutePath))
         {
-            // Return filename without .json extension (ConfigFileManager will add it)
-            MudDialog.Close(DialogResult.Ok(fileName));
+            result = Path.GetFullPath(_absolutePath);
+            if (!result.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                result += ".json";
+            }
+        }
+        else if (_useBrowseMode)
+        {
+            if (!string.IsNullOrEmpty(_customFileName))
+            {
+                var directory = Path.GetDirectoryName(_selectedPath ?? FileManager.WorkingDirectory) ?? FileManager.WorkingDirectory;
+                result = Path.Combine(directory, _customFileName + ".json");
+            }
+            else if (!string.IsNullOrEmpty(_selectedPath))
+            {
+                result = _selectedPath;
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            // Quick save - return relative filename (ConfigFileManager will handle path)
+            result = fileName;
+        }
+
+        if (!string.IsNullOrEmpty(result))
+        {
+            MudDialog.Close(DialogResult.Ok(result));
         }
     }
 
