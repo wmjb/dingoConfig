@@ -1,20 +1,14 @@
 using application.Services;
 using Microsoft.Extensions.Logging;
+using LogLevel = application.Models.LogLevel;
 
 namespace infrastructure.Logging;
 
-public class GlobalLoggerProvider : ILoggerProvider
+public class GlobalLoggerProvider(GlobalLogger globalLogger) : ILoggerProvider
 {
-    private readonly GlobalLogger _globalLogger;
-
-    public GlobalLoggerProvider(GlobalLogger globalLogger)
-    {
-        _globalLogger = globalLogger;
-    }
-
     public ILogger CreateLogger(string categoryName)
     {
-        return new GlobalLoggerAdapter(categoryName, _globalLogger);
+        return new GlobalLoggerAdapter(categoryName, globalLogger);
     }
 
     public void Dispose()
@@ -23,17 +17,8 @@ public class GlobalLoggerProvider : ILoggerProvider
     }
 }
 
-internal class GlobalLoggerAdapter : ILogger
+internal class GlobalLoggerAdapter(string categoryName, GlobalLogger globalLogger) : ILogger
 {
-    private readonly string _categoryName;
-    private readonly GlobalLogger _globalLogger;
-
-    public GlobalLoggerAdapter(string categoryName, GlobalLogger globalLogger)
-    {
-        _categoryName = categoryName;
-        _globalLogger = globalLogger;
-    }
-
     public void Log<TState>(
         Microsoft.Extensions.Logging.LogLevel logLevel,
         EventId eventId,
@@ -48,12 +33,12 @@ internal class GlobalLoggerAdapter : ILogger
         var mappedLevel = MapLogLevel(logLevel);
 
         // Extract source from category (e.g., "application.Services.DeviceManager" → "DeviceManager")
-        var source = ExtractSourceFromCategory(_categoryName);
+        var source = ExtractSourceFromCategory(categoryName);
 
         var message = formatter(state, exception);
         var exceptionStr = exception?.ToString();
 
-        _globalLogger.Log(mappedLevel, source, message, exceptionStr, _categoryName);
+        globalLogger.Log(mappedLevel, source, message, exceptionStr, categoryName);
     }
 
     public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel)
@@ -66,17 +51,17 @@ internal class GlobalLoggerAdapter : ILogger
         return null;
     }
 
-    private static application.Models.LogLevel MapLogLevel(Microsoft.Extensions.Logging.LogLevel logLevel)
+    private static LogLevel MapLogLevel(Microsoft.Extensions.Logging.LogLevel logLevel)
     {
         return logLevel switch
         {
-            Microsoft.Extensions.Logging.LogLevel.Trace => application.Models.LogLevel.Debug,
-            Microsoft.Extensions.Logging.LogLevel.Debug => application.Models.LogLevel.Debug,
-            Microsoft.Extensions.Logging.LogLevel.Information => application.Models.LogLevel.Info,
-            Microsoft.Extensions.Logging.LogLevel.Warning => application.Models.LogLevel.Warning,
-            Microsoft.Extensions.Logging.LogLevel.Error => application.Models.LogLevel.Error,
-            Microsoft.Extensions.Logging.LogLevel.Critical => application.Models.LogLevel.Error,
-            _ => application.Models.LogLevel.Info
+            Microsoft.Extensions.Logging.LogLevel.Trace => LogLevel.Debug,
+            Microsoft.Extensions.Logging.LogLevel.Debug => LogLevel.Debug,
+            Microsoft.Extensions.Logging.LogLevel.Information => LogLevel.Info,
+            Microsoft.Extensions.Logging.LogLevel.Warning => LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Error => LogLevel.Error,
+            Microsoft.Extensions.Logging.LogLevel.Critical => LogLevel.Error,
+            _ => LogLevel.Info
         };
     }
 

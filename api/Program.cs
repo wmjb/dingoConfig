@@ -8,6 +8,7 @@ using api.Services;
 using MudBlazor.Services;
 using domain.Interfaces;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using Microsoft.AspNetCore.Connections;
 
@@ -57,14 +58,9 @@ builder.Services.AddSingleton<GlobalLogger>();
 // Add background services
 builder.Services.AddHostedService<CommsDataPipeline>();
 
-// Add GlobalLogger to logging pipeline
-var serviceProvider = builder.Services.BuildServiceProvider();
-var globalLogger = serviceProvider.GetRequiredService<GlobalLogger>();
-builder.Logging.AddProvider(new GlobalLoggerProvider(globalLogger));
-
-builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
-builder.Services.AddOpenApi();
+// Add GlobalLogger to logging pipeline using factory to avoid creating duplicate singleton
+builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
+    new GlobalLoggerProvider(sp.GetRequiredService<GlobalLogger>()));
 
 var app = builder.Build();
 
@@ -78,12 +74,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
-else
-{
-    // Enable Swagger in development
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseHttpsRedirection();
 
@@ -91,7 +81,6 @@ app.UseAntiforgery();
 app.UseAuthorization();
 
 app.MapStaticAssets();
-app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

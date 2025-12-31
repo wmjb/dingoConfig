@@ -7,7 +7,7 @@ public class GlobalLogger : IDisposable
 {
     private const int MaxBufferSize = 50000;
     private readonly ConcurrentQueue<LogEntry> _logBuffer = new();
-    private readonly object _fileLock = new();
+    private readonly Lock _fileLock = new();
     private readonly string _logDirectory;
     private StreamWriter? _logWriter;
 
@@ -32,7 +32,7 @@ public class GlobalLogger : IDisposable
             Category = category ?? string.Empty
         };
 
-        // Add to buffer (drop oldest if full)
+        // Add to buffer (drop the oldest if full)
         _logBuffer.Enqueue(entry);
         while (_logBuffer.Count > MaxBufferSize)
         {
