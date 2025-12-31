@@ -36,7 +36,7 @@ public class PdmDevice : IDevice
     [JsonIgnore] public double BatteryVoltage { get; set; }
     [JsonIgnore] public double BoardTempC { get; set; }
     [JsonIgnore] public double BoardTempF { get; set; }
-    [JsonIgnore] public string Version { get; set; } = "";
+    [JsonIgnore] public string Version { get; set; } = "v0.0.0";
     [JsonIgnore] public bool SleepEnabled { get; set; }
     [JsonIgnore] public bool CanFiltersEnabled { get; set; }
     [JsonIgnore] public CanBitRate BitRate { get; set; }
