@@ -61,8 +61,8 @@ api (Presentation - Blazor Server)
 │   │   │   └── Functions/ - 14 configuration grids (OutputsGrid, InputsGrid, etc.)
 │   │   └── CANBoard/ - CANBoard device components
 │   │       └── Tabs/ - CanboardDashboardTab, CanboardConfigurationTab
-│   ├── Shared/ - Toolbars (AdapterToolbarControl, FileToolbar)
-│   ├── Dialogs/ - 3 dialogs (OpenFileDialog, SaveAsDialog, SettingsDialog)
+│   ├── Shared/ - Toolbars (AdapterToolbarControl, FileToolbar, SimPlaybackToolbar)
+│   ├── Dialogs/ - 4 dialogs (OpenFileDialog, OpenCanLogDialog, SaveAsDialog, SettingsDialog)
 │   └── Layout/ - MainLayout, NavMenu, ReconnectModal
 ├── Services/
 │   └── NotificationService - Combines Snackbar + GlobalLogger
@@ -74,6 +74,7 @@ application (Business Logic)
 │   ├── DeviceManager - Device lifecycle, request/response tracking
 │   ├── ConfigFileManager - JSON persistence, file state management
 │   ├── CanMsgLogger - CAN message logging with CSV output
+│   ├── SimPlayback - CAN log file playback for SimAdapter (FULL)
 │   └── GlobalLogger - Application-wide logging system
 └── Models/
     ├── LogEntry, LogLevel - Global logging models
@@ -107,7 +108,7 @@ infrastructure (Implementation)
 │   ├── UsbAdapter - Serial SLCAN adapter (FULL)
 │   ├── SlcanAdapter - SLCAN protocol (FULL)
 │   ├── PcanAdapter - Peak PCAN hardware (FULL)
-│   └── SimAdapter - Simulation adapter (STUB)
+│   └── SimAdapter - Simulation adapter with CAN log playback (FULL)
 ├── Comms/
 │   └── CommsAdapterManager - Runtime adapter selection
 ├── BackgroundServices/
@@ -144,7 +145,7 @@ Allows runtime selection and hot-swapping of communication adapters without reco
 - UsbAdapter - Serial port (115200 baud, SLCAN protocol)
 - SlcanAdapter - SLCAN protocol
 - PcanAdapter - Peak PCAN hardware (Peak.PCANBasic.NET v4.10.0.964)
-- SimAdapter - Simulation (stub only)
+- SimAdapter - Simulation adapter with CAN log file playback
 
 **Usage Pattern**:
 ```csharp
@@ -369,6 +370,94 @@ Tracks and logs CAN messages with summary and full history modes.
 - Payload: Hex or Decimal
 - Configurable via UI dropdown
 
+### 9. SimPlayback (CAN Log File Replay)
+
+**Location**: `application/Services/SimPlayback.cs`
+
+Replays recorded CAN log files through the SimAdapter, simulating real CAN traffic with accurate timing.
+
+**Features**:
+- **CSV Parsing**: Supports both hex (0x prefix) and decimal format
+- **Real-time Playback**: Respects original message timestamps for accurate replay
+- **State Machine**: Idle → Playing → Paused/Stopped with proper state transitions
+- **Loop Mode**: Automatic restart when playback completes
+- **Progress Tracking**: Real-time message index and timestamp display
+- **Event-Driven**: Raises MessageReady events consumed by SimAdapter
+
+**State Machine**:
+```csharp
+public enum PlaybackState { Idle, Playing, Paused, Stopped }
+```
+
+**Key Methods**:
+- `LoadFile(string filePath)`: Parse CSV and store messages with relative timestamps
+- `Play()`: Start/resume playback with background task
+- `Pause()`: Pause playback (retains position)
+- `Reset()`: Stop and reset to beginning
+
+**CSV Format**:
+```
+Timestamp,Direction,CAN ID,Length,Data
+2024-12-30 10:46:29.123,Rx,0x123,8,12 34 56 78 AB CD EF 00
+2024-12-30 10:46:29.456,Tx,0x456,4,11 22 33 44
+```
+
+**Integration with SimAdapter**:
+```csharp
+// SimAdapter constructor injection (primary constructor)
+public class SimAdapter(SimPlayback playback) : ICommsAdapter
+{
+    public Task<bool> StartAsync(CancellationToken ct)
+    {
+        IsConnected = true;
+        playback.MessageReady += OnMessageReady;
+        return Task.FromResult(true);
+    }
+
+    private void OnMessageReady(CanFrame frame, DataDirection direction)
+    {
+        DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
+    }
+}
+```
+
+**UI Components**:
+- **SimPlaybackToolbar**: Play/Pause/Reset controls, loop toggle, real-time progress display
+- **OpenCanLogDialog**: File selector for CSV log files in `./logs` directory
+- **AdapterToolbarControl**: "Open Log File" button (shown only when Sim adapter selected)
+- **MainLayout**: Conditionally shows SimPlaybackToolbar when Sim adapter is connected
+
+**Data Flow**:
+```
+User selects Sim adapter → "Open Log File" button appears
+User selects CSV file → SimPlayback.LoadFile() parses messages
+User connects to Sim → SimPlaybackToolbar appears in toolbar
+User clicks Play → SimPlayback starts background task
+Background task → Raises MessageReady events with timing
+SimAdapter.OnMessageReady → Raises DataReceived event
+CommsDataPipeline → Routes to CanMsgLogger and Devices
+```
+
+**Playback Algorithm**:
+- Calculates relative time from first message timestamp
+- Adjusts start time when resuming from pause
+- Uses `Task.Delay()` for accurate inter-message timing
+- Thread-safe state transitions with lock
+- Handles cancellation gracefully (pause/reset/disconnect)
+
+**Usage Pattern**:
+```csharp
+// In UI component
+@inject SimPlayback Playback
+
+var (success, error) = await Playback.LoadFile(filePath);
+if (success)
+{
+    await Playback.Play();  // Start playback
+    // Playback.Loop = true for continuous replay
+}
+```
+
 ## Dependency Injection Setup
 
 **Location**: `api/Program.cs`
@@ -381,6 +470,7 @@ builder.Services.AddSingleton<ICommsAdapterManager, CommsAdapterManager>();
 builder.Services.AddSingleton<DeviceManager>();
 builder.Services.AddSingleton<ConfigFileManager>();
 builder.Services.AddSingleton<CanMsgLogger>();
+builder.Services.AddSingleton<SimPlayback>();
 builder.Services.AddSingleton<GlobalLogger>();
 ```
 
@@ -411,7 +501,7 @@ builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
 
 ### Why Transient Adapters?
 
-Adapters are transient because only ONE is active at a time (selected via CommsAdapterManager). Each connection resolves a fresh adapter instance, preventing state leakage between connections.
+Adapters are transient because only ONE is active at a time (selected via CommsAdapterManager). Each connection resolves a fresh adapter instance, preventing state leakage between connections. SimAdapter receives the singleton SimPlayback service via constructor injection, allowing multiple SimAdapter instances to share the same playback state.
 
 ## Data Flow Patterns
 
@@ -486,6 +576,39 @@ CommsDataPipeline receives data via manager.DataReceived
 UI polls manager.IsConnected at 20 Hz
 ```
 
+### SimPlayback Pipeline (CAN Log Replay)
+```
+User clicks "Open Log File" (Sim adapter selected)
+    ↓
+OpenCanLogDialog shows CSV files from ./logs
+    ↓
+SimPlayback.LoadFile() parses CSV → List<PlaybackMessage>
+    ↓
+User connects to Sim adapter
+    ↓
+SimAdapter.StartAsync() subscribes to SimPlayback.MessageReady
+    ↓
+SimPlaybackToolbar appears in MainLayout (conditional)
+    ↓
+User clicks Play → SimPlayback.Play()
+    ↓
+Background task: PlaybackLoop(CancellationToken)
+    ↓
+For each message: Task.Delay(relativeTime) → MessageReady event
+    ↓
+SimAdapter.OnMessageReady() receives CanFrame
+    ↓
+SimAdapter raises DataReceived event
+    ↓
+CommsAdapterManager forwards to subscribers
+    ↓
+CommsDataPipeline → RX Channel → CanMsgLogger + Devices
+    ↓
+UI polls SimPlayback.State/CurrentTime at 10 Hz
+    ↓
+SimPlaybackToolbar displays progress
+```
+
 ### UI Update Pattern (Timer-based Polling)
 
 **NOT using SignalR** - Uses Blazor Server's built-in circuit with timer-based polling:
@@ -511,6 +634,8 @@ protected override void OnInitialized()
 - Device views: 20 Hz (50ms)
 - CAN Log: 10 Hz (100ms)
 - Global Log: 10 Hz (100ms)
+- SimPlaybackToolbar: 10 Hz (100ms)
+- MainLayout (adapter status): 2 Hz (500ms)
 - NavMenu device list: 1 Hz (1000ms)
 
 ## Device Implementation
