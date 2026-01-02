@@ -1,6 +1,6 @@
 using System.Text.Json;
 using application.Models;
-using domain.Devices.CanboardDevice;
+using domain.Devices.Canboard;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Interfaces;

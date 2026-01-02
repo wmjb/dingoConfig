@@ -1,0 +1,107 @@
+@using domain.Devices.Canboard
+
+<div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+    <MudText Typo="Typo.h6" Class="mb-2">Device</MudText>
+    <MudGrid>
+        <MudItem>
+            <MudCard Style="height: 100%">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">@Device.BoardTempC.ToString("F1") °C</MudText>
+                    <MudText Typo="Typo.body2">Board Temperature</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem>
+            <MudCard Style="height: 100%">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">@Device.Heartbeat</MudText>
+                    <MudText Typo="Typo.body2">Heartbeat</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @* Analog Inputs *@
+    @if (Device.AnalogInputs.Any())
+    {
+        <MudDivider Class="my-4"/>
+        <MudText Typo="Typo.h6" Class="mb-2">Analog Inputs</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var input in Device.AnalogInputs)
+            {
+                <MudItem>
+                    <MudCard>
+                        <MudCardContent>
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudText Typo="Typo.body1">@input.Name</MudText>
+                                <MudText Typo="Typo.body2">@input.Millivolts.ToString("F1") mV</MudText>
+                                <MudText Typo="Typo.body2">Switch: @input.RotarySwitchPos</MudText>
+                                <MudChip T="string" Variant="Variant.Outlined"
+                                         Color="@(input.DigitalIn ? Color.Success : Color.Default)"
+                                         Size="Size.Small" Style="min-width: 100px;">
+                                    Digital: @(input.DigitalIn ? "ON" : "OFF")
+                                </MudChip>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* Digital Inputs *@
+    @if (Device.DigitalInputs.Any())
+    {
+        <MudDivider Class="my-4"/>
+        <MudText Typo="Typo.h6" Class="mb-2">Digital Inputs</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var input in Device.DigitalInputs)
+            {
+                <MudItem>
+                    <MudCard>
+                        <MudCardContent>
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudText Typo="Typo.body1">@input.Name</MudText>
+                                <MudChip T="string" Variant="Variant.Outlined"
+                                         Color="@(input.State ? Color.Success : Color.Default)"
+                                         Size="Size.Small" Style="min-width: 100px;">
+                                    @(input.State ? "ON" : "OFF")
+                                </MudChip>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* Digital Outputs *@
+    @if (Device.DigitalOutputs.Any())
+    {
+        <MudDivider Class="my-4"/>
+        <MudText Typo="Typo.h6" Class="mb-2">Digital Outputs</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var output in Device.DigitalOutputs)
+            {
+                <MudItem>
+                    <MudCard>
+                        <MudCardContent>
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudText Typo="Typo.body1">@output.Name</MudText>
+                                <MudChip T="string" Variant="Variant.Outlined"
+                                         Color="@(output.State ? Color.Success : Color.Default)"
+                                         Size="Size.Small" Style="min-width: 100px;">
+                                    @(output.State ? "ON" : "OFF")
+                                </MudChip>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CanboardDevice Device { get; set; } = null!;
+}

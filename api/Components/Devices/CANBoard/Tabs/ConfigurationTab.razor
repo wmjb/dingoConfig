@@ -1,0 +1,12 @@
+@using domain.Devices.Canboard
+
+<div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+    <MudAlert Severity="Severity.Info">
+        <MudText Typo="Typo.h6">CANBoard Configuration</MudText>
+        <MudText Typo="Typo.body2">Configuration editing is not yet implemented for CANBoard devices.</MudText>
+    </MudAlert>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CanboardDevice Device { get; set; } = null!;
+}

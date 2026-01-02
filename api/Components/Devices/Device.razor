@@ -1,13 +1,11 @@
 @page "/device/{DeviceId:guid}"
-@using api.Components.Devices.CANBoard
-@using api.Components.Devices.dingoPdm
-@using api.Components.Devices.dingoPdmMax
 @using domain.Interfaces
 @using domain.Devices.dingoPdm
 @using domain.Devices.dingoPdmMax
-@using domain.Devices.CanboardDevice
+@using domain.Devices.Canboard
 @using application.Services
 @inject DeviceManager DeviceManager
+@inject ICommsAdapterManager AdapterManager
 @implements IDisposable
 
 <PageTitle>Device</PageTitle>
@@ -15,19 +13,25 @@
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     @if (_currentDevice != null)
     {
-        @* Render appropriate view based on device type *@
+        @* Render BaseDeviceView with appropriate device type *@
         @switch (_currentDevice)
         {
             case PdmMaxDevice pdmMaxDevice:
-                <PdmMaxDeviceView Device="pdmMaxDevice"/>
+                <BaseDeviceView TDevice="PdmMaxDevice"
+                               Device="pdmMaxDevice"
+                               AdapterConnected="@AdapterManager.IsConnected" />
                 break;
 
             case PdmDevice pdmDevice:
-                <PdmDeviceView Device="pdmDevice"/>
+                <BaseDeviceView TDevice="PdmDevice"
+                               Device="pdmDevice"
+                               AdapterConnected="@AdapterManager.IsConnected" />
                 break;
 
             case CanboardDevice canboardDevice:
-                <CanboardDeviceView Device="canboardDevice" />
+                <BaseDeviceView TDevice="CanboardDevice"
+                               Device="canboardDevice"
+                               AdapterConnected="@AdapterManager.IsConnected" />
                 break;
 
             default:
