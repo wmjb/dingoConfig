@@ -82,8 +82,7 @@ public class CommsDataPipeline(
             {
                 msgLogger.Log(DataDirection.Rx, frame);
                 
-                // Route frame to DeviceManager
-                // DeviceManager passes to all devices so they can update their state/config
+                // Route frame to DeviceManager, passes to all devices so they can update their state/config
                 deviceManager.OnCanDataReceived(frame);
             }
             catch (Exception ex)
@@ -162,7 +161,7 @@ public class CommsDataPipeline(
     /// <summary>
     /// Queue a frame for transmission (normal priority)
     /// </summary>
-    public void QueueTransmit(CanFrame frame)
+    private void QueueTransmit(CanFrame frame)
     {
         _txChannel.Writer.TryWrite(frame);
     }

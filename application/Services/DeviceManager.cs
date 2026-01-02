@@ -30,15 +30,14 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     }
 
     /// <summary>
-    /// Get UI state for a device (creates if doesn't exist)
+    /// Get UI state for a device (creates device UI state if doesn't exist)
     /// </summary>
     public DeviceUiState GetDeviceUiState(Guid deviceId)
     {
-        if (!_deviceUiState.TryGetValue(deviceId, out var state))
-        {
-            state = new DeviceUiState();
-            _deviceUiState[deviceId] = state;
-        }
+        if (_deviceUiState.TryGetValue(deviceId, out var state)) return state;
+        
+        state = new DeviceUiState();
+        _deviceUiState[deviceId] = state;
         return state;
     }
 
@@ -225,7 +224,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     private void HandleMessageTimeout((int BaseId, int Prefix, int Index) key, DeviceCanFrame frame)
     {
-        if (!_requestQueue.TryGetValue(key, out var queuedFrame))
+        if (!_requestQueue.TryGetValue(key, out _))
             return;
 
         frame.RxAttempts++;

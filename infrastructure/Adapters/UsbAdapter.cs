@@ -8,7 +8,7 @@ namespace infrastructure.Adapters;
 
 public class UsbAdapter : ICommsAdapter
 {
-    public string? Name => "USB";
+    public string Name => "USB";
     private SerialPort? _serial;
     private Stopwatch? _rxStopwatch;
     public TimeSpan RxTimeDelta { get; private set; }

@@ -6,17 +6,11 @@ using domain.Models;
 
 namespace infrastructure.Adapters;
 
-public class SimAdapter : ICommsAdapter
+public class SimAdapter(SimPlayback playback) : ICommsAdapter
 {
-    private readonly SimPlayback _playback;
     private TimeSpan _rxTimeDelta = TimeSpan.FromMilliseconds(50);
 
-    public string? Name => "Sim";
-
-    public SimAdapter(SimPlayback playback)
-    {
-        _playback = playback;
-    }
+    public string Name => "Sim";
 
     public Task<bool> InitAsync(string port, CanBitRate bitRate, CancellationToken ct)
     {
@@ -27,13 +21,13 @@ public class SimAdapter : ICommsAdapter
     public Task<bool> StartAsync(CancellationToken ct)
     {
         IsConnected = true;
-        _playback.MessageReady += OnMessageReady;
+        playback.MessageReady += OnMessageReady;
         return Task.FromResult(true);
     }
 
     public Task<bool> StopAsync()
     {
-        _playback.MessageReady -= OnMessageReady;
+        playback.MessageReady -= OnMessageReady;
         IsConnected = false;
         return Task.FromResult(true);
     }
@@ -58,5 +52,5 @@ public class SimAdapter : ICommsAdapter
 
     TimeSpan ICommsAdapter.RxTimeDelta => _rxTimeDelta;
 
-    public bool IsConnected { get; set; }
+    public bool IsConnected { get; private set; }
 }
