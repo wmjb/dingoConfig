@@ -211,8 +211,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         // Start timeout timer
         StartMessageTimer(key, frame);
 
-        logger.LogDebug("Message queued: {Description} (BaseId={BaseId}, Prefix={Prefix})",
-            frame.MsgDescription, key.Item1, key.Item2);
+        //logger.LogDebug("Message queued: {Description} (BaseId={BaseId}, Prefix={Prefix})",
+        //    frame.MsgDescription, key.Item1, key.Item2);
     }
 
     private void StartMessageTimer((int, int, int) key, DeviceCanFrame frame)
@@ -273,6 +273,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         foreach (var msg in readMsgs)
         {
             QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
         }
 
         logger.LogInformation("Read started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
@@ -294,6 +295,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         foreach (var msg in downloadMsgs)
         {
             QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
         }
 
         logger.LogInformation("Write started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
@@ -316,13 +318,17 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         var modifyMsgs = device.GetModifyMsgs(newId);
         foreach (var msg in modifyMsgs)
         {
-            QueueMessage(msg);
+            QueueMessage(msg, true);
+            Thread.Sleep(1); //Slow down to give device time to respond
         }
 
         logger.LogInformation("Modify started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
         
+        //Wait for modify messages to be sent, then update the base ID
+        Thread.Sleep(300);
+        
         device.Name = newName;
-        device.BaseId =  newId;
+        device.BaseId = newId;
         
         return true;
     }

@@ -919,20 +919,18 @@ public class PdmDevice : IDevice
 
     public List<DeviceCanFrame> GetModifyMsgs(int newId)
     {
-        var id = BaseId;
-
         List<DeviceCanFrame> msgs =
         [
             new DeviceCanFrame
             {
-                DeviceBaseId = BaseId,
+                DeviceBaseId = newId, //Set msg ID to new ID so response is processed properly
                 Sent = false,
                 Received = false,
                 Prefix = (int)MessagePrefix.Can,
                 Index = 0,
                 Frame = new CanFrame
                 (
-                    Id: id,
+                    Id: BaseId - 1,
                     Len: 4,
                     Payload: [
                         Convert.ToByte(MessagePrefix.Can), //Byte 0

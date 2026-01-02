@@ -276,7 +276,8 @@
 
             DeviceManager.ModifyDeviceConfig(_modifyDevice.Guid, _newDeviceName, _newDeviceBaseId);
 
-            Notification.NewSuccess($"Device '{_newDeviceName}' modified successfully");
+            Notification.NewSuccess($"Device '{_newDeviceName}' modify successfully sent.");
+            Notification.NewWarning("Remember to Burn after modifying device base ID to store new ID on device");
             _showModifyForm = false;
             
         }
