@@ -3,173 +3,294 @@
 
 <MudCard Outlined="true" Class="mb-2">
     <MudCardContent>
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="Wiper.Name"
-                              Label="Name"
-                              Variant="Variant.Outlined" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSwitch @bind-Value="Wiper.Enabled"
-                           Label="Enabled"
-                           Color="Color.Primary" />
-            </MudItem>
-
-            <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mt-2">Mode & General Settings</MudText>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.Mode"
-                           Label="Wiper Mode"
-                           Variant="Variant.Outlined">
-                    @foreach (WiperMode mode in Enum.GetValues(typeof(WiperMode)))
-                    {
-                        <MudSelectItem Value="@mode">@mode</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSwitch @bind-Value="Wiper.ParkStopLevel"
-                           Label="Park Stop Level"
-                           Color="Color.Primary" />
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudNumericField @bind-Value="Wiper.WashWipeCycles"
-                                 Label="Wash Wipe Cycles"
-                                 Variant="Variant.Outlined"
-                                 Min="0"
-                                 Max="15" />
+        <MudGrid Spacing="5">
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Enable</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudTextField @bind-Value="Wiper.Name"
+                                      Label="Name"
+                                      Variant="Variant.Outlined"/>
+                        <MudSwitch @bind-Value="Wiper.Enabled"
+                                   Label="Enabled"
+                                   Color="Color.Primary"/>
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
 
-            <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mt-2">Input Mappings</MudText>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.SlowInput"
-                           Label="Slow Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.FastInput"
-                           Label="Fast Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.InterInput"
-                           Label="Intermittent Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.OnInput"
-                           Label="ON Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.SpeedInput"
-                           Label="Speed Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.ParkInput"
-                           Label="Park Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.SwipeInput"
-                           Label="Swipe Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="Wiper.WashInput"
-                           Label="Wash Input"
-                           Variant="Variant.Outlined"
-                           T="VarMap">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Mode</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudSelect @bind-Value="Wiper.Mode"
+                                   Label="Wiper Mode"
+                                   SelectedValueChanged="OnModeSelected"
+                                   Variant="Variant.Outlined">
+                            @foreach (WiperMode mode in Enum.GetValues(typeof(WiperMode)))
+                            {
+                                <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSwitch @bind-Value="Wiper.ParkStopLevel"
+                                   Label="Park Stop Level"
+                                   Color="Color.Primary"/>
+                        <MudNumericField @bind-Value="Wiper.WashWipeCycles"
+                                         Label="Wash Wipe Cycles"
+                                         Variant="Variant.Outlined"
+                                         Min="0"
+                                         Max="15"/>
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
 
-            <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mt-2">Speed Map</MudText>
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Required Inputs</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudSelect @bind-Value="Wiper.ParkInput"
+                                   Label="Park Input"
+                                   Variant="Variant.Outlined"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
-            @for (int i = 0; i < 8; i++)
-            {
-                var index = i; // Capture for lambda
-                <MudItem xs="6" md="3">
-                    <MudSelect @bind-Value="Wiper.SpeedMap[index]"
-                               Label="@($"Speed {index}")"
-                               Variant="Variant.Outlined">
-                        @foreach (WiperSpeed speed in Enum.GetValues(typeof(WiperSpeed)))
+            
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Mode Inputs</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudSelect @bind-Value="Wiper.SlowInput"
+                                   Label="Slow Input"
+                                   Variant="Variant.Outlined"
+                                   Disabled="@_slowInputDisabled"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="Wiper.FastInput"
+                                   Label="Fast Input"
+                                   Variant="Variant.Outlined"
+                                   Disabled="@_fastInputDisabled"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="Wiper.InterInput"
+                                   Label="Intermittent Input"
+                                   Variant="Variant.Outlined"
+                                   Disabled="@_interInputDisabled"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="Wiper.OnInput"
+                                   Label="On Input"
+                                   Variant="Variant.Outlined"
+                                   Disabled="@_onInputDisabled"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="Wiper.SpeedInput"
+                                   Label="Speed Input"
+                                   Variant="Variant.Outlined"
+                                   Disabled="@_speedInputDisabled"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Optional Inputs</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudSelect @bind-Value="Wiper.SwipeInput"
+                                   Label="Swipe Input"
+                                   Variant="Variant.Outlined"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="Wiper.WashInput"
+                                   Label="Wash Input"
+                                   Variant="Variant.Outlined"
+                                   T="VarMap">
+                            @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
+                            {
+                                <MudSelectItem Value="@varMap">@varMap</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Speed Map</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @for (int i = 0; i < 4; i++)
                         {
-                            <MudSelectItem Value="@speed">@speed</MudSelectItem>
+                            var index = i; // Capture for lambda
+                            <MudSelect @bind-Value="Wiper.SpeedMap[index]"
+                                       Label="@($"Speed {index}")"
+                                       Variant="Variant.Outlined"
+                                       Disabled="_speedInputDisabled">
+                                @foreach (WiperSpeed speed in Enum.GetValues(typeof(WiperSpeed)))
+                                {
+                                    <MudSelectItem Value="@speed">@speed</MudSelectItem>
+                                }
+                            </MudSelect>
                         }
-                    </MudSelect>
-                </MudItem>
-            }
-
-            <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mt-2">Intermittent Delays (seconds)</MudText>
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
-            @for (int i = 0; i < 6; i++)
-            {
-                var index = i; // Capture for lambda
-                <MudItem xs="6" md="4">
-                    <MudNumericField @bind-Value="Wiper.IntermitTime[index]"
-                                     Label="@($"Delay {index}")"
-                                     Variant="Variant.Outlined"
-                                     Min="0"
-                                     Step="0.1" />
-                </MudItem>
-            }
+            
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Speed Map</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @for (int i = 4; i < 8; i++)
+                        {
+                            var index = i; // Capture for lambda
+                            <MudSelect @bind-Value="Wiper.SpeedMap[index]"
+                                       Label="@($"Speed {index}")"
+                                       Variant="Variant.Outlined"
+                                       Disabled="_speedInputDisabled">
+                                @foreach (WiperSpeed speed in Enum.GetValues(typeof(WiperSpeed)))
+                                {
+                                    <MudSelectItem Value="@speed">@speed</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Intermittent Delays (s)</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            var index = i; // Capture for lambda
+                            <MudNumericField @bind-Value="Wiper.IntermitTime[index]"
+                                             Label="@($"Delay {index}")"
+                                             Variant="Variant.Outlined"
+                                             Min="0"
+                                             Step="0.1"/>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem>
+                <MudCard Elevation="4" Style="width: 250px; height: 100%">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6" Class="mt-2">Intermittent Delays (s)</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @for (int i = 3; i < 6; i++)
+                        {
+                            var index = i; // Capture for lambda
+                            <MudNumericField @bind-Value="Wiper.IntermitTime[index]"
+                                             Label="@($"Delay {index}")"
+                                             Variant="Variant.Outlined"
+                                             Min="0"
+                                             Step="0.1"/>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>
 
 @code {
-    [Parameter, EditorRequired]
-    public Wiper Wiper { get; set; } = null!;
+    [Parameter, EditorRequired] public Wiper Wiper { get; set; } = null!;
+
+    private bool _slowInputDisabled;
+    private bool _fastInputDisabled;
+    private bool _interInputDisabled;
+    private bool _onInputDisabled;
+    private bool _speedInputDisabled;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        SetInputsEnabled();
+    }
+
+    private void OnModeSelected(string value)
+    {
+        SetInputsEnabled();
+    }
+
+    private void SetInputsEnabled()
+    {
+        switch (Wiper.Mode)
+        {
+            case WiperMode.DigIn:
+                _onInputDisabled = true;
+                _speedInputDisabled = true;
+
+                _slowInputDisabled = false;
+                _fastInputDisabled = false;
+                _interInputDisabled = false;
+                break;
+            case WiperMode.IntIn:
+                _slowInputDisabled = true;
+                _fastInputDisabled = true;
+                _interInputDisabled = true;
+                _onInputDisabled = true;
+
+                _speedInputDisabled = false;
+                break;
+            case WiperMode.MixIn:
+                _slowInputDisabled = true;
+                _fastInputDisabled = true;
+                _interInputDisabled = true;
+
+                _onInputDisabled = false;
+                _speedInputDisabled = false;
+                break;
+        }
+    }
+
 }
