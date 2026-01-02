@@ -2,78 +2,95 @@
 
 <PageTitle>Home</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
     <MudPaper Elevation="0" Class="pa-6">
-        <MudText Typo="Typo.h3" GutterBottom="true">Welcome to dingoConfig</MudText>
-        <MudText Typo="Typo.body1" Class="mb-4">
-            Manage your dingo CAN devices (dingoPDM, dingoPDM-Max, CANBoard) through various communication adapters.
-        </MudText>
+        <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h3">dingoConfig</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">
+                Configure and monitor your devices
+            </MudText>
 
-        <MudGrid>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6" Class="mb-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Link" Class="mr-2" /> Connect Adapter
-                        </MudText>
-                        <MudText Typo="Typo.body2">
-                            Select and connect to a CAN communication adapter (USB, SLCAN, PCAN, or Simulated).
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/adapter">Go to Adapter</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+            <MudGrid Justify="Justify.Center">
+                <MudItem>
+                    <MudCard Elevation="4" Style="width: 175px; height: 100%;">
+                        <MudCardContent>
+                            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                <MudIcon Size="Size.Large" Icon="@Icons.Material.Filled.Bolt"/>
+                                <MudText Typo="Typo.h6">
+                                    dingoPDM
+                                </MudText>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
 
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6" Class="mb-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Devices" Class="mr-2" /> Manage Devices
-                        </MudText>
-                        <MudText Typo="Typo.body2">
-                            Create, configure, and monitor your dingo CAN devices.
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/devices">Go to Devices</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+                <MudItem>
+                    <MudCard Elevation="4" Style="width: 175px; height: 100%;">
+                        <MudCardContent>
+                            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                <MudIcon Size="Size.Large" Icon="@Icons.Material.Filled.OfflineBolt"/>
+                                <MudText Typo="Typo.h6">
+                                    dingoPDM-Max
+                                </MudText>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
 
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6" Class="mb-2">
-                            <MudIcon Icon="@Icons.Material.Filled.MonitorHeart" Class="mr-2" /> Real-time Monitoring
-                        </MudText>
-                        <MudText Typo="Typo.body2">
-                            View live data from your devices at 20Hz with SignalR real-time updates.
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/devices">Start Monitoring</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
+                <MudItem>
+                    <MudCard Elevation="4" Style="width: 175px; height: 100%;">
+                        <MudCardContent>
+                            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                <MudIcon Size="Size.Large" Icon="@Icons.Material.Filled.DeveloperBoard"/>
+                                <MudText Typo="Typo.h6">
+                                    CANBoard
+                                </MudText>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
 
-        <MudDivider Class="my-6" />
+            </MudGrid>
+        </MudStack>
+
+        <MudDivider Class="my-6"/>
 
         <MudText Typo="Typo.h5" GutterBottom="true">Features</MudText>
-        <MudList T="string">
-            <MudListItem T="string" Icon="@Icons.Material.Filled.Speed">
-                High-performance CAN bus communication (1,000-3,000 messages/second)
+
+        <MudList ReadOnly="true" T="string">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Cable">
+                Connect to various comms adapters
             </MudListItem>
-            <MudListItem T="string" Icon="@Icons.Material.Filled.Settings">
-                Device configuration management (~100 parameters per device)
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Memory">
+                Add device(s) to configure and monitor
             </MudListItem>
-            <MudListItem T="string" Icon="@Icons.Material.Filled.SwapHoriz">
-                Runtime adapter hot-swapping
+            <MudListItem T="string" Icon="@Icons.Material.Outlined.SaveAs">
+                Save the devices to a config file
             </MudListItem>
-            <MudListItem T="string" Icon="@Icons.Material.Filled.Update">
-                Real-time web monitoring with SignalR
+            <MudListItem T="string" Icon="@Icons.Material.Outlined.FolderOpen">
+                Open devices from a config file
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Article">
+                Monitor and export CAN traffic
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.ListAlt">
+                Monitor and export system message logs
+            </MudListItem>
+        </MudList>
+        
+        <MudDivider Class="my-6"/>
+
+        <MudText Typo="Typo.h6" GutterBottom="true">Getting Started</MudText>
+
+        <MudList ReadOnly="true" T="string">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Cable">
+                Select a comms adapter and connect
+            </MudListItem>
+            <MudListItem T="string" href="/devices" Icon="@Icons.Material.Filled.Memory">
+                Add device(s)
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Outlined.SaveAs">
+                Save the devices to a config file
             </MudListItem>
         </MudList>
     </MudPaper>
