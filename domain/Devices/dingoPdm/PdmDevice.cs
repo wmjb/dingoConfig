@@ -50,9 +50,9 @@ public class PdmDevice : IDevice
     [JsonPropertyName("outputs")] public List<Output> Outputs { get; } = [];
     [JsonPropertyName("canInputs")] public List<CanInput> CanInputs { get; } = [];
     [JsonPropertyName("virtualInputs")] public List<VirtualInput> VirtualInputs { get; } = [];
-    [JsonPropertyName("wipers")] public Wiper Wipers { get; } = new Wiper("wiper");
+    [JsonPropertyName("wipers")] public Wiper Wipers { get; protected set; } = null!;
     [JsonPropertyName("flashers")] public List<Flasher> Flashers { get; } = [];
-    [JsonPropertyName("starterDisable")] public StarterDisable StarterDisable { get; } = new("starterDisable");
+    [JsonPropertyName("starterDisable")] public StarterDisable StarterDisable { get; protected set; } = null!;
     [JsonPropertyName("counters")] public List<Counter> Counters { get; } = [];
     [JsonPropertyName("conditions")] public List<Condition> Conditions { get; } = [];
     
@@ -91,7 +91,7 @@ public class PdmDevice : IDevice
     {
         for (var i = 0; i < NumDigitalInputs; i++)
             Inputs.Add(new Input(i + 1, "digitalInput" + i));
-        
+
         for (var i = 0; i < NumOutputs; i++)
             Outputs.Add(new Output(i + 1, "output" + i));
 
@@ -109,6 +109,11 @@ public class PdmDevice : IDevice
 
         for (var i = 0; i < NumConditions; i++)
             Conditions.Add(new Condition(i + 1, "condition" + i));
+        
+        StarterDisable = new StarterDisable("starterDisable", NumOutputs);
+        
+        Wipers = new Wiper("wiper");
+        
     }
 
     protected virtual void SetLimits()

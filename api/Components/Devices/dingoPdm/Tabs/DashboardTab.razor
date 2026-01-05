@@ -297,7 +297,14 @@
         <MudCardContent>
             <MudStack AlignItems="AlignItems.Center" Spacing="1">
                 <MudText Typo="Typo.body1">@Device.StarterDisable.Name</MudText>
-
+                @for (var i = 0; i < Device.StarterDisable.OutputsDisabled.Count; i++)
+                {
+                    <MudChip T="bool"
+                             Color="@(Device.StarterDisable.OutputsDisabled[i] ? Color.Success : Color.Default)"
+                             Text="@($"Output {i + 1}")"
+                             Size="Size.Small"
+                             Variant="Variant.Outlined"/>
+                }
             </MudStack>
         </MudCardContent>
     </MudCard>

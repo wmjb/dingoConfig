@@ -35,30 +35,14 @@
                         <MudText Typo="Typo.h6" Class="mt-2">Disable</MudText>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudSwitch @bind-Value="StarterDisable.Output1"
-                                   Label="Output 1"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output2"
-                                   Label="Output 2"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output3"
-                                   Label="Output 3"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output4"
-                                   Label="Output 4"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output5"
-                                   Label="Output 5"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output6"
-                                   Label="Output 6"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output7"
-                                   Label="Output 7"
-                                   Color="Color.Primary"/>
-                        <MudSwitch @bind-Value="StarterDisable.Output8"
-                                   Label="Output 8"
-                                   Color="Color.Primary"/>
+                        @for (var i = 0; i < StarterDisable.OutputsDisabled.Count; i++)
+                        {
+                            var index = i; // Capture loop variable to avoid closure issues
+                            <MudSwitch T="bool"
+                                       @bind-Value="@StarterDisable.OutputsDisabled[index]"
+                                       Label="@($"Output {index + 1}")"
+                                       Color="Color.Primary"/>
+                        }
                     </MudCardContent>
                 </MudCard>
             </MudItem>

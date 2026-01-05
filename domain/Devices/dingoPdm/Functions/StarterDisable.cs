@@ -6,21 +6,14 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class StarterDisable(string name) : IDeviceFunction
+public class StarterDisable(string name, int outputCount) : IDeviceFunction
 {
     [JsonPropertyName("name")] public string Name {get; set;} = name;
-    [JsonIgnore] public int Number => 1; // Singleton function
+    [JsonIgnore] public int Number => 1;
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("input")] public VarMap Input {get; set;}
-    [JsonPropertyName("output1")] public bool Output1 {get; set;}
-    [JsonPropertyName("output2")] public bool Output2 {get; set;}
-    [JsonPropertyName("output3")] public bool Output3 {get; set;}
-    [JsonPropertyName("output4")] public bool Output4 {get; set;}
-    [JsonPropertyName("output5")] public bool Output5 {get; set;}
-    [JsonPropertyName("output6")] public bool Output6 {get; set;}
-    [JsonPropertyName("output7")] public bool Output7 {get; set;}
-    [JsonPropertyName("output8")] public bool Output8 {get; set;}
-    
+    [JsonPropertyName("outputsDisabled")] public List<bool> OutputsDisabled {get; set;} = [..new bool[outputCount]];
+
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
         return data;
@@ -68,14 +61,11 @@ public class StarterDisable(string name) : IDeviceFunction
 
         Enabled = ExtractSignalInt(data, 8, 1) == 1;
         Input = (VarMap)ExtractSignalInt(data, 16, 8);
-        Output1 = ExtractSignalInt(data, 24, 1) == 1;
-        Output2 = ExtractSignalInt(data, 25, 1) == 1;
-        Output3 = ExtractSignalInt(data, 26, 1) == 1;
-        Output4 = ExtractSignalInt(data, 27, 1) == 1;
-        Output5 = ExtractSignalInt(data, 28, 1) == 1;
-        Output6 = ExtractSignalInt(data, 29, 1) == 1;
-        Output7 = ExtractSignalInt(data, 30, 1) == 1;
-        Output8 = ExtractSignalInt(data, 31, 1) == 1;
+
+        for (int i = 0; i < OutputsDisabled.Count; i++)
+        {
+            OutputsDisabled[i] = ExtractSignalInt(data, 24 + i, 1) == 1;
+        }
 
         return true;
     }
@@ -86,14 +76,12 @@ public class StarterDisable(string name) : IDeviceFunction
         InsertSignalInt(data, (long)MessagePrefix.StarterDisable, 0, 8);
         InsertBool(data, Enabled, 8);
         InsertSignalInt(data, (long)Input, 16, 8);
-        InsertBool(data, Output1, 24);
-        InsertBool(data, Output2, 25);
-        InsertBool(data, Output3, 26);
-        InsertBool(data, Output4, 27);
-        InsertBool(data, Output5, 28);
-        InsertBool(data, Output6, 29);
-        InsertBool(data, Output7, 30);
-        InsertBool(data, Output8, 31);
+
+        for (int i = 0; i < OutputsDisabled.Count; i++)
+        {
+            InsertBool(data, OutputsDisabled[i], 24 + i);
+        }
+
         return data;
     }
 }
