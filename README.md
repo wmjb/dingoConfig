@@ -8,7 +8,7 @@
 
 # dingoConfig
 
-dingoConfig is a .NET application with a Blazor Server web UI for managing `dingoPDM`, `dingoPDM-Max`, `CANBoard`, etc. through various communication adapters (`USB`, `SLCAN`, `PCAN`, `Simulated`).
+dingoConfig is a .NET application with a Blazor Server web UI for managing [dingoPDM](https://github.com/corygrant/dingoPDM), [dingoPDM-Max](https://github.com/corygrant/dingoPDM-Max), [CANBoard](https://github.com/corygrant/CANBoard_HW), etc. through various communication adapters (`USB`, `SLCAN`, `PCAN`, `Simulated`).
 
 # [**Releases**](https://github.com/corygrant/dingoConfig/releases/)
 
