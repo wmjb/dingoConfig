@@ -24,20 +24,6 @@ public class DevicePlotService : IDisposable
     private const int WindowSeconds = 60;
     private const int BufferCapacity = SamplesPerSecond * WindowSeconds; // 1200
 
-    private static readonly string[] ColorPalette =
-    [
-        "#2196F3", // Blue
-        "#F44336", // Red
-        "#4CAF50", // Green
-        "#FF9800", // Orange
-        "#9C27B0", // Purple
-        "#00BCD4", // Cyan
-        "#FFEB3B", // Yellow
-        "#795548", // Brown
-        "#607D8B", // Blue Grey
-        "#E91E63"  // Pink
-    ];
-
     public DevicePlotService(DeviceManager deviceManager, ILogger<DevicePlotService> logger)
     {
         _deviceManager =  deviceManager;
@@ -76,7 +62,7 @@ public class DevicePlotService : IDisposable
     /// <summary>
     /// Adds a signal to plot for a device
     /// </summary>
-    public void AddSignal(Guid deviceId, IPlotReference reference)
+    public void AddSignal(Guid deviceId, IPlotReference reference, string color)
     {
         var plotData = GetOrCreatePlotData(deviceId);
 
@@ -87,14 +73,11 @@ public class DevicePlotService : IDisposable
             return;
         }
 
-        // Assign color from palette
-        var colorIndex = plotData.Signals.Count % ColorPalette.Length;
-
         var timeSeries = new SignalTimeSeries
         {
             Reference = reference,
             DataPoints = new CircularBuffer<PlotDataPoint>(BufferCapacity),
-            Color = ColorPalette[colorIndex]
+            Color = color
         };
 
         plotData.Signals[reference.Name] = timeSeries;
@@ -105,8 +88,8 @@ public class DevicePlotService : IDisposable
             StartSamplingTimer(deviceId, plotData);
         }
 
-        _logger.LogInformation("Added signal {Signal} to plot for device {DeviceId}",
-            reference.Name, deviceId);
+        _logger.LogInformation("Added signal {Signal} with color {Color} to plot for device {DeviceId}",
+            reference.Name, color, deviceId);
     }
 
     /// <summary>

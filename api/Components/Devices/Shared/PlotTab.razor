@@ -2,6 +2,7 @@
 @using application.Services
 @using application.Models
 @using Microsoft.JSInterop
+@using MudBlazor.Utilities
 @using Plotly.Blazor
 @using Plotly.Blazor.Traces
 @using Plotly.Blazor.Traces.ScatterLib
@@ -53,6 +54,24 @@
                 }
             </MudSelect>
 
+            <!-- Color Selection -->
+            <MudSelect T="string"
+                       @bind-Value="_selectedColor"
+                       Label="Color"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Style="min-width: 120px">
+                @foreach (var colorInfo in ColorPalette)
+                {
+                    <MudSelectItem Value="@colorInfo.Hex">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 20px; background-color: @colorInfo.Hex; border: 1px solid #ccc; border-radius: 3px;"></div>
+                            <span>@colorInfo.Name</span>
+                        </div>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
             <MudButton Color="Color.Primary"
                        Variant="Variant.Outlined"
                        StartIcon="@Icons.Material.Filled.Add"
@@ -72,8 +91,8 @@
                 {
                     var color = PlotService.GetSignalColor(Device.Guid, reference);
                     <MudChip Text="@reference.Name"
-                             Color="Color.Primary"
-                             Style="@($"background-color: {color}; color: white;")"
+                             Variant="Variant.Outlined"
+                             Style="@($"border-color: {color}; color: {color};")"
                              OnClose="@CreateRemoveCallback(reference)" />
                 }
             </MudChipSet>
@@ -103,7 +122,7 @@
 
 @code {
     [Parameter, EditorRequired] public TDevice Device { get; set; } = null!;
-    
+
     private PlotlyChart? _chart;
     private Config _config = new Config();
     private Layout _layout = new Layout();
@@ -116,6 +135,27 @@
 
     // Selection state
     private IPlotReference? _selectedProp;
+    private string _selectedColor = "#2196F3"; // Default to blue
+
+    // Color palette for signal selection
+    private static readonly List<(string Name, string Hex)> ColorPalette = new()
+    {
+        ("Blue", "#2196F3"),
+        ("Red", "#F44336"),
+        ("Green", "#4CAF50"),
+        ("Orange", "#FF9800"),
+        ("Purple", "#9C27B0"),
+        ("Cyan", "#00BCD4"),
+        ("Yellow", "#FFEB3B"),
+        ("Brown", "#795548"),
+        ("Blue Grey", "#607D8B"),
+        ("Pink", "#E91E63"),
+        ("Lime", "#CDDC39"),
+        ("Indigo", "#3F51B5"),
+        ("Teal", "#009688"),
+        ("Deep Orange", "#FF5722"),
+        ("Light Green", "#8BC34A")
+    };
 
     // Track data point counts per trace to use ExtendTrace
     private Dictionary<string, int> _traceSampleCounts = new();
@@ -250,7 +290,7 @@
     {
         if (_selectedProp == null) return;
 
-        PlotService.AddSignal(Device.Guid, _selectedProp);
+        PlotService.AddSignal(Device.Guid, _selectedProp, _selectedColor);
         _activeSignals = PlotService.GetActiveSignals(Device.Guid);
 
         // Add trace to chart - use initialLoad: true to include existing data
