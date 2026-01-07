@@ -1,4 +1,5 @@
 @using domain.Devices.Canboard
+@typeparam TDevice where TDevice : CanboardDevice
 
 <div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
     <MudAlert Severity="Severity.Info">
@@ -8,5 +9,5 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired] public CanboardDevice Device { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = null!;
 }

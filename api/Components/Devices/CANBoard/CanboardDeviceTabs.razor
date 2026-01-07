@@ -1,23 +1,26 @@
 @using api.Components.Devices.CANBoard.Tabs
+@using api.Components.Devices.Shared
 @using domain.Devices.Canboard
 @typeparam TDevice where TDevice : CanboardDevice
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
     <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
-        <DashboardTab Device="Device" />
+        <DashboardTab TDevice="TDevice" Device="Device" />
     </MudTabPanel>
 
     <MudTabPanel Text="Configuration" Icon="@Icons.Material.Filled.Settings">
-        <ConfigurationTab Device="Device" />
+        <ConfigurationTab TDevice="TDevice" Device="Device" />
     </MudTabPanel>
 
     <MudTabPanel Text="Plot" Icon="@Icons.Material.Filled.StackedLineChart">
-        <PlotTab />
+        <PlotTab TDevice="TDevice" Device="Device" />
     </MudTabPanel>
 
+@*
     <MudTabPanel Text="Flow" Icon="@Icons.Material.Filled.DataExploration">
         <FlowTab />
     </MudTabPanel>
+    *@
 </MudTabs>
 
 @code {

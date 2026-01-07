@@ -366,7 +366,7 @@ public class DevicePlotService : IDisposable
                                 typeof(PlotReference<>).MakeGenericType(itemType),
                                 item,
                                 itemProp,
-                                $"{prefix}.{prop.Name}.{itemPlotableAttr.DisplayName}[{index}]",
+                                $"{prefix}.{prop.Name}[{index}].{itemPlotableAttr.DisplayName}",
                                 itemPlotableAttr.Unit)!;
                             plotRefs.Add(plotRef);
                         }
