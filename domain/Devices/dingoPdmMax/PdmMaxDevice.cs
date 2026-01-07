@@ -17,14 +17,6 @@ public class PdmMaxDevice(ILogger<PdmMaxDevice> logger, string name, int baseId)
 
     [JsonIgnore] public override string Type => "dingoPDM-Max";
 
-    protected override void SetLimits()
-    {
-        Outputs[0].NominalCurrentLimit = 26.0;
-        Outputs[1].NominalCurrentLimit = 26.0;
-        Outputs[2].NominalCurrentLimit = 26.0;
-        Outputs[3].NominalCurrentLimit = 26.0;
-    }
-
     protected override void ReadMessage2(byte[] data)
     {
         //Unused with Max

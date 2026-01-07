@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -10,9 +11,9 @@ public class AnalogInput(int number, string name) : IDeviceFunction
     [JsonPropertyName("number")] public int Number { get; set; } = number;
     [JsonPropertyName("name")] public string Name { get; set; } = name;
 
-    [JsonIgnore] public double Millivolts { get; set; }
-    [JsonIgnore] public int RotarySwitchPos { get; set; }
-    [JsonIgnore] public bool DigitalIn { get; set; }
+    [JsonIgnore][Plotable(displayName:"Millivolts")] public double Millivolts { get; set; }
+    [JsonIgnore][Plotable(displayName:"RotarySwPos")] public int RotarySwitchPos { get; set; }
+    [JsonIgnore][Plotable(displayName:"DigIn")] public bool DigitalIn { get; set; }
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

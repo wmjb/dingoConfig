@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+using System.Reflection;
 
 namespace application.Models;
 
@@ -7,37 +7,38 @@ public interface IPlotReference
     string Name { get; }
     string Unit { get; }
     double GetValue();
-    string PropertyName { get; }
     object? SourceObject { get; }
+    PropertyInfo Prop { get; }
 }
 
-public class PlotReference<TSource> : IPlotReference
+public class PlotReference<T>(
+    T source,
+    PropertyInfo prop,
+    string name,
+    string unit)
+    : IPlotReference
 {
-    private readonly TSource _source;
-    private readonly Func<TSource, double> _getter;
+    public string Name { get; } = name;
+    public string Unit { get; } = unit;
+    public object? SourceObject => source;
+    public PropertyInfo Prop => prop;
 
-    public PlotReference(
-        TSource source, 
-        Expression<Func<TSource, double>> propertyExpression,
-        string name,
-        string unit)
+    public double GetValue()
     {
-        _source = source;
-        _getter = propertyExpression.Compile();
-        Name = name;
-        Unit = unit;
+        var value = prop.GetValue(source);
 
-        PropertyName = "";
-        if (propertyExpression.Body is MemberExpression memberExpr)
-        {
-            PropertyName = memberExpr.Member.Name;
-        }
+        if (value == null)
+            return 0.0;
+
+        if (prop.PropertyType == typeof(bool))
+            return (bool)value ? 1.0 : 0.0;
+
+        if (prop.PropertyType == typeof(int))
+            return (int)value;
+
+        if (prop.PropertyType == typeof(double))
+            return (double)value;
+
+        return 0.0;
     }
-
-    public string Name { get; }
-    public string Unit { get; }
-    public string PropertyName { get; }
-    public object? SourceObject => _source;
-    
-    public double GetValue() => _getter(_source);
 }

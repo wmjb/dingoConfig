@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Devices.dingoPdm.Functions;
 using domain.Enums;
@@ -36,10 +37,10 @@ public class PdmDevice : IDevice
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
 
     
-    [JsonIgnore] public DeviceState DeviceState { get; private set; }
-    [JsonIgnore] public double TotalCurrent { get; private set; }
-    [JsonIgnore] public double BatteryVoltage { get; private set; }
-    [JsonIgnore] public double BoardTempC { get; private set; }
+    [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; private set; }
+    [JsonIgnore][Plotable(displayName:"TotalCurrent", unit:"A")] public double TotalCurrent { get; private set; }
+    [JsonIgnore][Plotable(displayName:"BatteryVoltage", unit:"V")] public double BatteryVoltage { get; private set; }
+    [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; private set; }
     [JsonIgnore] public string Version { get; private set; } = "v0.0.0";
     
     [JsonIgnore] public bool SleepEnabled { get; set; }
@@ -82,7 +83,6 @@ public class PdmDevice : IDevice
 
         // ReSharper disable VirtualMemberCallInConstructor
         InitializeCollections();
-        SetLimits();
 
         Logger.LogDebug("PDM {Name} created", Name);
     }
@@ -114,19 +114,6 @@ public class PdmDevice : IDevice
         
         Wipers = new Wiper("wiper");
         
-    }
-
-    protected virtual void SetLimits()
-    {
-        //Set limits
-        Outputs[0].NominalCurrentLimit = 13.0;
-        Outputs[1].NominalCurrentLimit = 13.0;
-        Outputs[2].NominalCurrentLimit = 8.0;
-        Outputs[3].NominalCurrentLimit = 8.0;
-        Outputs[4].NominalCurrentLimit = 8.0;
-        Outputs[5].NominalCurrentLimit = 8.0;
-        Outputs[6].NominalCurrentLimit = 8.0;
-        Outputs[7].NominalCurrentLimit = 8.0;
     }
 
     private void Clear()

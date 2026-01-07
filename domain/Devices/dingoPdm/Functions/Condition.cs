@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
@@ -16,7 +17,7 @@ public class Condition(int number, string name) : IDeviceFunction
     [JsonPropertyName("operator")] public Operator Operator {get; set;}
     [JsonPropertyName("arg")] public int Arg {get; set;}
 
-    [JsonIgnore] public int Value {get; set;}
+    [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -21,7 +22,7 @@ public class Counter(int number, string name) : IDeviceFunction
     [JsonPropertyName("resetEdge")] public InputEdge ResetEdge {get; set;}
     [JsonPropertyName("wrapAround")] public bool WrapAround {get; set;}
 
-    [JsonIgnore] public int Value {get; set;}
+    [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

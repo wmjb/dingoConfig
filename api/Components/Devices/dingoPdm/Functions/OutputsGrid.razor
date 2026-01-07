@@ -39,7 +39,7 @@
             <EditTemplate>
                 <MudNumericField @bind-Value="@context.Item.CurrentLimit" 
                                  Min="0"
-                                 Max="@((context.Item.NominalCurrentLimit * CurrentLimitMult))"
+                                 Max="100"
                                  Step="1.0"/>
             </EditTemplate>
         </TemplateColumn>
@@ -47,7 +47,7 @@
             <EditTemplate>
                 <MudNumericField @bind-Value="@context.Item.InrushCurrentLimit" 
                                  Min="0"
-                                 Max="@((context.Item.NominalCurrentLimit * InrushLimitMult))"
+                                 Max="100"
                                  Step="1.0"/>
             </EditTemplate>
         </TemplateColumn>

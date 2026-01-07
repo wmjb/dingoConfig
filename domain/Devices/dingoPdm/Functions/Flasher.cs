@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -16,7 +17,7 @@ public class Flasher(int number, string name) : IDeviceFunction
     [JsonPropertyName("onTime")] public int OnTime {get; set;}
     [JsonPropertyName("offTime")] public int  OffTime {get; set;}
 
-    [JsonIgnore] public bool Value {get; set;}
+    [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

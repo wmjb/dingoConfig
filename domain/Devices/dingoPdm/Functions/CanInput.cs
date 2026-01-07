@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
@@ -32,8 +33,8 @@ public class CanInput(int number, string name) : IDeviceFunction
         }
     }
     
-    [JsonIgnore] public bool Output { get; set; }
-    [JsonIgnore] public int Value {get; set;}
+    [JsonIgnore][Plotable(displayName:"State")] public bool Output { get; set; }
+    [JsonIgnore][Plotable(displayName:"Value")] public int Value {get; set;}
 
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

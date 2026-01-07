@@ -1,30 +1,31 @@
+using System.Collections;
+using System.Reflection;
+using System.Text.Json.Serialization;
 using application.Common;
 using application.Models;
+using domain.Common;
 using Microsoft.Extensions.Logging;
 
 namespace application.Services;
 
-public enum RecordingState
-{
-    Stopped,   // No timer, no data collection
-    Recording, // Timer active, collecting data
-    Paused     // Timer stopped, data preserved
-}
+/*
+ * DevicePlotService->DevicePlots->DevicePlot->Signals->Signal->Reference->GetValue()
+ */
 
 public class DevicePlotService : IDisposable
 {
     private readonly DeviceManager _deviceManager;
     private readonly ILogger<DevicePlotService> _logger;
-
+        
     private readonly Dictionary<Guid, DevicePlotData> _devicePlots = new();
-    private readonly Dictionary<Guid, object> _deviceLocks = new();
+    private readonly Dictionary<Guid, List<IPlotReference>> _deviceProps = new();
 
     private const int SamplesPerSecond = 20;
     private const int WindowSeconds = 60;
     private const int BufferCapacity = SamplesPerSecond * WindowSeconds; // 1200
 
     private static readonly string[] ColorPalette =
-    {
+    [
         "#2196F3", // Blue
         "#F44336", // Red
         "#4CAF50", // Green
@@ -35,128 +36,127 @@ public class DevicePlotService : IDisposable
         "#795548", // Brown
         "#607D8B", // Blue Grey
         "#E91E63"  // Pink
-    };
+    ];
 
     public DevicePlotService(DeviceManager deviceManager, ILogger<DevicePlotService> logger)
     {
-        _deviceManager = deviceManager;
+        _deviceManager =  deviceManager;
         _logger = logger;
+        
+        _deviceManager.DeviceAdded += DeviceAddedHandler;
     }
 
+    private void DeviceAddedHandler(object? sender, DeviceAddedEventArgs e)
+    {
+        if (_deviceProps.ContainsKey(e.Device.Guid))
+        {
+            _logger.LogWarning("Device {Device} props already added for {DeviceId}",
+                e.Device.Name, e.Device.Guid);
+            return;
+        }
+        
+        _deviceProps[e.Device.Guid] = CreatePlotReferencesFromObject(e.Device, e.Device.Name);
+    }
+
+    public List<IPlotReference> GetAvailableProps(Guid deviceId)
+    {
+        return !_deviceProps.TryGetValue(deviceId, out var propData) ? [] : propData;
+    }
+    
     /// <summary>
     /// Adds a signal to plot for a device
     /// </summary>
-    public void AddSignal(Guid deviceId, PlotSignalDescriptor descriptor)
+    public void AddSignal(Guid deviceId, IPlotReference reference)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        var plotData = GetOrCreatePlotData(deviceId);
+
+        if (plotData.Signals.ContainsKey(reference.Name))
         {
-            var plotData = GetOrCreatePlotData(deviceId);
-
-            if (plotData.Signals.ContainsKey(descriptor.Key))
-            {
-                _logger.LogWarning("Signal {Signal} already being plotted for device {DeviceId}",
-                    descriptor.GetDisplayName(), deviceId);
-                return;
-            }
-
-            // Assign color from palette
-            int colorIndex = plotData.Signals.Count % ColorPalette.Length;
-
-            var timeSeries = new SignalTimeSeries
-            {
-                Descriptor = descriptor,
-                DataPoints = new CircularBuffer<PlotDataPoint>(BufferCapacity),
-                Color = ColorPalette[colorIndex]
-            };
-
-            plotData.Signals[descriptor.Key] = timeSeries;
-
-            // Start sampling timer if state is Recording and this is first signal
-            if (plotData.State == RecordingState.Recording && plotData.Signals.Count == 1)
-            {
-                StartSamplingTimer(deviceId, plotData);
-            }
-
-            _logger.LogInformation("Added signal {Signal} to plot for device {DeviceId}",
-                descriptor.GetDisplayName(), deviceId);
+            _logger.LogWarning("Signal {Signal} already being plotted for device {DeviceId}",
+                reference.Name, deviceId);
+            return;
         }
+
+        // Assign color from palette
+        var colorIndex = plotData.Signals.Count % ColorPalette.Length;
+
+        var timeSeries = new SignalTimeSeries
+        {
+            Reference = reference,
+            DataPoints = new CircularBuffer<PlotDataPoint>(BufferCapacity),
+            Color = ColorPalette[colorIndex]
+        };
+
+        plotData.Signals[reference.Name] = timeSeries;
+
+        // Start sampling timer if state is Recording and this is first signal
+        if (plotData is { State: RecordingState.Recording, Signals.Count: 1 })
+        {
+            StartSamplingTimer(deviceId, plotData);
+        }
+
+        _logger.LogInformation("Added signal {Signal} to plot for device {DeviceId}",
+            reference.Name, deviceId);
     }
 
     /// <summary>
     /// Removes a signal from plot
     /// </summary>
-    public void RemoveSignal(Guid deviceId, PlotSignalDescriptor descriptor)
+    public void RemoveSignal(Guid deviceId, IPlotReference reference)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return;
+
+        plotData.Signals.Remove(reference.Name);
+
+        // Stop timer if no more signals and state is Recording
+        if (plotData.Signals.Count == 0 && plotData.State == RecordingState.Recording)
         {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return;
-
-            plotData.Signals.Remove(descriptor.Key);
-
-            // Stop timer if no more signals and state is Recording
-            if (plotData.Signals.Count == 0 && plotData.State == RecordingState.Recording)
-            {
-                StopSamplingTimer(plotData);
-                _logger.LogInformation("Removed last signal, stopped sampling for device {DeviceId}", deviceId);
-            }
+            StopSamplingTimer(plotData);
+            _logger.LogInformation("Removed last signal, stopped sampling for device {DeviceId}", deviceId);
         }
     }
 
     /// <summary>
     /// Gets active signals for a device
     /// </summary>
-    public List<PlotSignalDescriptor> GetActiveSignals(Guid deviceId)
+    public List<IPlotReference> GetActiveSignals(Guid deviceId)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
-        {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return new List<PlotSignalDescriptor>();
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return new List<IPlotReference>();
 
-            return plotData.Signals.Values
-                .Select(s => s.Descriptor)
-                .ToList();
-        }
+        return plotData.Signals.Values
+            .Select(s => s.Reference)
+            .ToList();
     }
 
     /// <summary>
     /// Gets plot data for a specific signal
     /// </summary>
-    public List<(DateTime Timestamp, double Value)> GetPlotData(Guid deviceId, PlotSignalDescriptor descriptor)
+    public List<(DateTime Timestamp, double Value)> GetPlotData(Guid deviceId, IPlotReference reference)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
-        {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return new List<(DateTime, double)>();
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return new List<(DateTime, double)>();
 
-            if (!plotData.Signals.TryGetValue(descriptor.Key, out var timeSeries))
-                return new List<(DateTime, double)>();
+        if (!plotData.Signals.TryGetValue(reference.Name, out var timeSeries))
+            return new List<(DateTime, double)>();
 
-            var dataPoints = timeSeries.DataPoints.GetAll();
-            return dataPoints.Select(p => (p.Timestamp, p.Value)).ToList();
-        }
+        var dataPoints = timeSeries.DataPoints.GetAll();
+        return dataPoints.Select(p => (p.Timestamp, p.Value)).ToList();
     }
 
     /// <summary>
     /// Gets the color assigned to a signal
     /// </summary>
-    public string? GetSignalColor(Guid deviceId, PlotSignalDescriptor descriptor)
+    public string? GetSignalColor(Guid deviceId, IPlotReference reference)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
-        {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return null;
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return null;
 
-            if (!plotData.Signals.TryGetValue(descriptor.Key, out var timeSeries))
-                return null;
+        if (!plotData.Signals.TryGetValue(reference.Name, out var timeSeries))
+            return null;
 
-            return timeSeries.Color;
-        }
+        return timeSeries.Color;
     }
 
     /// <summary>
@@ -164,14 +164,10 @@ public class DevicePlotService : IDisposable
     /// </summary>
     public RecordingState GetRecordingState(Guid deviceId)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
-        {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return RecordingState.Stopped;
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return RecordingState.Stopped;
 
-            return plotData.State;
-        }
+        return plotData.State;
     }
 
     /// <summary>
@@ -179,27 +175,23 @@ public class DevicePlotService : IDisposable
     /// </summary>
     public void StartRecording(Guid deviceId)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        var plotData = GetOrCreatePlotData(deviceId);
+
+        if (plotData.State == RecordingState.Recording)
         {
-            var plotData = GetOrCreatePlotData(deviceId);
-
-            if (plotData.State == RecordingState.Recording)
-            {
-                _logger.LogWarning("Recording already active for device {DeviceId}", deviceId);
-                return;
-            }
-
-            plotData.State = RecordingState.Recording;
-
-            // Start timer if we have signals
-            if (plotData.Signals.Count > 0)
-            {
-                StartSamplingTimer(deviceId, plotData);
-            }
-
-            _logger.LogInformation("Started recording for device {DeviceId}", deviceId);
+            _logger.LogWarning("Recording already active for device {DeviceId}", deviceId);
+            return;
         }
+
+        plotData.State = RecordingState.Recording;
+
+        // Start timer if we have signals
+        if (plotData.Signals.Count > 0)
+        {
+            StartSamplingTimer(deviceId, plotData);
+        }
+
+        _logger.LogInformation("Started recording for device {DeviceId}", deviceId);
     }
 
     /// <summary>
@@ -207,23 +199,19 @@ public class DevicePlotService : IDisposable
     /// </summary>
     public void PauseRecording(Guid deviceId)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return;
+
+        if (plotData.State != RecordingState.Recording)
         {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return;
-
-            if (plotData.State != RecordingState.Recording)
-            {
-                _logger.LogWarning("Cannot pause - not currently recording for device {DeviceId}", deviceId);
-                return;
-            }
-
-            plotData.State = RecordingState.Paused;
-            StopSamplingTimer(plotData);
-
-            _logger.LogInformation("Paused recording for device {DeviceId}", deviceId);
+            _logger.LogWarning("Cannot pause - not currently recording for device {DeviceId}", deviceId);
+            return;
         }
+
+        plotData.State = RecordingState.Paused;
+        StopSamplingTimer(plotData);
+
+        _logger.LogInformation("Paused recording for device {DeviceId}", deviceId);
     }
 
     /// <summary>
@@ -231,23 +219,19 @@ public class DevicePlotService : IDisposable
     /// </summary>
     public void StopRecording(Guid deviceId)
     {
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+            return;
+
+        plotData.State = RecordingState.Stopped;
+        StopSamplingTimer(plotData);
+
+        // Clear all signal data
+        foreach (var signal in plotData.Signals.Values)
         {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return;
-
-            plotData.State = RecordingState.Stopped;
-            StopSamplingTimer(plotData);
-
-            // Clear all signal data
-            foreach (var signal in plotData.Signals.Values)
-            {
-                signal.DataPoints.Clear();
-            }
-
-            _logger.LogInformation("Stopped recording for device {DeviceId}", deviceId);
+            signal.DataPoints.Clear();
         }
+
+        _logger.LogInformation("Stopped recording for device {DeviceId}", deviceId);
     }
 
     private void StartSamplingTimer(Guid deviceId, DevicePlotData plotData)
@@ -261,7 +245,7 @@ public class DevicePlotService : IDisposable
         plotData.SamplingTimer = new Timer(_ =>
         {
             SampleAllSignals(deviceId);
-        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(50)); // 20 Hz
+        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(1000 / SamplesPerSecond));
 
         _logger.LogInformation("Started sampling timer for device {DeviceId}", deviceId);
     }
@@ -274,67 +258,155 @@ public class DevicePlotService : IDisposable
 
     private void SampleAllSignals(Guid deviceId)
     {
-        var device = _deviceManager.GetDevice(deviceId);
-        if (device == null)
+        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
             return;
 
-        var lockObj = GetOrCreateLock(deviceId);
-        lock (lockObj)
+        // Only sample if we're in Recording state
+        if (plotData.State != RecordingState.Recording)
+            return;
+
+        var timestamp = DateTime.UtcNow;
+
+        foreach (var signal in plotData.Signals.Values)
         {
-            if (!_devicePlots.TryGetValue(deviceId, out var plotData))
-                return;
-
-            // Only sample if we're in Recording state
-            if (plotData.State != RecordingState.Recording)
-                return;
-
-            var timestamp = DateTime.UtcNow;
-
-            foreach (var signal in plotData.Signals.Values)
+            try
             {
-                try
-                {
-                    double value = SignalValueExtractor.GetValue(device, signal.Descriptor);
+                double value = signal.Reference.GetValue();
 
-                    var dataPoint = new PlotDataPoint
-                    {
-                        Timestamp = timestamp,
-                        Value = value
-                    };
-
-                    signal.DataPoints.Add(dataPoint);
-                }
-                catch (Exception ex)
+                var dataPoint = new PlotDataPoint
                 {
-                    _logger.LogError(ex, "Error sampling signal {Signal} for device {DeviceId}",
-                        signal.Descriptor.GetDisplayName(), deviceId);
-                }
+                    Timestamp = timestamp,
+                    Value = value
+                };
+
+                signal.DataPoints.Add(dataPoint);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sampling signal {Signal} for device {DeviceId}",
+                    signal.Reference.Name, deviceId);
             }
         }
     }
 
     private DevicePlotData GetOrCreatePlotData(Guid deviceId)
     {
-        if (!_devicePlots.TryGetValue(deviceId, out var plotData))
+        if (_devicePlots.TryGetValue(deviceId, out var plotData)) return plotData;
+        
+        plotData = new DevicePlotData
         {
-            plotData = new DevicePlotData
-            {
-                DeviceId = deviceId,
-                State = RecordingState.Stopped
-            };
-            _devicePlots[deviceId] = plotData;
-        }
+            DeviceId = deviceId,
+            State = RecordingState.Stopped
+        };
+        _devicePlots[deviceId] = plotData;
         return plotData;
     }
-
-    private object GetOrCreateLock(Guid deviceId)
+    
+    private static List<IPlotReference> CreatePlotReferencesFromObject<T>(
+        T source,
+        string prefix = "Device")
     {
-        if (!_deviceLocks.TryGetValue(deviceId, out var lockObj))
+        var plotRefs = new List<IPlotReference>();
+
+        if (source == null)
+            return plotRefs;
+
+        // Use runtime type instead of compile-time type to get concrete properties
+        var actualType = source.GetType();
+        var properties = actualType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var prop in properties)
         {
-            lockObj = new object();
-            _deviceLocks[deviceId] = lockObj;
+            var plotableAttr = prop.GetCustomAttribute<PlotableAttribute>();
+
+            // Check if this property itself is plotable
+            if (plotableAttr?.DisplayName is { Length: > 0 })
+            {
+                // Only include bool, int, double types
+                if (prop.PropertyType == typeof(bool) ||
+                    prop.PropertyType == typeof(int) ||
+                    prop.PropertyType == typeof(double))
+                {
+                    var plotLine = new PlotReference<T>(
+                        source, 
+                        prop, 
+                        $"{prefix}.{plotableAttr.DisplayName}", 
+                        plotableAttr.Unit);
+                    plotRefs.Add(plotLine);
+                }
+            }
+
+            // Explore collections (List<T>) - ONE LEVEL DEEP ONLY
+            if (prop.PropertyType.IsGenericType &&
+                prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                if (prop.GetValue(source) is not IEnumerable list) continue;
+                
+                var index = 0;
+                foreach (var item in list)
+                {
+                    if (item != null)
+                    {
+                        // Get plotable properties from the list item (non-recursive)
+                        var itemType = item.GetType();
+                        var itemProps = itemType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                        foreach (var itemProp in itemProps)
+                        {
+                            var itemPlotableAttr = itemProp.GetCustomAttribute<PlotableAttribute>();
+                            if (itemPlotableAttr?.DisplayName is not { Length: > 0 })
+                                continue;
+                            
+                            // Only include bool, int, double types
+                            if (itemProp.PropertyType != typeof(bool) &&
+                                itemProp.PropertyType != typeof(int) &&
+                                itemProp.PropertyType != typeof(double)) continue;
+
+                            var plotRef = (IPlotReference)Activator.CreateInstance(
+                                typeof(PlotReference<>).MakeGenericType(itemType),
+                                item,
+                                itemProp,
+                                $"{prefix}.{prop.Name}.{itemPlotableAttr.DisplayName}[{index}]",
+                                itemPlotableAttr.Unit)!;
+                            plotRefs.Add(plotRef);
+                        }
+                    }
+                    index++;
+                }
+            }
+            // Explore single complex objects (ONE LEVEL DEEP ONLY)
+            else if (prop.PropertyType.IsClass &&
+                     prop.PropertyType != typeof(string) &&
+                     !prop.PropertyType.IsPrimitive)
+            {
+                var nestedObject = prop.GetValue(source);
+                if (nestedObject == null) continue;
+                
+                var nestedType = nestedObject.GetType();
+                var nestedProps = nestedType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var nestedProp in nestedProps)
+                {
+                    var nestedPlotableAttr = nestedProp.GetCustomAttribute<PlotableAttribute>();
+                    if (nestedPlotableAttr?.DisplayName is not { Length: > 0 }) continue;
+                    
+                    // Only include bool, int, double types
+                    if (nestedProp.PropertyType != typeof(bool) &&
+                        nestedProp.PropertyType != typeof(int) &&
+                        nestedProp.PropertyType != typeof(double)) continue;
+
+                    var plotRef = (IPlotReference)Activator.CreateInstance(
+                        typeof(PlotReference<>).MakeGenericType(nestedType),
+                        nestedObject,
+                        nestedProp,
+                        $"{prefix}.{prop.Name}.{nestedPlotableAttr.DisplayName}",
+                        nestedPlotableAttr.Unit)!;
+                    plotRefs.Add(plotRef);
+                }
+            }
         }
-        return lockObj;
+
+        return plotRefs;
     }
 
     public void Dispose()
@@ -344,8 +416,15 @@ public class DevicePlotService : IDisposable
             plotData.SamplingTimer?.Dispose();
         }
         _devicePlots.Clear();
-        _deviceLocks.Clear();
     }
+    
+}
+
+public enum RecordingState
+{
+    Stopped,   // No timer, no data collection
+    Recording, // Timer active, collecting data
+    Paused     // Timer stopped, data preserved
 }
 
 // Internal data structures
@@ -369,3 +448,4 @@ internal class PlotDataPoint
     public DateTime Timestamp { get; set; }
     public double Value { get; set; }
 }
+

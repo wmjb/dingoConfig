@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -10,7 +11,7 @@ public class DigitalInput(int number, string name) : IDeviceFunction
     [JsonPropertyName("number")] public int Number { get; set; } = number;
     [JsonPropertyName("name")] public string Name { get; set; } = name;
     
-    [JsonIgnore] public bool State;
+    [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

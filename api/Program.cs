@@ -61,6 +61,7 @@ builder.Services.AddSingleton<DeviceManager>();
 builder.Services.AddSingleton<CanMsgLogger>();
 builder.Services.AddSingleton<SystemLogger>();
 builder.Services.AddSingleton<SimPlayback>();
+builder.Services.AddSingleton<DevicePlotService>();
 
 // Add background services
 builder.Services.AddHostedService<CommsDataPipeline>();
@@ -70,6 +71,8 @@ builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
     new SystemLoggerProvider(sp.GetRequiredService<SystemLogger>()));
 
 var app = builder.Build();
+
+_ = app.Services.GetRequiredService<DevicePlotService>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

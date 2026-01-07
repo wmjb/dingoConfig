@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
@@ -12,11 +13,12 @@ public class Input(int number, string name) : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; } = name;
     [JsonPropertyName("number")] public int Number { get;} = number;
-    [JsonPropertyName("state")] public bool State { get; set; }
     [JsonPropertyName("invert")] public bool Invert { get; set; }
     [JsonPropertyName("mode")] public InputMode Mode { get; set; }
     [JsonPropertyName("debounceTime")] public int DebounceTime { get; set; }
     [JsonPropertyName("pull")] public InputPull Pull { get; set; }
+    
+    [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
@@ -33,14 +34,19 @@ public class Output(int number, string name) : IDeviceFunction
     [JsonPropertyName("softStartRampTime")] public int SoftStartRampTime { get; set; }
     [JsonPropertyName("dutyCycleDenominator")] public int DutyCycleDenominator { get; set; }
     
-    [JsonIgnore] public double Current { get; set; }
-    [JsonIgnore] public OutState State { get; set; }
-    [JsonIgnore] public int ResetCount { get; set; }
-    [JsonIgnore] public double CurrentDutyCycle { get; set; }
-    [JsonIgnore] public double CalculatedPower { get; set; }
-    
-    //Limit checks
-    [JsonIgnore] public double NominalCurrentLimit { get; set; }
+    [JsonIgnore][Plotable(displayName:"Current", unit:"A")] public double Current { get; set; }
+    [JsonIgnore][Plotable(displayName:"State")] public OutState State { get; set; }
+    [JsonIgnore][Plotable(displayName:"ResetCount")] public int ResetCount { get; set; }
+    [JsonIgnore][Plotable(displayName:"DutyCycle", unit:"%")] public double CurrentDutyCycle
+    {
+        get;
+        set
+        {
+            field = value;
+            CalculatedCurrent = (field / 100.0) * Current;
+        }
+    }
+    [JsonIgnore][Plotable(displayName:"CalcCurrent", unit:"A")] public double CalculatedCurrent { get; set; }
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

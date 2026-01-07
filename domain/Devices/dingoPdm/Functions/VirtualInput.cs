@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
@@ -23,7 +24,7 @@ public class VirtualInput(int number, string name) : IDeviceFunction
     [JsonPropertyName("cond2")] public Conditional Cond2 { get; set; }
     [JsonPropertyName("mode")] public InputMode Mode {get; set;}
 
-    [JsonIgnore] public bool Value {get; set;}
+    [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {

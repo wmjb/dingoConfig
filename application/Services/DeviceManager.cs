@@ -20,6 +20,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     private const int MaxRetries = 10;
     private const int TimeoutMs = 500;
+    
+    public event EventHandler<DeviceAddedEventArgs>? DeviceAdded;
 
     /// <summary>
     /// Set the callback for transmitting frames (called by CommsDataPipeline during setup)
@@ -59,6 +61,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",
             deviceType, name, baseId, device.Guid);
 
+        OnDeviceAdded(this, new DeviceAddedEventArgs(device));
+        
         return device;
     }
 
@@ -132,6 +136,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         foreach (var device in devices)
         {
             _devices[device.Guid] = device;
+            GetDeviceUiState(device.Guid).NeedsRead = true;
+            OnDeviceAdded(this, new DeviceAddedEventArgs(device));
         }
         logger.LogInformation("Added {Count} devices", devices.Count);
     }
@@ -427,4 +433,13 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         return true;
     }
     
+    private void OnDeviceAdded(object sender, DeviceAddedEventArgs e)
+    {
+        DeviceAdded?.Invoke(this, e);
+    }
+}
+
+public class DeviceAddedEventArgs(IDevice device) : EventArgs
+{
+    public IDevice Device { get; } = device;
 }

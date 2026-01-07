@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -25,10 +26,10 @@ public class Wiper(string name) : IDeviceFunction
     [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = new WiperSpeed[8];
     [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = new double[6];
 
-    [JsonIgnore] public bool SlowState { get; set; }
-    [JsonIgnore] public bool FastState { get; set; }
-    [JsonIgnore] public WiperState State { get; set; }
-    [JsonIgnore] public WiperSpeed Speed { get; set; }
+    [JsonIgnore][Plotable(displayName:"SlowState")] public bool SlowState { get; set; }
+    [JsonIgnore][Plotable(displayName:"FastState")] public bool FastState { get; set; }
+    [JsonIgnore][Plotable(displayName:"State")] public WiperState State { get; set; }
+    [JsonIgnore][Plotable(displayName:"Speed")] public WiperSpeed Speed { get; set; }
 
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
