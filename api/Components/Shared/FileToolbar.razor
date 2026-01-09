@@ -1,7 +1,9 @@
 @using application.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ConfigFileManager FileManager
 @inject DeviceManager DeviceManager
 @inject IDialogService DialogService
+@inject ProtectedLocalStorage ProtectedLocalStore
 @implements IDisposable
 
 <MudToolBar Dense="true" Class="mb-3">
@@ -61,6 +63,15 @@
     protected override void OnInitialized()
     {
         FileManager.OnStateChanged += StateHasChanged;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var result = await ProtectedLocalStore.GetAsync<string>("workingDirectory");
+            if (result is { Success: true, Value: not null }) FileManager.WorkingDirectory = result.Value;
+        }
     }
 
     private string GetStatusText()
@@ -165,6 +176,7 @@
         if (dialogResult is { Canceled: false, Data: string newDirectory })
         {
             FileManager.WorkingDirectory = newDirectory;
+            await ProtectedLocalStore.SetAsync("workingDirectory", FileManager.WorkingDirectory);
         }
     }
 

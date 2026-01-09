@@ -204,13 +204,13 @@
         if (firstRender)
         {
             var result = await ProtectedLocalStore.GetAsync<string>("selectedAdapter");
-            if (result.Success) _selectedAdapterType = result.Value;
+            if (result is { Success: true, Value: not null }) _selectedAdapterType = result.Value;
             
             result = await ProtectedLocalStore.GetAsync<string>("selectedPort");
-            if (result.Success) _selectedPort = result.Value;
+            if (result is { Success: true, Value: not null }) _selectedPort = result.Value;
             
             result = await ProtectedLocalStore.GetAsync<string>("selectedBitrate");
-            if (result.Success) _selectedBitrate = result.Value;
+            if (result is { Success: true, Value: not null }) _selectedBitrate = result.Value;
         }
     }
     
