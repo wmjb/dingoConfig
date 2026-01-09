@@ -4,21 +4,21 @@
 
 <MudToolBar Dense="true" Class="mb-3">
     <MudTooltip Text="Play">
-        <MudIconButton Icon="@Icons.Material.Outlined.PlayArrow"
+        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow"
                        Color="Color.Default"
                        Disabled="@IsPlayDisabled"
                        OnClick="@HandlePlay" />
     </MudTooltip>
 
     <MudTooltip Text="Pause">
-        <MudIconButton Icon="@Icons.Material.Outlined.Pause"
+        <MudIconButton Icon="@Icons.Material.Filled.Pause"
                        Color="Color.Default"
                        Disabled="@IsPauseDisabled"
                        OnClick="@HandlePause" />
     </MudTooltip>
 
     <MudTooltip Text="Reset">
-        <MudIconButton Icon="@Icons.Material.Outlined.ResetTv"
+        <MudIconButton Icon="@Icons.Material.Filled.SkipPrevious"
                        Color="Color.Default"
                        Disabled="@IsResetDisabled"
                        OnClick="@HandleReset"/>
@@ -32,7 +32,7 @@
 
     <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
 
-    <MudText Typo="Typo.body2" Color="Color.Secondary">
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="min-width: 300px">
         @GetStatusText()
     </MudText>
 </MudToolBar>
@@ -81,7 +81,7 @@
             _ => "Ready"
         };
 
-        return $"{state} | {Playback.CurrentMessageIndex}/{Playback.TotalMessages} | {Playback.CurrentTime:mm\\:ss\\.fff}";
+        return $"{state}   |   {Playback.CurrentMessageIndex}/{Playback.TotalMessages}";
     }
 
     public void Dispose()

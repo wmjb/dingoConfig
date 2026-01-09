@@ -359,24 +359,33 @@
 
     private async Task OpenLogFile()
     {
-        var parameters = new DialogParameters { };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
-
-        var dialog = await DialogService.ShowAsync<OpenCanLogDialog>("Open CAN Log", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled && result.Data is string filePath)
+        var parameters = new DialogParameters
         {
-            var (success, error) = await SimPlayback.LoadFile(filePath);
+            { nameof(OpenFileDialog.FileFilter), "*.csv" }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<OpenFileDialog>("Open File", parameters, options);
+        var dialogResult = await dialog.Result;
+        
+        if (dialogResult is { Canceled: false, Data: string fileName })
+        {
+            var (success, error) = await SimPlayback.LoadFile(fileName);
             if (success)
             {
-                Notification.NewSuccess($"Loaded {System.IO.Path.GetFileName(filePath)}");
+                Notification.NewSuccess($"Loaded {System.IO.Path.GetFileName(fileName)}");
             }
             else
             {
                 Notification.NewError($"Failed to load file: {error}");
             }
         }
+        
     }
 
     public void Dispose()
