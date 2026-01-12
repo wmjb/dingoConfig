@@ -96,25 +96,25 @@ public class PdmDevice : IDevice
     protected virtual void InitializeCollections()
     {
         for (var i = 0; i < NumDigitalInputs; i++)
-            Inputs.Add(new Input(i + 1, "digitalInput" + i));
+            Inputs.Add(new Input(i + 1, "digitalInput" + (i + 1)));
 
         for (var i = 0; i < NumOutputs; i++)
-            Outputs.Add(new Output(i + 1, "output" + i));
+            Outputs.Add(new Output(i + 1, "output" + (i + 1)));
 
         for (var i = 0; i < NumCanInputs; i++)
-            CanInputs.Add(new CanInput(i + 1, "canInput" + i));
+            CanInputs.Add(new CanInput(i + 1, "canInput" + (i + 1)));
 
         for (var i = 0; i < NumVirtualInputs; i++)
-            VirtualInputs.Add(new VirtualInput(i + 1, "virtualInput" + i));
+            VirtualInputs.Add(new VirtualInput(i + 1, "virtualInput" + (i + 1)));
 
         for (var i = 0; i < NumFlashers; i++)
-            Flashers.Add(new Flasher(i + 1,  "flasher" + i));
+            Flashers.Add(new Flasher(i + 1,  "flasher" + (i + 1)));
 
         for (var i = 0; i < NumCounters; i++)
-            Counters.Add(new Counter(i  + 1, "counter" + i));
+            Counters.Add(new Counter(i  + 1, "counter" + (i + 1)));
 
         for (var i = 0; i < NumConditions; i++)
-            Conditions.Add(new Condition(i + 1, "condition" + i));
+            Conditions.Add(new Condition(i + 1, "condition" + (i + 1)));
         
         StarterDisable = new StarterDisable("starterDisable", NumOutputs);
         

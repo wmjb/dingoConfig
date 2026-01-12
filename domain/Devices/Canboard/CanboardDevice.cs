@@ -66,13 +66,13 @@ public class CanboardDevice : IDevice
     protected virtual void InitializeCollections()
     {
         for (var i = 0; i < NumAnalogInputs; i++)
-            AnalogInputs.Add(new AnalogInput(i + 1, "analogInput" + i));
+            AnalogInputs.Add(new AnalogInput(i + 1, "analogInput" + (i + 1)));
 
         for (var i = 0; i < NumDigitalInputs; i++)
-            DigitalInputs.Add(new DigitalInput(i + 1, "digitalInput" + i));
+            DigitalInputs.Add(new DigitalInput(i + 1, "digitalInput" + (i + 1)));
 
         for (var i = 0; i < NumDigitalOutputs; i++)
-            DigitalOutputs.Add(new DigitalOutput(i + 1, "digitalOutput" + i));
+            DigitalOutputs.Add(new DigitalOutput(i + 1, "digitalOutput" + (i + 1)));
     }
 
     public void UpdateIsConnected()
