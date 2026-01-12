@@ -144,6 +144,15 @@ public class DbcSignalCodec
     #region Encoding (Insert)
 
     /// <summary>
+    /// Inserts a signal value into CAN data using DBC signal
+    /// </summary>
+    public static void InsertSignal(byte[] data, DbcSignal signal)
+    {
+        InsertSignal(data, signal.Value,  signal.StartBit, signal.Length, 
+            signal.ByteOrder, signal.IsSigned, signal.Factor, signal.Offset);
+    }
+    
+    /// <summary>
     /// Inserts a signal value into CAN data using DBC parameters
     /// </summary>
     /// <param name="data">CAN data byte array to modify</param>
