@@ -8,18 +8,78 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Input(int number, string name) : IDeviceFunction
+public class Input : IDeviceFunction
 {
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
-    [JsonPropertyName("name")] public string Name { get; set; } = name;
-    [JsonPropertyName("number")] public int Number { get;} = number;
+    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("number")] public int Number { get; }
     [JsonPropertyName("invert")] public bool Invert { get; set; }
     [JsonPropertyName("mode")] public InputMode Mode { get; set; }
     [JsonPropertyName("debounceTime")] public int DebounceTime { get; set; }
     [JsonPropertyName("pull")] public InputPull Pull { get; set; }
-    
+
     [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
-    
+
+    [JsonIgnore] private List<(DbcSignal Signal, Action<double> SetValue)> SettingsRxSignals { get; }
+    [JsonIgnore] private List<(DbcSignal Signal, Func<double> GetValue)> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public Input(int number, string name)
+    {
+        Number = number;
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private List<(DbcSignal Signal, Action<double> SetValue)> InitializeRxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                val => Enabled = val != 0),
+
+            (new DbcSignal { Name = "Mode", StartBit = 9, Length = 2 },
+                val => Mode = (InputMode)val),
+
+            (new DbcSignal { Name = "Invert", StartBit = 11, Length = 1 },
+                val => Invert = val != 0),
+
+            (new DbcSignal { Name = "DebounceTime", StartBit = 16, Length = 8, Factor = 10.0 },
+                val => DebounceTime = (int)val),
+
+            (new DbcSignal { Name = "Pull", StartBit = 24, Length = 2 },
+                val => Pull = (InputPull)val)
+        ];
+    }
+
+    private List<(DbcSignal Signal, Func<double> GetValue)> InitializeTxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                () => (int)MessagePrefix.Inputs),
+
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                () => Enabled ? 1 : 0),
+
+            (new DbcSignal { Name = "Mode", StartBit = 9, Length = 2 },
+                () => (int)Mode),
+
+            (new DbcSignal { Name = "Invert", StartBit = 11, Length = 1 },
+                () => Invert ? 1 : 0),
+
+            (new DbcSignal { Name = "Index", StartBit = 12, Length = 4 },
+                () => Number - 1),
+
+            (new DbcSignal { Name = "DebounceTime", StartBit = 16, Length = 8, Factor = 10.0 },
+                () => DebounceTime),
+
+            (new DbcSignal { Name = "Pull", StartBit = 24, Length = 2 },
+                () => (int)Pull)
+        ];
+    }
+
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
         return (data & 0xF0) >> 4;
@@ -66,25 +126,25 @@ public class Input(int number, string name) : IDeviceFunction
         if (prefix != MessagePrefix.Inputs) return false;
         if (data.Length != 4) return false;
 
-        Enabled = ExtractSignalInt(data, 8, 1) == 1;
-        Mode = (InputMode)ExtractSignalInt(data, 9, 2);
-        Invert = ExtractSignalInt(data, 11, 1) == 1;
-        DebounceTime = (int)ExtractSignal(data, 16, 8, factor: 10.0); // ms*10
-        Pull = (InputPull)ExtractSignalInt(data, 24, 2);
+        foreach (var (signal, setValue) in SettingsRxSignals)
+        {
+            var value = ExtractSignal(data, signal);
+            setValue(value);
+        }
 
         return true;
     }
 
     private byte[] Write()
     {
-        byte[] data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.Inputs, 0, 8);
-        InsertBool(data, Enabled, 8);
-        InsertSignalInt(data, (long)Mode, 9, 2);
-        InsertBool(data, Invert, 11);
-        InsertSignalInt(data, Number - 1, 12, 4);
-        InsertSignal(data, DebounceTime, 16, 8, factor: 10.0); // ms/10
-        InsertSignalInt(data, (long)Pull, 24, 2);
+        var data = new byte[8];
+
+        foreach (var (signal, getValue) in SettingsTxSignals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 }

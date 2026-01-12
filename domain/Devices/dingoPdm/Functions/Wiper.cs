@@ -7,9 +7,9 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Wiper(string name) : IDeviceFunction
+public class Wiper : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set;} = name;
+    [JsonPropertyName("name")] public string Name {get; set;}
     [JsonIgnore] public int Number => 1; // Singleton function
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("mode")] public WiperMode Mode { get; set; }
@@ -30,6 +30,208 @@ public class Wiper(string name) : IDeviceFunction
     [JsonIgnore][Plotable(displayName:"FastState")] public bool FastState { get; set; }
     [JsonIgnore][Plotable(displayName:"State")] public WiperState State { get; set; }
     [JsonIgnore][Plotable(displayName:"Speed")] public WiperSpeed Speed { get; set; }
+
+    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> SettingsRxSignals { get; }
+    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public Wiper(string name)
+    {
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> InitializeRxSignals()
+    {
+        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>>
+        {
+            [MessagePrefix.Wiper] =
+            [
+                (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                    val => Enabled = val != 0),
+
+                (new DbcSignal { Name = "Mode", StartBit = 9, Length = 2 },
+                    val => Mode = (WiperMode)val),
+
+                (new DbcSignal { Name = "ParkStopLevel", StartBit = 11, Length = 1 },
+                    val => ParkStopLevel = val != 0),
+
+                (new DbcSignal { Name = "WashWipeCycles", StartBit = 12, Length = 4 },
+                    val => WashWipeCycles = (int)val),
+
+                (new DbcSignal { Name = "SlowInput", StartBit = 16, Length = 8 },
+                    val => SlowInput = (VarMap)val),
+
+                (new DbcSignal { Name = "FastInput", StartBit = 24, Length = 8 },
+                    val => FastInput = (VarMap)val),
+
+                (new DbcSignal { Name = "InterInput", StartBit = 32, Length = 8 },
+                    val => InterInput = (VarMap)val),
+
+                (new DbcSignal { Name = "OnInput", StartBit = 40, Length = 8 },
+                    val => OnInput = (VarMap)val),
+
+                (new DbcSignal { Name = "ParkInput", StartBit = 48, Length = 8 },
+                    val => ParkInput = (VarMap)val),
+
+                (new DbcSignal { Name = "WashInput", StartBit = 56, Length = 8 },
+                    val => WashInput = (VarMap)val)
+            ],
+            [MessagePrefix.WiperSpeed] =
+            [
+                (new DbcSignal { Name = "SwipeInput", StartBit = 8, Length = 8 },
+                    val => SwipeInput = (VarMap)val),
+
+                (new DbcSignal { Name = "SpeedInput", StartBit = 16, Length = 8 },
+                    val => SpeedInput = (VarMap)val),
+
+                (new DbcSignal { Name = "SpeedMap0", StartBit = 24, Length = 4 },
+                    val => SpeedMap[0] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap1", StartBit = 28, Length = 4 },
+                    val => SpeedMap[1] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap2", StartBit = 32, Length = 4 },
+                    val => SpeedMap[2] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap3", StartBit = 36, Length = 4 },
+                    val => SpeedMap[3] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap4", StartBit = 40, Length = 4 },
+                    val => SpeedMap[4] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap5", StartBit = 44, Length = 4 },
+                    val => SpeedMap[5] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap6", StartBit = 48, Length = 4 },
+                    val => SpeedMap[6] = (WiperSpeed)val),
+
+                (new DbcSignal { Name = "SpeedMap7", StartBit = 52, Length = 4 },
+                    val => SpeedMap[7] = (WiperSpeed)val)
+            ],
+            [MessagePrefix.WiperDelays] =
+            [
+                (new DbcSignal { Name = "IntermitTime0", StartBit = 8, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[0] = val),
+
+                (new DbcSignal { Name = "IntermitTime1", StartBit = 16, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[1] = val),
+
+                (new DbcSignal { Name = "IntermitTime2", StartBit = 24, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[2] = val),
+
+                (new DbcSignal { Name = "IntermitTime3", StartBit = 32, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[3] = val),
+
+                (new DbcSignal { Name = "IntermitTime4", StartBit = 40, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[4] = val),
+
+                (new DbcSignal { Name = "IntermitTime5", StartBit = 48, Length = 8, Factor = 0.1 },
+                    val => IntermitTime[5] = val)
+            ]
+        };
+    }
+
+    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> InitializeTxSignals()
+    {
+        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>>
+        {
+            [MessagePrefix.Wiper] =
+            [
+                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                    () => (int)MessagePrefix.Wiper),
+
+                (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                    () => Enabled ? 1 : 0),
+
+                (new DbcSignal { Name = "Mode", StartBit = 9, Length = 2 },
+                    () => (int)Mode),
+
+                (new DbcSignal { Name = "ParkStopLevel", StartBit = 11, Length = 1 },
+                    () => ParkStopLevel ? 1 : 0),
+
+                (new DbcSignal { Name = "WashWipeCycles", StartBit = 12, Length = 4 },
+                    () => WashWipeCycles),
+
+                (new DbcSignal { Name = "SlowInput", StartBit = 16, Length = 8 },
+                    () => (int)SlowInput),
+
+                (new DbcSignal { Name = "FastInput", StartBit = 24, Length = 8 },
+                    () => (int)FastInput),
+
+                (new DbcSignal { Name = "InterInput", StartBit = 32, Length = 8 },
+                    () => (int)InterInput),
+
+                (new DbcSignal { Name = "OnInput", StartBit = 40, Length = 8 },
+                    () => (int)OnInput),
+
+                (new DbcSignal { Name = "ParkInput", StartBit = 48, Length = 8 },
+                    () => (int)ParkInput),
+
+                (new DbcSignal { Name = "WashInput", StartBit = 56, Length = 8 },
+                    () => (int)WashInput)
+            ],
+            [MessagePrefix.WiperSpeed] =
+            [
+                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                    () => (int)MessagePrefix.WiperSpeed),
+
+                (new DbcSignal { Name = "SwipeInput", StartBit = 8, Length = 8 },
+                    () => (int)SwipeInput),
+
+                (new DbcSignal { Name = "SpeedInput", StartBit = 16, Length = 8 },
+                    () => (int)SpeedInput),
+
+                (new DbcSignal { Name = "SpeedMap0", StartBit = 24, Length = 4 },
+                    () => (int)SpeedMap[0]),
+
+                (new DbcSignal { Name = "SpeedMap1", StartBit = 28, Length = 4 },
+                    () => (int)SpeedMap[1]),
+
+                (new DbcSignal { Name = "SpeedMap2", StartBit = 32, Length = 4 },
+                    () => (int)SpeedMap[2]),
+
+                (new DbcSignal { Name = "SpeedMap3", StartBit = 36, Length = 4 },
+                    () => (int)SpeedMap[3]),
+
+                (new DbcSignal { Name = "SpeedMap4", StartBit = 40, Length = 4 },
+                    () => (int)SpeedMap[4]),
+
+                (new DbcSignal { Name = "SpeedMap5", StartBit = 44, Length = 4 },
+                    () => (int)SpeedMap[5]),
+
+                (new DbcSignal { Name = "SpeedMap6", StartBit = 48, Length = 4 },
+                    () => (int)SpeedMap[6]),
+
+                (new DbcSignal { Name = "SpeedMap7", StartBit = 52, Length = 4 },
+                    () => (int)SpeedMap[7])
+            ],
+            [MessagePrefix.WiperDelays] =
+            [
+                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                    () => (int)MessagePrefix.WiperDelays),
+
+                (new DbcSignal { Name = "IntermitTime0", StartBit = 8, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[0]),
+
+                (new DbcSignal { Name = "IntermitTime1", StartBit = 16, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[1]),
+
+                (new DbcSignal { Name = "IntermitTime2", StartBit = 24, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[2]),
+
+                (new DbcSignal { Name = "IntermitTime3", StartBit = 32, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[3]),
+
+                (new DbcSignal { Name = "IntermitTime4", StartBit = 40, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[4]),
+
+                (new DbcSignal { Name = "IntermitTime5", StartBit = 48, Length = 8, Factor = 0.1 },
+                    () => IntermitTime[5])
+            ]
+        };
+    }
 
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
@@ -132,97 +334,71 @@ public class Wiper(string name) : IDeviceFunction
         {
             case MessagePrefix.Wiper:
                 if (data.Length != 8) return false;
+                break;
 
-                Enabled = ExtractSignalInt(data, 8, 1) == 1;
-                Mode = (WiperMode)ExtractSignalInt(data, 9, 2);
-                ParkStopLevel = ExtractSignalInt(data, 11, 1) == 1;
-                WashWipeCycles = (byte)ExtractSignalInt(data, 12, 4);
-                SlowInput = (VarMap)ExtractSignalInt(data, 16, 8);
-                FastInput = (VarMap)ExtractSignalInt(data, 24, 8);
-                InterInput = (VarMap)ExtractSignalInt(data, 32, 8);
-                OnInput = (VarMap)ExtractSignalInt(data, 40, 8);
-                ParkInput = (VarMap)ExtractSignalInt(data, 48, 8);
-                WashInput = (VarMap)ExtractSignalInt(data, 56, 8);
-
-                return true;
-            
             case MessagePrefix.WiperSpeed:
                 if (data.Length != 7) return false;
+                break;
 
-                SwipeInput = (VarMap)ExtractSignalInt(data, 8, 8);
-                SpeedInput = (VarMap)ExtractSignalInt(data, 16, 8);
-                SpeedMap[0] = (WiperSpeed)ExtractSignalInt(data, 24, 4);
-                SpeedMap[1] = (WiperSpeed)ExtractSignalInt(data, 28, 4);
-                SpeedMap[2] = (WiperSpeed)ExtractSignalInt(data, 32, 4);
-                SpeedMap[3] = (WiperSpeed)ExtractSignalInt(data, 36, 4);
-                SpeedMap[4] = (WiperSpeed)ExtractSignalInt(data, 40, 4);
-                SpeedMap[5] = (WiperSpeed)ExtractSignalInt(data, 44, 4);
-                SpeedMap[6] = (WiperSpeed)ExtractSignalInt(data, 48, 4);
-                SpeedMap[7] = (WiperSpeed)ExtractSignalInt(data, 52, 4);
-
-                return true;
-            
             case MessagePrefix.WiperDelays:
                 if (data.Length != 7) return false;
+                break;
 
-                IntermitTime[0] = ExtractSignal(data, 8, 8, factor: 0.1);
-                IntermitTime[1] = ExtractSignal(data, 16, 8, factor: 0.1);
-                IntermitTime[2] = ExtractSignal(data, 24, 8, factor: 0.1);
-                IntermitTime[3] = ExtractSignal(data, 32, 8, factor: 0.1);
-                IntermitTime[4] = ExtractSignal(data, 40, 8, factor: 0.1);
-                IntermitTime[5] = ExtractSignal(data, 48, 8, factor: 0.1);
-
-                return true;
-            
             default:
                 return false;
         }
+
+        if (!SettingsRxSignals.TryGetValue(prefix, out var signals))
+            return false;
+
+        foreach (var (signal, setValue) in signals)
+        {
+            var value = ExtractSignal(data, signal);
+            setValue(value);
+        }
+
+        return true;
     }
 
     private byte[] Write()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.Wiper, 0, 8);
-        InsertBool(data, Enabled, 8);
-        InsertSignalInt(data, (long)Mode, 9, 2);
-        InsertBool(data, ParkStopLevel, 11);
-        InsertSignalInt(data, WashWipeCycles, 12, 4);
-        InsertSignalInt(data, (long)SlowInput, 16, 8);
-        InsertSignalInt(data, (long)FastInput, 24, 8);
-        InsertSignalInt(data, (long)InterInput, 32, 8);
-        InsertSignalInt(data, (long)OnInput, 40, 8);
-        InsertSignalInt(data, (long)ParkInput, 48, 8);
-        InsertSignalInt(data, (long)WashInput, 56, 8);
+        var signals = SettingsTxSignals[MessagePrefix.Wiper];
+
+        foreach (var (signal, getValue) in signals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 
     private byte[] WriteSpeed()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.WiperSpeed, 0, 8);
-        InsertSignalInt(data, (long)SwipeInput, 8, 8);
-        InsertSignalInt(data, (long)SpeedInput, 16, 8);
-        InsertSignalInt(data, (long)SpeedMap[0], 24, 4);
-        InsertSignalInt(data, (long)SpeedMap[1], 28, 4);
-        InsertSignalInt(data, (long)SpeedMap[2], 32, 4);
-        InsertSignalInt(data, (long)SpeedMap[3], 36, 4);
-        InsertSignalInt(data, (long)SpeedMap[4], 40, 4);
-        InsertSignalInt(data, (long)SpeedMap[5], 44, 4);
-        InsertSignalInt(data, (long)SpeedMap[6], 48, 4);
-        InsertSignalInt(data, (long)SpeedMap[7], 52, 4);
+        var signals = SettingsTxSignals[MessagePrefix.WiperSpeed];
+
+        foreach (var (signal, getValue) in signals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 
     private byte[] WriteDelays()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.WiperDelays, 0, 8);
-        InsertSignal(data, IntermitTime[0], 8, 8, factor: 0.1);
-        InsertSignal(data, IntermitTime[1], 16, 8, factor: 0.1);
-        InsertSignal(data, IntermitTime[2], 24, 8, factor: 0.1);
-        InsertSignal(data, IntermitTime[3], 32, 8, factor: 0.1);
-        InsertSignal(data, IntermitTime[4], 40, 8, factor: 0.1);
-        InsertSignal(data, IntermitTime[5], 48, 8, factor: 0.1);
+        var signals = SettingsTxSignals[MessagePrefix.WiperDelays];
+
+        foreach (var (signal, getValue) in signals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 }

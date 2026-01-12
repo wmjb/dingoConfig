@@ -7,10 +7,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Counter(int number, string name) : IDeviceFunction
+public class Counter : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set; } = name;
-    [JsonPropertyName("number")] public int Number {get;} = number;
+    [JsonPropertyName("name")] public string Name {get; set; }
+    [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("incInput")] public VarMap IncInput { get; set; }
     [JsonPropertyName("decInput")] public VarMap DecInput { get; set; }
@@ -23,7 +23,97 @@ public class Counter(int number, string name) : IDeviceFunction
     [JsonPropertyName("wrapAround")] public bool WrapAround {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}
-    
+
+    [JsonIgnore] private List<(DbcSignal Signal, Action<double> SetValue)> SettingsRxSignals { get; }
+    [JsonIgnore] private List<(DbcSignal Signal, Func<double> GetValue)> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public Counter(int number, string name)
+    {
+        Number = number;
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private List<(DbcSignal Signal, Action<double> SetValue)> InitializeRxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Enabled", StartBit = 16, Length = 1 },
+                val => Enabled = val != 0),
+
+            (new DbcSignal { Name = "WrapAround", StartBit = 17, Length = 1 },
+                val => WrapAround = val != 0),
+
+            (new DbcSignal { Name = "IncInput", StartBit = 24, Length = 8 },
+                val => IncInput = (VarMap)val),
+
+            (new DbcSignal { Name = "DecInput", StartBit = 32, Length = 8 },
+                val => DecInput = (VarMap)val),
+
+            (new DbcSignal { Name = "ResetInput", StartBit = 40, Length = 8 },
+                val => ResetInput = (VarMap)val),
+
+            (new DbcSignal { Name = "MinCount", StartBit = 48, Length = 4 },
+                val => MinCount = (int)val),
+
+            (new DbcSignal { Name = "MaxCount", StartBit = 52, Length = 4 },
+                val => MaxCount = (int)val),
+
+            (new DbcSignal { Name = "IncEdge", StartBit = 56, Length = 2 },
+                val => IncEdge = (InputEdge)val),
+
+            (new DbcSignal { Name = "DecEdge", StartBit = 58, Length = 2 },
+                val => DecEdge = (InputEdge)val),
+
+            (new DbcSignal { Name = "ResetEdge", StartBit = 60, Length = 2 },
+                val => ResetEdge = (InputEdge)val)
+        ];
+    }
+
+    private List<(DbcSignal Signal, Func<double> GetValue)> InitializeTxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                () => (int)MessagePrefix.Counter),
+
+            (new DbcSignal { Name = "Index", StartBit = 8, Length = 8 },
+                () => Number - 1),
+
+            (new DbcSignal { Name = "Enabled", StartBit = 16, Length = 1 },
+                () => Enabled ? 1 : 0),
+
+            (new DbcSignal { Name = "WrapAround", StartBit = 17, Length = 1 },
+                () => WrapAround ? 1 : 0),
+
+            (new DbcSignal { Name = "IncInput", StartBit = 24, Length = 8 },
+                () => (int)IncInput),
+
+            (new DbcSignal { Name = "DecInput", StartBit = 32, Length = 8 },
+                () => (int)DecInput),
+
+            (new DbcSignal { Name = "ResetInput", StartBit = 40, Length = 8 },
+                () => (int)ResetInput),
+
+            (new DbcSignal { Name = "MinCount", StartBit = 48, Length = 4 },
+                () => MinCount),
+
+            (new DbcSignal { Name = "MaxCount", StartBit = 52, Length = 4 },
+                () => MaxCount),
+
+            (new DbcSignal { Name = "IncEdge", StartBit = 56, Length = 2 },
+                () => (int)IncEdge),
+
+            (new DbcSignal { Name = "DecEdge", StartBit = 58, Length = 2 },
+                () => (int)DecEdge),
+
+            (new DbcSignal { Name = "ResetEdge", StartBit = 60, Length = 2 },
+                () => (int)ResetEdge)
+        ];
+    }
+
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
         return data;
@@ -70,16 +160,11 @@ public class Counter(int number, string name) : IDeviceFunction
         if (prefix != MessagePrefix.Counter) return false;
         if (data.Length != 8) return false;
 
-        Enabled = ExtractSignalInt(data, 16, 1) == 1;
-        WrapAround = ExtractSignalInt(data, 17, 1) == 1;
-        IncInput = (VarMap)ExtractSignalInt(data, 24, 8);
-        DecInput = (VarMap)ExtractSignalInt(data, 32, 8);
-        ResetInput = (VarMap)ExtractSignalInt(data, 40, 8);
-        MinCount = (int)ExtractSignalInt(data, 48, 4);
-        MaxCount = (int)ExtractSignalInt(data, 52, 4);
-        IncEdge = (InputEdge)ExtractSignalInt(data, 56, 2);
-        DecEdge = (InputEdge)ExtractSignalInt(data, 58, 2);
-        ResetEdge = (InputEdge)ExtractSignalInt(data, 60, 2);
+        foreach (var (signal, setValue) in SettingsRxSignals)
+        {
+            var value = ExtractSignal(data, signal);
+            setValue(value);
+        }
 
         return true;
     }
@@ -87,18 +172,12 @@ public class Counter(int number, string name) : IDeviceFunction
     private byte[] Write()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.Counter, 0, 8);
-        InsertSignalInt(data, Number - 1, 8, 8);
-        InsertBool(data, Enabled, 16);
-        InsertBool(data, WrapAround, 17);
-        InsertSignalInt(data, (long)IncInput, 24, 8);
-        InsertSignalInt(data, (long)DecInput, 32, 8);
-        InsertSignalInt(data, (long)ResetInput, 40, 8);
-        InsertSignalInt(data, MinCount, 48, 4);
-        InsertSignalInt(data, MaxCount, 52, 4);
-        InsertSignalInt(data, (long)IncEdge, 56, 2);
-        InsertSignalInt(data, (long)DecEdge, 58, 2);
-        InsertSignalInt(data, (long)ResetEdge, 60, 2);
+
+        foreach (var (signal, getValue) in SettingsTxSignals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
 
         return data;
     }

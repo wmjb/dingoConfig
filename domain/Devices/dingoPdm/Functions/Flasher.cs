@@ -7,10 +7,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class Flasher(int number, string name) : IDeviceFunction
+public class Flasher : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set; } = name;
-    [JsonPropertyName("number")] public int Number {get;} = number;
+    [JsonPropertyName("name")] public string Name {get; set; }
+    [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("single")] public bool Single {get; set;}
     [JsonPropertyName("input")] public VarMap Input {get; set;}
@@ -18,7 +18,67 @@ public class Flasher(int number, string name) : IDeviceFunction
     [JsonPropertyName("offTime")] public int  OffTime {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
-    
+
+    [JsonIgnore] private List<(DbcSignal Signal, Action<double> SetValue)> SettingsRxSignals { get; }
+    [JsonIgnore] private List<(DbcSignal Signal, Func<double> GetValue)> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public Flasher(int number, string name)
+    {
+        Number = number;
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private List<(DbcSignal Signal, Action<double> SetValue)> InitializeRxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                val => Enabled = val != 0),
+
+            (new DbcSignal { Name = "Single", StartBit = 9, Length = 1 },
+                val => Single = val != 0),
+
+            (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
+                val => Input = (VarMap)val),
+
+            (new DbcSignal { Name = "OnTime", StartBit = 32, Length = 8, Factor = 0.1 },
+                val => OnTime = (int)val),
+
+            (new DbcSignal { Name = "OffTime", StartBit = 40, Length = 8, Factor = 0.1 },
+                val => OffTime = (int)val)
+        ];
+    }
+
+    private List<(DbcSignal Signal, Func<double> GetValue)> InitializeTxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                () => (int)MessagePrefix.Flashers),
+
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                () => Enabled ? 1 : 0),
+
+            (new DbcSignal { Name = "Single", StartBit = 9, Length = 1 },
+                () => Single ? 1 : 0),
+
+            (new DbcSignal { Name = "Index", StartBit = 12, Length = 4 },
+                () => Number - 1),
+
+            (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
+                () => (int)Input),
+
+            (new DbcSignal { Name = "OnTime", StartBit = 32, Length = 8, Factor = 0.1 },
+                () => OnTime),
+
+            (new DbcSignal { Name = "OffTime", StartBit = 40, Length = 8, Factor = 0.1 },
+                () => OffTime)
+        ];
+    }
+
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
         return (data & 0xF0) >> 4;
@@ -65,11 +125,11 @@ public class Flasher(int number, string name) : IDeviceFunction
         if (prefix != MessagePrefix.Flashers) return false;
         if (data.Length != 6) return false;
 
-        Enabled = ExtractSignalInt(data, 8, 1) == 1;
-        Single = ExtractSignalInt(data, 9, 1) == 1;
-        Input = (VarMap)ExtractSignalInt(data, 16, 8);
-        OnTime = (int)ExtractSignal(data, 32, 8, factor: 0.1);
-        OffTime = (int)ExtractSignal(data, 40, 8, factor: 0.1);
+        foreach (var (signal, setValue) in SettingsRxSignals)
+        {
+            var value = ExtractSignal(data, signal);
+            setValue(value);
+        }
 
         return true;
     }
@@ -77,13 +137,13 @@ public class Flasher(int number, string name) : IDeviceFunction
     private byte[] Write()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.Flashers, 0, 8);
-        InsertBool(data, Enabled, 8);
-        InsertBool(data, Single, 9);
-        InsertSignalInt(data, Number - 1, 12, 4);
-        InsertSignalInt(data, (long)Input, 16, 8);
-        InsertSignal(data, OnTime, 32, 8, factor: 0.1);
-        InsertSignal(data, OffTime, 40, 8, factor: 0.1);
+
+        foreach (var (signal, getValue) in SettingsTxSignals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 }

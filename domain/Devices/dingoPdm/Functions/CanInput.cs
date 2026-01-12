@@ -8,10 +8,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class CanInput(int number, string name) : IDeviceFunction
+public class CanInput : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set; } = name;
-    [JsonPropertyName("number")] public int Number {get;} = number;
+    [JsonPropertyName("name")] public string Name {get; set; }
+    [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("timeoutEnabled")] public bool TimeoutEnabled {get; set;}
     [JsonPropertyName("timeout")] public int Timeout {get; set;}
@@ -35,6 +35,92 @@ public class CanInput(int number, string name) : IDeviceFunction
     
     [JsonIgnore][Plotable(displayName:"State")] public bool Output { get; set; }
     [JsonIgnore][Plotable(displayName:"Value")] public int Value {get; set;}
+
+    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> SettingsRxSignals { get; }
+    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public CanInput(int number, string name)
+    {
+        Number = number;
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> InitializeRxSignals()
+    {
+        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>>
+        {
+            [MessagePrefix.CanInputs] =
+            [
+                (new DbcSignal { Name = "Enabled", StartBit = 16, Length = 1 },
+                    val => Enabled = val != 0),
+
+                (new DbcSignal { Name = "Mode", StartBit = 17, Length = 2 },
+                    val => Mode = (InputMode)val),
+
+                (new DbcSignal { Name = "TimeoutEnabled", StartBit = 19, Length = 1 },
+                    val => TimeoutEnabled = val != 0),
+
+                (new DbcSignal { Name = "Operator", StartBit = 20, Length = 4 },
+                    val => Operator = (Operator)val),
+
+                (new DbcSignal { Name = "StartingByte", StartBit = 24, Length = 4 },
+                    val => StartingByte = (int)val),
+
+                (new DbcSignal { Name = "Dlc", StartBit = 28, Length = 4 },
+                    val => Dlc = (int)val),
+
+                (new DbcSignal { Name = "OnVal", StartBit = 32, Length = 16, ByteOrder = ByteOrder.BigEndian },
+                    val => OnVal = (int)val),
+
+                (new DbcSignal { Name = "Timeout", StartBit = 48, Length = 8, Factor = 0.1 },
+                    val => Timeout = (int)val)
+            ]
+            // Note: CanInputsId uses custom ID parsing logic in Receive()
+        };
+    }
+
+    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> InitializeTxSignals()
+    {
+        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>>
+        {
+            [MessagePrefix.CanInputs] =
+            [
+                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                    () => (int)MessagePrefix.CanInputs),
+
+                (new DbcSignal { Name = "Index", StartBit = 8, Length = 8 },
+                    () => Number - 1),
+
+                (new DbcSignal { Name = "Enabled", StartBit = 16, Length = 1 },
+                    () => Enabled ? 1 : 0),
+
+                (new DbcSignal { Name = "Mode", StartBit = 17, Length = 2 },
+                    () => (int)Mode),
+
+                (new DbcSignal { Name = "TimeoutEnabled", StartBit = 19, Length = 1 },
+                    () => TimeoutEnabled ? 1 : 0),
+
+                (new DbcSignal { Name = "Operator", StartBit = 20, Length = 4 },
+                    () => (int)Operator),
+
+                (new DbcSignal { Name = "StartingByte", StartBit = 24, Length = 4 },
+                    () => StartingByte),
+
+                (new DbcSignal { Name = "Dlc", StartBit = 28, Length = 4 },
+                    () => Dlc),
+
+                (new DbcSignal { Name = "OnVal", StartBit = 32, Length = 16, ByteOrder = ByteOrder.BigEndian },
+                    () => OnVal),
+
+                (new DbcSignal { Name = "Timeout", StartBit = 48, Length = 8, Factor = 0.1 },
+                    () => Timeout)
+            ]
+            // Note: CanInputsId uses custom ID encoding logic in WriteId()
+        };
+    }
 
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
@@ -119,17 +205,20 @@ public class CanInput(int number, string name) : IDeviceFunction
             case MessagePrefix.CanInputs when data.Length != 7:
                 return false;
             case MessagePrefix.CanInputs:
-                Enabled = ExtractSignalInt(data, 16, 1) == 1;
-                Mode = (InputMode)ExtractSignalInt(data, 17, 2);
-                TimeoutEnabled = ExtractSignalInt(data, 19, 1) == 1;
-                Operator = (Operator)ExtractSignalInt(data, 20, 4);
-                StartingByte = (int)ExtractSignalInt(data, 24, 4);
-                Dlc = (int)ExtractSignalInt(data, 28, 4);
-                OnVal = (int)ExtractSignalInt(data, 32, 16, ByteOrder.BigEndian);
-                Timeout = (int)ExtractSignal(data, 48, 8, factor: 0.1);
+            {
+                if (SettingsRxSignals.TryGetValue(prefix, out var signals))
+                {
+                    foreach (var (signal, setValue) in signals)
+                    {
+                        var value = ExtractSignal(data, signal);
+                        setValue(value);
+                    }
+                }
                 return true;
+            }
             case MessagePrefix.CanInputsId when data.Length != 8:
                 return false;
+            // Custom ID parsing logic
             case MessagePrefix.CanInputsId:
             {
                 Ide = ExtractSignalInt(data, 19, 1) == 1;
@@ -137,8 +226,8 @@ public class CanInput(int number, string name) : IDeviceFunction
                 if (Ide)
                 {
                     // Extended ID: bits 32-36 (5 bits) + bits 40-63 (24 bits) = 29 bits total
-                    int idUpper = (int)ExtractSignalInt(data, 32, 5);
-                    int idLower = (int)ExtractSignalInt(data, 40, 24, ByteOrder.BigEndian);
+                    var idUpper = (int)ExtractSignalInt(data, 32, 5);
+                    var idLower = (int)ExtractSignalInt(data, 40, 24, ByteOrder.BigEndian);
                     Id = (idUpper << 24) | idLower;
                 }
                 else
@@ -157,16 +246,16 @@ public class CanInput(int number, string name) : IDeviceFunction
     private byte[] Write()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.CanInputs, 0, 8);
-        InsertSignalInt(data, Number - 1, 8, 8);
-        InsertBool(data, Enabled, 16);
-        InsertSignalInt(data, (long)Mode, 17, 2);
-        InsertBool(data, TimeoutEnabled, 19);
-        InsertSignalInt(data, (long)Operator, 20, 4);
-        InsertSignalInt(data, StartingByte, 24, 4);
-        InsertSignalInt(data, Dlc, 28, 4);
-        InsertSignalInt(data, OnVal, 32, 16, ByteOrder.BigEndian);
-        InsertSignal(data, Timeout, 48, 8, factor: 0.1);
+
+        if (SettingsTxSignals.TryGetValue(MessagePrefix.CanInputs, out var signals))
+        {
+            foreach (var (signal, getValue) in signals)
+            {
+                signal.Value = getValue();
+                InsertSignal(data, signal);
+            }
+        }
+
         return data;
     }
 
@@ -176,6 +265,7 @@ public class CanInput(int number, string name) : IDeviceFunction
         InsertSignalInt(data, (long)MessagePrefix.CanInputsId, 0, 8);
         InsertSignalInt(data, Number - 1, 8, 8);
 
+        // Custom ID encoding logic
         if (Ide)
         {
             // Extended ID: upper 5 bits and lower 24 bits

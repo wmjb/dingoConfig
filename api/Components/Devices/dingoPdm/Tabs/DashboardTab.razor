@@ -100,10 +100,11 @@
                                 @GetOutputStateText(output.State)
                             </MudChip>
                             <MudText Typo="Typo.body2">@output.Current.ToString("F1") A</MudText>
+                            <MudText Typo="Typo.body2">Reset Count: @output.ResetCount.ToString("D")</MudText>
                             @if (output.PwmEnabled)
                             {
-                                <MudText Typo="Typo.body2">@output.CurrentDutyCycle.ToString("F1") %
-                                </MudText>
+                                <MudText Typo="Typo.body2">@output.CurrentDutyCycle.ToString("F1") %</MudText>
+                                <MudText Typo="Typo.body2">@output.CalculatedCurrent.ToString("F1") A (Calculated)</MudText>
                             }
                         </MudStack>
                     </MudCardContent>

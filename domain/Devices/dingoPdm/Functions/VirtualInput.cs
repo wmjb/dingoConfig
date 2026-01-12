@@ -8,10 +8,10 @@ using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class VirtualInput(int number, string name) : IDeviceFunction
+public class VirtualInput : IDeviceFunction
 {
-    [JsonPropertyName("name")] public string Name {get; set; } = name;
-    [JsonPropertyName("number")] public int Number {get; } = number;
+    [JsonPropertyName("name")] public string Name {get; set; }
+    [JsonPropertyName("number")] public int Number {get; }
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("not0")] public bool Not0 {get; set;}
     [JsonPropertyName("var0")] public VarMap Var0 { get; set; }
@@ -25,6 +25,96 @@ public class VirtualInput(int number, string name) : IDeviceFunction
     [JsonPropertyName("mode")] public InputMode Mode {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
+
+    [JsonIgnore] private List<(DbcSignal Signal, Action<double> SetValue)> SettingsRxSignals { get; }
+    [JsonIgnore] private List<(DbcSignal Signal, Func<double> GetValue)> SettingsTxSignals { get; }
+
+    [JsonConstructor]
+    public VirtualInput(int number, string name)
+    {
+        Number = number;
+        Name = name;
+        SettingsRxSignals = InitializeRxSignals();
+        SettingsTxSignals = InitializeTxSignals();
+    }
+
+    private List<(DbcSignal Signal, Action<double> SetValue)> InitializeRxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                val => Enabled = val != 0),
+
+            (new DbcSignal { Name = "Not0", StartBit = 9, Length = 1 },
+                val => Not0 = val != 0),
+
+            (new DbcSignal { Name = "Not1", StartBit = 10, Length = 1 },
+                val => Not1 = val != 0),
+
+            (new DbcSignal { Name = "Not2", StartBit = 11, Length = 1 },
+                val => Not2 = val != 0),
+
+            (new DbcSignal { Name = "Var0", StartBit = 24, Length = 8 },
+                val => Var0 = (VarMap)val),
+
+            (new DbcSignal { Name = "Var1", StartBit = 32, Length = 8 },
+                val => Var1 = (VarMap)val),
+
+            (new DbcSignal { Name = "Var2", StartBit = 40, Length = 8 },
+                val => Var2 = (VarMap)val),
+
+            (new DbcSignal { Name = "Cond0", StartBit = 48, Length = 2 },
+                val => Cond0 = (Conditional)val),
+
+            (new DbcSignal { Name = "Cond1", StartBit = 50, Length = 2 },
+                val => Cond1 = (Conditional)val),
+
+            (new DbcSignal { Name = "Mode", StartBit = 54, Length = 2 },
+                val => Mode = (InputMode)val)
+        ];
+    }
+
+    private List<(DbcSignal Signal, Func<double> GetValue)> InitializeTxSignals()
+    {
+        return
+        [
+            (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
+                () => (int)MessagePrefix.VirtualInputs),
+
+            (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
+                () => Enabled ? 1 : 0),
+
+            (new DbcSignal { Name = "Not0", StartBit = 9, Length = 1 },
+                () => Not0 ? 1 : 0),
+
+            (new DbcSignal { Name = "Not1", StartBit = 10, Length = 1 },
+                () => Not1 ? 1 : 0),
+
+            (new DbcSignal { Name = "Not2", StartBit = 11, Length = 1 },
+                () => Not2 ? 1 : 0),
+
+            (new DbcSignal { Name = "Index", StartBit = 16, Length = 8 },
+                () => Number - 1),
+
+            (new DbcSignal { Name = "Var0", StartBit = 24, Length = 8 },
+                () => (int)Var0),
+
+            (new DbcSignal { Name = "Var1", StartBit = 32, Length = 8 },
+                () => (int)Var1),
+
+            (new DbcSignal { Name = "Var2", StartBit = 40, Length = 8 },
+                () => (int)Var2),
+
+            (new DbcSignal { Name = "Cond0", StartBit = 48, Length = 2 },
+                () => (int)Cond0),
+
+            (new DbcSignal { Name = "Cond1", StartBit = 50, Length = 2 },
+                () => (int)Cond1),
+
+            (new DbcSignal { Name = "Mode", StartBit = 54, Length = 2 },
+                () => (int)Mode)
+        ];
+    }
     
     public static int ExtractIndex(byte data, MessagePrefix prefix)
     {
@@ -72,18 +162,11 @@ public class VirtualInput(int number, string name) : IDeviceFunction
         if (prefix != MessagePrefix.VirtualInputs) return false;
         if (data.Length != 7) return false;
 
-        Enabled = ExtractSignalInt(data, 8, 1) == 1;
-        Not0 = ExtractSignalInt(data, 9, 1) == 1;   
-        Not1 = ExtractSignalInt(data, 10, 1) == 1;  
-        Not2 = ExtractSignalInt(data, 11, 1) == 1;  
-
-        Var0 = (VarMap)ExtractSignalInt(data, 24, 8);
-        Var1 = (VarMap)ExtractSignalInt(data, 32, 8);
-        Var2 = (VarMap)ExtractSignalInt(data, 40, 8);
-
-        Mode = (InputMode)ExtractSignalInt(data, 54, 2);
-        Cond0 = (Conditional)ExtractSignalInt(data, 48, 2);
-        Cond1 = (Conditional)ExtractSignalInt(data, 50, 2);
+        foreach (var (signal, setValue) in SettingsRxSignals)
+        {
+            var value = ExtractSignal(data, signal);
+            setValue(value);
+        }
 
         return true;
     }
@@ -91,18 +174,13 @@ public class VirtualInput(int number, string name) : IDeviceFunction
     private byte[] Write()
     {
         var data = new byte[8];
-        InsertSignalInt(data, (long)MessagePrefix.VirtualInputs, 0, 8);
-        InsertBool(data, Enabled, 8);
-        InsertBool(data, Not0, 9);
-        InsertBool(data, Not1, 10);
-        InsertBool(data, Not2, 11);
-        InsertSignalInt(data, Number - 1, 16, 8);
-        InsertSignalInt(data, (long)Var0, 24, 8);
-        InsertSignalInt(data, (long)Var1, 32, 8);
-        InsertSignalInt(data, (long)Var2, 40, 8);
-        InsertSignalInt(data, (long)Mode, 54, 2);
-        InsertSignalInt(data, (long)Cond1, 50, 2);
-        InsertSignalInt(data, (long)Cond0, 48, 2);
+
+        foreach (var (signal, getValue) in SettingsTxSignals)
+        {
+            signal.Value = getValue();
+            InsertSignal(data, signal);
+        }
+
         return data;
     }
 }
