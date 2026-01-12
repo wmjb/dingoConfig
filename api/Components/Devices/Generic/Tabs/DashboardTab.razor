@@ -40,7 +40,7 @@
 @code {
     [Parameter, EditorRequired] public TDevice Device { get; set; } = null!;
 
-    private Color GetChipColor(double val)
+    private static Color GetChipColor(double val)
     {
         return val switch
         {

@@ -53,7 +53,7 @@
     [Parameter, EditorRequired]
     public List<DbcSignal> Signals { get; set; } = null!;
     
-    private Color GetChipColor(double val)
+    private static Color GetChipColor(double val)
     {
         return val switch
         {

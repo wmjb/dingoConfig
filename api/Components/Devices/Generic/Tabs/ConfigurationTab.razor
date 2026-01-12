@@ -117,8 +117,7 @@
 @code {
     [Parameter, EditorRequired] public TDevice Device { get; set; } = null!;
 
-    private string? _dbcFile;
-    private DbcSignal _customSignal = new DbcSignal();
+    private DbcSignal _customSignal = new();
 
     private async Task OpenDbcFile()
     {
@@ -137,17 +136,19 @@
 
         if (dialogResult is { Canceled: false, Data: string fileName })
         {
-            await Device.ParseDbcFile(fileName);
-
-            _dbcFile = fileName;
+            if(await Device.ParseDbcFile(fileName)) 
+                Notification.NewSuccess($"{Device.Name} opened DBC file {fileName}");
+            else
+                Notification.NewError($"{Device.Name} failed to open DBC file {fileName}");    
         }
     }
 
     private async Task AddCustomSignal()
     {
-        await Device.AddCustomSignal(_customSignal);
-
-        Notification.NewSuccess($"{Device.Name} added custom signal {_customSignal.Name}");
+        if( await Device.AddCustomSignal(_customSignal))
+            Notification.NewSuccess($"{Device.Name} added custom signal {_customSignal.Name}");
+        else
+            Notification.NewError($"{Device.Name} error adding custom signal {_customSignal.Name}");
     }
 
     private bool CustomSignalReady()
