@@ -43,19 +43,22 @@ public class CanboardDevice : IDevice
     [JsonPropertyName("analogIn")] public List<AnalogInput> AnalogInputs { get; init; } = [];
     [JsonPropertyName("digitalIn")] public List<DigitalInput> DigitalInputs { get; init; } = [];
     [JsonPropertyName("digitalOut")] public List<DigitalOutput> DigitalOutputs { get; init; } = [];
-    
+
     [JsonIgnore] public double BoardTempC { get; private set; }
     [JsonIgnore] public int Heartbeat { get; private set; }
-    
+
+    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+
     [JsonConstructor]
     public CanboardDevice(string name, int baseId)
     {
         Guid = Guid.NewGuid();
         Name = name;
         BaseId = baseId;
-        
+
         // ReSharper disable VirtualMemberCallInConstructor
         InitializeCollections();
+        InitializeStatusMessageSignals();
     }
     
     public void SetLogger(ILogger<CanboardDevice> logger)
@@ -73,6 +76,81 @@ public class CanboardDevice : IDevice
 
         for (var i = 0; i < NumDigitalOutputs; i++)
             DigitalOutputs.Add(new DigitalOutput(i + 1, "digitalOutput" + (i + 1)));
+    }
+
+    protected virtual void InitializeStatusMessageSignals()
+    {
+        StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
+
+        // Message 0 (BaseId + 0): Analog inputs 0-3 millivolts
+        StatusMessageSignals[0] = new List<(DbcSignal, Action<double>)>();
+        for (int i = 0; i < 4 && i < NumAnalogInputs; i++)
+        {
+            int index = i;
+            StatusMessageSignals[0].Add((
+                new DbcSignal { Name = $"AnalogInput{index}Millivolts", StartBit = index * 16, Length = 16 },
+                val => AnalogInputs[index].Millivolts = val
+            ));
+        }
+
+        // Message 1 (BaseId + 1): Analog input 4 millivolts + board temperature
+        StatusMessageSignals[1] = new List<(DbcSignal, Action<double>)>
+        {
+            (new DbcSignal { Name = "AnalogInput4Millivolts", StartBit = 0, Length = 16 },
+                val => AnalogInputs[4].Millivolts = val),
+
+            (new DbcSignal { Name = "BoardTempC", StartBit = 48, Length = 16, Factor = 0.01 },
+                val => BoardTempC = val)
+        };
+
+        // Message 2 (BaseId + 2): Complex message with rotary switches, digital I/O, heartbeat
+        StatusMessageSignals[2] = new List<(DbcSignal, Action<double>)>();
+
+        // Rotary switch positions (4-bit each)
+        for (int i = 0; i < NumAnalogInputs; i++)
+        {
+            int index = i;
+            StatusMessageSignals[2].Add((
+                new DbcSignal { Name = $"RotarySwitch{index}Pos", StartBit = index * 4, Length = 4 },
+                val => AnalogInputs[index].RotarySwitchPos = (short)val
+            ));
+        }
+
+        // Digital inputs (1-bit each starting at bit 32)
+        for (int i = 0; i < NumDigitalInputs; i++)
+        {
+            int index = i;
+            StatusMessageSignals[2].Add((
+                new DbcSignal { Name = $"DigitalInput{index}State", StartBit = 32 + index, Length = 1 },
+                val => DigitalInputs[index].State = val != 0
+            ));
+        }
+
+        // Analog inputs digital mode (1-bit each starting at bit 40)
+        for (int i = 0; i < NumAnalogInputs; i++)
+        {
+            int index = i;
+            StatusMessageSignals[2].Add((
+                new DbcSignal { Name = $"AnalogInput{index}DigitalMode", StartBit = 40 + index, Length = 1 },
+                val => AnalogInputs[index].DigitalIn = val != 0
+            ));
+        }
+
+        // Digital outputs (1-bit each starting at bit 48)
+        for (int i = 0; i < NumDigitalOutputs; i++)
+        {
+            int index = i;
+            StatusMessageSignals[2].Add((
+                new DbcSignal { Name = $"DigitalOutput{index}State", StartBit = 48 + index, Length = 1 },
+                val => DigitalOutputs[index].State = val != 0
+            ));
+        }
+
+        // Heartbeat (8-bit at bit 56)
+        StatusMessageSignals[2].Add((
+            new DbcSignal { Name = "Heartbeat", StartBit = 56, Length = 8 },
+            val => Heartbeat = (int)val
+        ));
     }
 
     public void UpdateIsConnected()
@@ -106,65 +184,17 @@ public class CanboardDevice : IDevice
     public void Read(int id, byte[] data,
         ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
     {
-        if (id == BaseId + 0) ReadMessage0(data);
-        if (id == BaseId + 1) ReadMessage1(data);
-        if (id == BaseId + 2) ReadMessage2(data);
+        var offset = id - BaseId;
+        if (StatusMessageSignals.TryGetValue(offset, out var signals))
+        {
+            foreach (var (signal, setValue) in signals)
+            {
+                var value = DbcSignalCodec.ExtractSignal(data, signal);
+                setValue(value);
+            }
+        }
 
         LastRxTime = DateTime.Now;
-    }
-
-    private void ReadMessage0(byte[] data)
-    {
-        AnalogInputs[0].Millivolts = DbcSignalCodec.ExtractSignal(data, startBit: 0, length: 16);
-        AnalogInputs[1].Millivolts = DbcSignalCodec.ExtractSignal(data, startBit: 16, length: 16);
-        AnalogInputs[2].Millivolts = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 16);
-        AnalogInputs[3].Millivolts = DbcSignalCodec.ExtractSignal(data, startBit: 48, length: 16);
-    }
-
-    private void ReadMessage1(byte[] data)
-    {
-        AnalogInputs[4].Millivolts = DbcSignalCodec.ExtractSignal(data, startBit: 0, length: 16);
-        //Byte 2 empty
-        //Byte 3 empty
-        //Byte 4 empty
-        //Byte 5 empty
-        BoardTempC = DbcSignalCodec.ExtractSignal(data, startBit: 48, length: 16, factor: 0.01);
-    }
-
-    private void ReadMessage2(byte[] data)
-    {
-        // Rotary switch positions (4-bit fields)
-        AnalogInputs[0].RotarySwitchPos = (short)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 4);
-        AnalogInputs[1].RotarySwitchPos = (short)DbcSignalCodec.ExtractSignalInt(data, startBit: 4, length: 4);
-        AnalogInputs[2].RotarySwitchPos = (short)DbcSignalCodec.ExtractSignalInt(data, startBit: 8, length: 4);
-        AnalogInputs[3].RotarySwitchPos = (short)DbcSignalCodec.ExtractSignalInt(data, startBit: 12, length: 4);
-        AnalogInputs[4].RotarySwitchPos = (short)DbcSignalCodec.ExtractSignalInt(data, startBit: 16, length: 4);
-
-        // Digital inputs (1-bit fields in byte 4)
-        DigitalInputs[0].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 32, length: 1) != 0;
-        DigitalInputs[1].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 33, length: 1) != 0;
-        DigitalInputs[2].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 34, length: 1) != 0;
-        DigitalInputs[3].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 35, length: 1) != 0;
-        DigitalInputs[4].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 36, length: 1) != 0;
-        DigitalInputs[5].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 37, length: 1) != 0;
-        DigitalInputs[6].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 38, length: 1) != 0;
-        DigitalInputs[7].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 39, length: 1) != 0;
-
-        // Analog inputs digital mode (1-bit fields in byte 5)
-        AnalogInputs[0].DigitalIn = DbcSignalCodec.ExtractSignalInt(data, startBit: 40, length: 1) != 0;
-        AnalogInputs[1].DigitalIn = DbcSignalCodec.ExtractSignalInt(data, startBit: 41, length: 1) != 0;
-        AnalogInputs[2].DigitalIn = DbcSignalCodec.ExtractSignalInt(data, startBit: 42, length: 1) != 0;
-        AnalogInputs[3].DigitalIn = DbcSignalCodec.ExtractSignalInt(data, startBit: 43, length: 1) != 0;
-        AnalogInputs[4].DigitalIn = DbcSignalCodec.ExtractSignalInt(data, startBit: 44, length: 1) != 0;
-
-        // Digital outputs (1-bit fields in byte 6)
-        DigitalOutputs[0].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 48, length: 1) != 0;
-        DigitalOutputs[1].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 49, length: 1) != 0;
-        DigitalOutputs[2].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 50, length: 1) != 0;
-        DigitalOutputs[3].State = DbcSignalCodec.ExtractSignalInt(data, startBit: 51, length: 1) != 0;
-
-        // Heartbeat (8-bit field in byte 7)
-        Heartbeat = (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 56, length: 8);
     }
 
     public List<DeviceCanFrame> GetReadMsgs()
