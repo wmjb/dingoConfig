@@ -36,10 +36,8 @@
         </TemplateColumn>
         <TemplateColumn Title="Fixed DC (%)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudNumericField @bind-Value="@context.Item.FixedDutyCycle" 
-                                 Min="0"
-                                 Max="100"
-                                 Step="1"/>
+                <MudNumericField Value="@context.Item.FixedDutyCycle" 
+                                 ValueChanged="@((int val) => OnDutyCycleChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.VariableDutyCycle" Title="Variable DC" CellStyle="max-width: 100px">
@@ -84,4 +82,14 @@
 @code {
     [Parameter, EditorRequired]
     public List<Output> Outputs { get; set; } = null!;
+    
+    private void OnDutyCycleChanged(Output item, int value)
+    {
+        if (value < 0 || value > 100)
+        {
+            //Snackbar.Add("Value must be between 0 and 100", Severity.Warning);
+        }
+        item.FixedDutyCycle = Math.Clamp(value, 0, 100);
+        StateHasChanged(); // Force UI update to show clamped value
+    }
 }
