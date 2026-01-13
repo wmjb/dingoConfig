@@ -5,18 +5,18 @@
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false"/>
-        <PropertyColumn Property="x => x.Enabled">
+        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+        <PropertyColumn Property="x => x.Enabled" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Name">
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.State" Title="State" Editable="false">
+        <PropertyColumn Property="x => x.State" Title="State" Editable="false" CellStyle="max-width: 100px">
             <CellTemplate>
                 <MudChip T="string"
                          Variant="Variant.Outlined"
@@ -26,7 +26,7 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Mode">
+        <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
                     @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
@@ -36,22 +36,29 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Invert">
+        <PropertyColumn Property="x => x.Invert" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Pull">
+        <PropertyColumn Property="x => x.Pull" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="domain.Enums.InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true">
-                    @foreach (domain.Enums.InputPull pull in Enum.GetValues(typeof(domain.Enums.InputPull)))
+                <MudSelect T="InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true">
+                    @foreach (InputPull pull in Enum.GetValues(typeof(InputPull)))
                     {
-                        <MudSelectItem T="domain.Enums.InputPull" Value="@pull">@pull</MudSelectItem>
+                        <MudSelectItem T="InputPull" Value="@pull">@pull</MudSelectItem>
                     }
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DebounceTime" Title="Debounce (ms)" />
+        <TemplateColumn Title="Debounce (ms)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.DebounceTime" 
+                                 Min="0"
+                                 Max="2550"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 

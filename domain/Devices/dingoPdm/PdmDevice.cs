@@ -131,9 +131,9 @@ public class PdmDevice : IDevice
 
         // Message 0: System status
         StatusMessageSignals[0] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumDigitalInputs; i++)
+        for (var i = 0; i < NumDigitalInputs; i++)
         {
-            int inputIndex = i;
+            var inputIndex = i;
             StatusMessageSignals[0].Add((
                 new DbcSignal { Name = $"Input{inputIndex}State", StartBit = i, Length = 1 },
                 val => Inputs[inputIndex].State = val != 0
@@ -154,10 +154,10 @@ public class PdmDevice : IDevice
         });
 
         // Message 1: Output currents 0-3
-        StatusMessageSignals[1] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < 4 && i < NumOutputs; i++)
+        StatusMessageSignals[1] = [];
+        for (var i = 0; i < 4 && i < NumOutputs; i++)
         {
-            int outputIndex = i;
+            var outputIndex = i;
             StatusMessageSignals[1].Add((
                 new DbcSignal { Name = $"Output{outputIndex}Current", StartBit = i * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
@@ -165,10 +165,10 @@ public class PdmDevice : IDevice
         }
 
         // Message 2: Output currents 4-7
-        StatusMessageSignals[2] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 4; i < NumOutputs; i++)
+        StatusMessageSignals[2] = [];
+        for (var i = 4; i < NumOutputs; i++)
         {
-            int outputIndex = i;
+            var outputIndex = i;
             StatusMessageSignals[2].Add((
                 new DbcSignal { Name = $"Output{outputIndex}Current", StartBit = (i - 4) * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
@@ -176,10 +176,10 @@ public class PdmDevice : IDevice
         }
 
         // Message 3: Output states, wiper, flashers
-        StatusMessageSignals[3] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumOutputs; i++)
+        StatusMessageSignals[3] = [];
+        for (var i = 0; i < NumOutputs; i++)
         {
-            int outputIndex = i;
+            var outputIndex = i;
             StatusMessageSignals[3].Add((
                 new DbcSignal { Name = $"Output{outputIndex}State", StartBit = i * 4, Length = 4 },
                 val => Outputs[outputIndex].State = (OutState)val
@@ -196,9 +196,9 @@ public class PdmDevice : IDevice
             (new DbcSignal { Name = "WiperState", StartBit = 44, Length = 4 },
                 val => Wipers.State = (WiperState)val)
         });
-        for (int i = 0; i < NumFlashers; i++)
+        for (var i = 0; i < NumFlashers; i++)
         {
-            int flasherIndex = i;
+            var flasherIndex = i;
             StatusMessageSignals[3].Add((
                 new DbcSignal { Name = $"Flasher{flasherIndex}", StartBit = 48 + i, Length = 1 },
                 val => Flashers[flasherIndex].Value = val != 0 && Flashers[flasherIndex].Enabled
@@ -206,10 +206,10 @@ public class PdmDevice : IDevice
         }
 
         // Message 4: Output reset counts
-        StatusMessageSignals[4] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumOutputs; i++)
+        StatusMessageSignals[4] = [];
+        for (var i = 0; i < NumOutputs; i++)
         {
-            int outputIndex = i;
+            var outputIndex = i;
             StatusMessageSignals[4].Add((
                 new DbcSignal { Name = $"Output{outputIndex}ResetCount", StartBit = i * 8, Length = 8 },
                 val => Outputs[outputIndex].ResetCount = (int)val
@@ -217,18 +217,18 @@ public class PdmDevice : IDevice
         }
 
         // Message 5: CAN inputs & virtual inputs
-        StatusMessageSignals[5] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumCanInputs; i++)
+        StatusMessageSignals[5] = [];
+        for (var i = 0; i < NumCanInputs; i++)
         {
-            int canInputIndex = i;
+            var canInputIndex = i;
             StatusMessageSignals[5].Add((
                 new DbcSignal { Name = $"CanInput{canInputIndex}", StartBit = i, Length = 1 },
                 val => CanInputs[canInputIndex].Output = val != 0
             ));
         }
-        for (int i = 0; i < NumVirtualInputs; i++)
+        for (var i = 0; i < NumVirtualInputs; i++)
         {
-            int virtualInputIndex = i;
+            var virtualInputIndex = i;
             StatusMessageSignals[5].Add((
                 new DbcSignal { Name = $"VirtualInput{virtualInputIndex}", StartBit = 32 + i, Length = 1 },
                 val => VirtualInputs[virtualInputIndex].Value = val != 0
@@ -236,18 +236,18 @@ public class PdmDevice : IDevice
         }
 
         // Message 6: Counters & conditions
-        StatusMessageSignals[6] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumCounters; i++)
+        StatusMessageSignals[6] = [];
+        for (var i = 0; i < NumCounters; i++)
         {
-            int counterIndex = i;
+            var counterIndex = i;
             StatusMessageSignals[6].Add((
                 new DbcSignal { Name = $"Counter{counterIndex}", StartBit = i * 8, Length = 8 },
                 val => Counters[counterIndex].Value = (int)val
             ));
         }
-        for (int i = 0; i < NumConditions; i++)
+        for (var i = 0; i < NumConditions; i++)
         {
-            int conditionIndex = i;
+            var conditionIndex = i;
             StatusMessageSignals[6].Add((
                 new DbcSignal { Name = $"Condition{conditionIndex}", StartBit = 32 + i, Length = 1 },
                 val => Conditions[conditionIndex].Value = (int)val
@@ -255,12 +255,12 @@ public class PdmDevice : IDevice
         }
 
         // Messages 7-14: CAN input values (4 per message)
-        for (int msg = 7; msg <= 14; msg++)
+        for (var msg = 7; msg <= 14; msg++)
         {
-            StatusMessageSignals[msg] = new List<(DbcSignal, Action<double>)>();
-            for (int i = 0; i < 4; i++)
+            StatusMessageSignals[msg] = [];
+            for (var i = 0; i < 4; i++)
             {
-                int canInputIndex = (msg - 7) * 4 + i;
+                var canInputIndex = (msg - 7) * 4 + i;
                 if (canInputIndex < NumCanInputs)
                 {
                     StatusMessageSignals[msg].Add((
@@ -272,10 +272,10 @@ public class PdmDevice : IDevice
         }
 
         // Message 15: Output duty cycles
-        StatusMessageSignals[15] = new List<(DbcSignal, Action<double>)>();
-        for (int i = 0; i < NumOutputs; i++)
+        StatusMessageSignals[15] = [];
+        for (var i = 0; i < NumOutputs; i++)
         {
-            int outputIndex = i;
+            var outputIndex = i;
             StatusMessageSignals[15].Add((
                 new DbcSignal { Name = $"Output{outputIndex}DutyCycle", StartBit = i * 8, Length = 8, Unit = "%" },
                 val => Outputs[outputIndex].CurrentDutyCycle = val
@@ -305,7 +305,7 @@ public class PdmDevice : IDevice
 
     public void UpdateIsConnected()
     {
-        TimeSpan timeSpan = DateTime.Now - LastRxTime;
+        var timeSpan = DateTime.Now - LastRxTime;
         Connected = timeSpan.TotalMilliseconds < 500;
     }
     

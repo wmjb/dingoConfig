@@ -6,18 +6,18 @@
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false"/>
-        <PropertyColumn Property="x => x.Enabled">
+        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+        <PropertyColumn Property="x => x.Enabled" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Name">
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Output" Title="Value" Editable="false">
+        <PropertyColumn Property="x => x.Output" Title="Value" Editable="false" CellStyle="max-width: 100px">
             <CellTemplate>
                 <MudChip T="string"
                          Variant="Variant.Outlined"
@@ -27,15 +27,36 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Id" Title="CAN ID" />
-        <PropertyColumn Property="x => x.Ide" Title="Extended">
+        <TemplateColumn Title="CAN ID" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.Id" 
+                                 Min="0"
+                                 Max="536870912"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Ide" Title="Extended" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Ide" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Dlc" Title="DLC" />
-        <PropertyColumn Property="x => x.StartingByte" Title="Start Byte" />
-        <PropertyColumn Property="x => x.Operator">
+        <TemplateColumn Title="Num Bytes" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.Dlc" 
+                                 Min="1"
+                                 Max="2"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Start Byte" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.StartingByte" 
+                                 Min="0"
+                                 Max="8"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Operator" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true">
                     @foreach (Operator op in Enum.GetValues(typeof(Operator)))
@@ -45,8 +66,15 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.OnVal" Title="On Value" />
-        <PropertyColumn Property="x => x.Mode">
+        <TemplateColumn Title="On Value" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.OnVal" 
+                                 Min="0"
+                                 Max="65536"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
                     @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
@@ -56,12 +84,19 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.TimeoutEnabled" Title="Timeout En">
+        <PropertyColumn Property="x => x.TimeoutEnabled" Title="Timeout En" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Timeout" Title="Timeout (s)" />
+        <TemplateColumn Title="Timeout (s)" Resizable="true" CellStyle="max-width: 150px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.Timeout" 
+                                 Min="0"
+                                 Max="25"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 </MudPaper>

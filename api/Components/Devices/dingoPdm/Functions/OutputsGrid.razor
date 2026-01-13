@@ -6,17 +6,17 @@
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
     <Columns>
         <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" />
-        <PropertyColumn Property="x => x.Enabled">
+        <PropertyColumn Property="x => x.Enabled" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Name">
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.State" Title="State" Editable="false">
+        <PropertyColumn Property="x => x.State" Editable="false" CellStyle="max-width: 100px">
             <CellTemplate>
                 <MudChip T="string" Variant="Variant.Outlined"
                          Color="@GetOutputColor(context.Item.State)"
@@ -25,7 +25,7 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Input" Title="Variable">
+        <PropertyColumn Property="x => x.Input" Title="Variable" CellStyle="max-width: 150px">
             <EditTemplate>
                 <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
@@ -35,23 +35,23 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <TemplateColumn Title="Current Limit (A)">
+        <TemplateColumn Title="Current Limit (A)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @bind-Value="@context.Item.CurrentLimit" 
                                  Min="0"
-                                 Max="100"
+                                 Max="255"
                                  Step="1.0"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Inrush Limit (A)">
+        <TemplateColumn Title="Inrush Limit (A)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @bind-Value="@context.Item.InrushCurrentLimit" 
                                  Min="0"
-                                 Max="100"
+                                 Max="255"
                                  Step="1.0"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Inrush Time (s)">
+        <TemplateColumn Title="Inrush Time (s)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @bind-Value="@context.Item.InrushTime"
                                  Min ="0"
@@ -59,7 +59,7 @@
                                  Step="1"/>
             </EditTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.ResetMode">
+        <PropertyColumn Property="x => x.ResetMode" Title="Reset Mode" CellStyle="max-width: 150px">
             <EditTemplate>
                 <MudSelect T="ResetMode" @bind-Value="context.Item.ResetMode" Variant="Variant.Outlined" Dense="true">
                     @foreach (ResetMode resetMode in Enum.GetValues(typeof(ResetMode)))
@@ -69,17 +69,28 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.ResetCountLimit" Title="Reset Count" />
-        <PropertyColumn Property="x => x.ResetTime" Title="Reset Time (s)" />
+        <TemplateColumn Title="Reset Count Limit" Resizable="true" CellStyle="max-width: 70px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.ResetCountLimit"
+                                 Min ="0"
+                                 Max="15"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Reset Time (s)" Resizable="true" CellStyle="max-width: 70px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.ResetTime"
+                                 Min ="0"
+                                 Max="25"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 
 @code {
     [Parameter, EditorRequired]
     public List<Output> Outputs { get; set; } = null!;
-
-    private const double CurrentLimitMult = 1.5;
-    private const double InrushLimitMult = 3.0;
     
     private static Color GetOutputColor(OutState state) => state switch
     {
@@ -92,8 +103,8 @@
     private static string GetOutputStateText(OutState state) => state switch
     {
         OutState.On => "ON",
-        OutState.Overcurrent => "OVERCURRENT",
-        OutState.Fault => "RESETTING",
+        OutState.Overcurrent => "OC",
+        OutState.Fault => "FAULT",
         _ => "OFF"
     };
 }

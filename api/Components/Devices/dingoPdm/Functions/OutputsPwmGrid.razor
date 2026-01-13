@@ -5,18 +5,18 @@
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" />
-        <PropertyColumn Property="x => x.PwmEnabled" Title="Enabled">
+        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+        <PropertyColumn Property="x => x.PwmEnabled" Title="Enabled" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.PwmEnabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Name">
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.CurrentDutyCycle" Title="Duty Cycle" Editable="false">
+        <PropertyColumn Property="x => x.CurrentDutyCycle" Title="Duty Cycle" Editable="false" CellStyle="max-width: 100px">
             <CellTemplate>
                 <MudChip T="string"
                          Variant="Variant.Outlined"
@@ -26,14 +26,28 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Frequency" Title="Freq (Hz)" />
-        <PropertyColumn Property="x => x.FixedDutyCycle" Title="Fixed DC (%)" />
-        <PropertyColumn Property="x => x.VariableDutyCycle" Title="Variable DC">
+        <TemplateColumn Title="Freq (Hz)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.Frequency" 
+                                 Min="0"
+                                 Max="511"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Fixed DC (%)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.FixedDutyCycle" 
+                                 Min="0"
+                                 Max="100"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.VariableDutyCycle" Title="Variable DC" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.VariableDutyCycle" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DutyCycleInput" Title="DC Input">
+        <PropertyColumn Property="x => x.DutyCycleInput" Title="DC Input" CellStyle="max-width: 150px">
             <EditTemplate>
                 <MudSelect T="VarMap" @bind-Value="context.Item.DutyCycleInput" Variant="Variant.Outlined" Dense="true">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
@@ -43,13 +57,27 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DutyCycleDenominator" Title="Variable DC Denom" />
-        <PropertyColumn Property="x => x.SoftStartEnabled" Title="Soft Start">
+        <TemplateColumn Title="Variable DC Denom" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.DutyCycleDenominator" 
+                                 Min="0"
+                                 Max="255"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.SoftStartEnabled" Title="Soft Start" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.SoftStartEnabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.SoftStartRampTime" Title="SS Duration (ms)" />
+        <TemplateColumn Title="SS Duration (ms)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.SoftStartRampTime" 
+                                 Min="0"
+                                 Max="65535"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 

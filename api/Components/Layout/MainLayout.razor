@@ -1,5 +1,4 @@
 ﻿@using api.Services
-@using api.Components.Shared
 @using domain.Interfaces
 @using MudBlazor.Utilities
 @inherits LayoutComponentBase
@@ -61,8 +60,8 @@
     [Inject] private ICommsAdapterManager AdapterManager { get; set; } = null!;
 
     private bool _drawerOpen = true;
-    private bool _showSimPlayback = false;
-    private System.Threading.Timer? _adapterStatusTimer;
+    private bool _showSimPlayback;
+    private Timer? _adapterStatusTimer;
 
     readonly MudTheme _theme = new MudTheme()
     {
@@ -82,12 +81,12 @@
         AdapterManager.Disconnected += OnAdapterDisconnected;
 
         // Poll adapter status to show/hide SimPlaybackToolbar
-        _adapterStatusTimer = new System.Threading.Timer(_ =>
+        _adapterStatusTimer = new Timer(_ =>
         {
             InvokeAsync(() =>
             {
                 var status = AdapterManager.GetStatus();
-                _showSimPlayback = status.isConnected && status.activeAdapter == "Sim";
+                _showSimPlayback = status is { isConnected: true, activeAdapter: "Sim" };
                 StateHasChanged();
             });
         }, null, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500));

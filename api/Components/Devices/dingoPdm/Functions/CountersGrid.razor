@@ -5,18 +5,18 @@
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
     <Columns>
-        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false"/>
+        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
         <PropertyColumn Property="x => x.Enabled">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Name">
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Value" Title="Value" Editable="false">
+        <PropertyColumn Property="x => x.Value" Title="Value" Editable="false" CellStyle="max-width: 100px">
             <CellTemplate>
                 <MudChip T="string"
                          Variant="Variant.Outlined"
@@ -26,14 +26,28 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.MinCount" Title="Min" />
-        <PropertyColumn Property="x => x.MaxCount" Title="Max" />
-        <PropertyColumn Property="x => x.WrapAround" Title="Wrap">
+        <TemplateColumn Title="Min" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.MinCount" 
+                                 Min="0"
+                                 Max="16"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Max" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @bind-Value="@context.Item.MaxCount" 
+                                 Min="0"
+                                 Max="16"
+                                 Step="1"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.WrapAround" Title="Wrap" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudCheckBox @bind-Value="context.Item.WrapAround" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.IncInput" Title="Inc Input">
+        <PropertyColumn Property="x => x.IncInput" Title="Inc Input" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="VarMap" @bind-Value="context.Item.IncInput" Variant="Variant.Outlined" Dense="true">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
@@ -43,7 +57,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.IncEdge" Title="Inc Edge">
+        <PropertyColumn Property="x => x.IncEdge" Title="Inc Edge" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="InputEdge" @bind-Value="context.Item.IncEdge" Variant="Variant.Outlined" Dense="true">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
@@ -53,7 +67,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DecInput" Title="Dec Input">
+        <PropertyColumn Property="x => x.DecInput" Title="Dec Input" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="VarMap" @bind-Value="context.Item.DecInput" Variant="Variant.Outlined" Dense="true">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
@@ -63,7 +77,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DecEdge" Title="Dec Edge">
+        <PropertyColumn Property="x => x.DecEdge" Title="Dec Edge" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="InputEdge" @bind-Value="context.Item.DecEdge" Variant="Variant.Outlined" Dense="true">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
@@ -73,7 +87,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.ResetInput" Title="Reset Input">
+        <PropertyColumn Property="x => x.ResetInput" Title="Reset Input" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="VarMap" @bind-Value="context.Item.ResetInput" Variant="Variant.Outlined" Dense="true">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
@@ -83,7 +97,7 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.ResetEdge" Title="Reset Edge">
+        <PropertyColumn Property="x => x.ResetEdge" Title="Reset Edge" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudSelect T="InputEdge" @bind-Value="context.Item.ResetEdge" Variant="Variant.Outlined" Dense="true">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
