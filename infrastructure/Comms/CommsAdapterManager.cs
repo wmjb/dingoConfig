@@ -42,7 +42,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         // Adapter list with platform guard
         var adapters = new List<string> { "USB", "SLCAN", "PCAN", "Sim" };
 
-#if LINUX
+#if !WINDOWS
         adapters.Add("SocketCAN");
 #endif
 
@@ -69,7 +69,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
             "SLCAN" => serviceProvider.GetRequiredService<SlcanAdapter>(),
             "PCAN" => serviceProvider.GetRequiredService<PcanAdapter>(),
 
-#if LINUX
+#if !WINDOWS
             "SocketCAN" => serviceProvider.GetRequiredService<SocketCanAdapter>(),
 #endif
 
