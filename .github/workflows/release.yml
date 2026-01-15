@@ -92,7 +92,7 @@ jobs:
             -c Release \
             -r linux-x64 \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-x64
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-x64 -p:DefineConstants=LINUX
 
       - name: Build Linux ARM64
         run: |
@@ -100,7 +100,7 @@ jobs:
             -c Release \
             -r linux-arm64 \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64 -p:DefineConstants=LINUX
 
       - name: Build macOS x64
         run: |
