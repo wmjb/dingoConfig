@@ -1,4 +1,4 @@
-#if LINUX
+#if !WINDOWS
 
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
