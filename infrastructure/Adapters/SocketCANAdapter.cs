@@ -8,7 +8,7 @@ using domain.Interfaces;
 
 namespace infrastructure.Adapters;
 
-public class SocketCanAdapter : ICommsAdapter
+public unsafe class SocketCanAdapter : ICommsAdapter
 {
     public string Name => "SocketCAN";
 
@@ -84,15 +84,14 @@ public class SocketCanAdapter : ICommsAdapter
         if (_fd < 0)
             return Task.FromResult(false);
 
-        var raw = new CanFrameRaw
-        {
-            can_id = (uint)frame.Id,
-            can_dlc = (byte)frame.Len
-        };
+        CanFrameRaw raw = default;
+        raw.can_id = (uint)frame.Id;
+        raw.can_dlc = (byte)frame.Len;
 
-        Array.Copy(frame.Payload, raw.data, frame.Len);
+        for (int i = 0; i < frame.Len; i++)
+            raw.data[i] = frame.Payload[i];
 
-        int size = Marshal.SizeOf<CanFrameRaw>();
+        int size = sizeof(CanFrameRaw);
         IntPtr ptr = Marshal.AllocHGlobal(size);
         Marshal.StructureToPtr(raw, ptr, false);
 
@@ -105,7 +104,7 @@ public class SocketCanAdapter : ICommsAdapter
 
     private void ReceiveLoop()
     {
-        int size = Marshal.SizeOf<CanFrameRaw>();
+        int size = sizeof(CanFrameRaw);
         IntPtr ptr = Marshal.AllocHGlobal(size);
 
         while (_running && _fd >= 0)
@@ -122,7 +121,8 @@ public class SocketCanAdapter : ICommsAdapter
                 }
 
                 var payload = new byte[raw.can_dlc];
-                Array.Copy(raw.data, payload, raw.can_dlc);
+                for (int i = 0; i < raw.can_dlc; i++)
+                    payload[i] = raw.data[i];
 
                 var frame = new CanFrame((int)raw.can_id, raw.can_dlc, payload);
                 DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
@@ -138,22 +138,21 @@ public class SocketCanAdapter : ICommsAdapter
 // -----------------------------
 
 [StructLayout(LayoutKind.Sequential)]
+public unsafe struct CanFrameRaw
+{
+    public uint can_id;
+    public byte can_dlc;
+    public fixed byte __pad[3];   // required padding
+    public fixed byte data[8];    // fixed buffer
+}
+
+[StructLayout(LayoutKind.Sequential)]
 public struct SockAddrCan
 {
     public ushort can_family;
     public int can_ifindex;
     public uint rx_id;
     public uint tx_id;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct CanFrameRaw
-{
-    public uint can_id;
-    public byte can_dlc;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-    public byte[] data;
 }
 
 // -----------------------------
