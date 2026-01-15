@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Text;
 using domain.Enums;
 using domain.Models;
 using domain.Interfaces;
@@ -96,7 +97,8 @@ public class SocketCanAdapter : ICommsAdapter
             var can = new CanFrameRaw
             {
                 can_id = (uint)frame.Id,
-                can_dlc = (byte)frame.Len
+                can_dlc = (byte)frame.Len,
+                data = new byte[8]
             };
 
             Array.Copy(frame.Payload, can.data, frame.Len);
@@ -139,7 +141,10 @@ public class SocketCanAdapter : ICommsAdapter
                 var frame = new CanFrame((int)raw.can_id, raw.can_dlc, payload);
                 DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
             }
-            catch { }
+            catch
+            {
+                // ignore transient socket errors
+            }
         }
     }
 
@@ -149,7 +154,11 @@ public class SocketCanAdapter : ICommsAdapter
 
     private static int GetInterfaceIndex(string ifName)
     {
-        var ifreq = new Ifreq();
+        var ifreq = new Ifreq
+        {
+            ifr_name = new byte[16]
+        };
+
         Encoding.ASCII.GetBytes(ifName).CopyTo(ifreq.ifr_name, 0);
 
         int fd = Libc.socket((int)AddressFamily.Unix, (int)SocketType.Dgram, 0);
@@ -201,6 +210,7 @@ public struct CanFrameRaw
 {
     public uint can_id;
     public byte can_dlc;
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
     public byte[] data;
 }
@@ -231,4 +241,31 @@ public static class Libc
 
     [DllImport("libc", SetLastError = true)]
     public static extern int close(int fd);
+}
+
+// -----------------------------
+// Required SockAddr wrapper
+// -----------------------------
+
+public class SockAddr : EndPoint
+{
+    private readonly byte[] _addr;
+
+    public SockAddr(byte[] addr)
+    {
+        _addr = addr;
+    }
+
+    public override SocketAddress Serialize()
+    {
+        var sa = new SocketAddress(AddressFamily.Can, _addr.Length);
+        for (int i = 0; i < _addr.Length; i++)
+            sa[i] = _addr[i];
+        return sa;
+    }
+
+    public override EndPoint Create(SocketAddress socketAddress)
+    {
+        throw new NotImplementedException();
+    }
 }
