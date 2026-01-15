@@ -12,7 +12,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
 {
     private ICommsAdapter? _activeAdapter;
     
-    public ICommsAdapter?  ActiveAdapter => _activeAdapter;
+    public ICommsAdapter? ActiveAdapter => _activeAdapter;
 
     private string? _activePort;
 
@@ -20,12 +20,11 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
 
     public event EventHandler<CanFrameEventArgs>? DataReceived;
     public event EventHandler? Connected;
-    
 
     public (string[] adapters, string[] ports) GetAvailable()
     {
         return (
-            adapters: ["USB", "SLCAN", "PCAN", "Sim"],
+            adapters: ["USB", "SLCAN", "PCAN", "SocketCAN", "Sim"],
             ports: SerialPort.GetPortNames()
         );
     }
@@ -46,6 +45,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
             "USB" => serviceProvider.GetRequiredService<UsbAdapter>(),
             "SLCAN" => serviceProvider.GetRequiredService<SlcanAdapter>(),
             "PCAN" => serviceProvider.GetRequiredService<PcanAdapter>(),
+            "SocketCAN" => serviceProvider.GetRequiredService<SocketCanAdapter>(),
             "Sim" => serviceProvider.GetRequiredService<SimAdapter>(),
             _ => throw new ArgumentException($"Unknown adapter type: {adapterName}")
         };
@@ -115,5 +115,4 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     {
         Connected?.Invoke(this, EventArgs.Empty);
     }
-    
 }
