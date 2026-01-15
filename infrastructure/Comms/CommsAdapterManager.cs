@@ -23,11 +23,28 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
 
     public (string[] adapters, string[] ports) GetAvailable()
     {
+        var serialPorts = SerialPort.GetPortNames();
+    
+        // Discover CAN interfaces (Linux only)
+        string[] canIfaces = [];
+        try
+        {
+            canIfaces = Directory.GetDirectories("/sys/class/net")
+                .Select(Path.GetFileName)
+                .Where(n => n.StartsWith("can") || n.StartsWith("vcan"))
+                .ToArray();
+        }
+        catch
+        {
+            // Ignore on Windows
+        }
+
         return (
             adapters: ["USB", "SLCAN", "PCAN", "SocketCAN", "Sim"],
-            ports: SerialPort.GetPortNames()
+            ports: serialPorts.Concat(canIfaces).ToArray()
         );
     }
+
 
     public (bool isConnected, string? activeAdapter, string? activePort) GetStatus()
     {
