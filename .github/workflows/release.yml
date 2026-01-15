@@ -82,7 +82,7 @@ jobs:
         run: |
           dotnet publish api/api.csproj \
             -c Release \
-            -r linux-arm32 \
+            -r linux-arm \
             --self-contained true \
             -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm32
 
@@ -92,7 +92,7 @@ jobs:
             -c Release \
             -r linux-arm64 \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64 -p:DefineConstants=LINUX
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64
 
       - name: Create zip archives
         run: |
