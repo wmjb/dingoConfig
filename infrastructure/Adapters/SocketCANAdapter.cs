@@ -1,9 +1,7 @@
-#if !WINDOWS
-
-using System.Net.Sockets;
-using System.Runtime.InteropServices;
+using System;
 using System.Diagnostics;
-using System.Text;
+using System.Runtime.InteropServices;
+using System.Threading;
 using domain.Enums;
 using domain.Models;
 using domain.Interfaces;
@@ -14,7 +12,7 @@ public class SocketCanAdapter : ICommsAdapter
 {
     public string Name => "SocketCAN";
 
-    private Socket? _socket;
+    private int _fd = -1;
     private Thread? _rxThread;
     private bool _running;
 
@@ -25,42 +23,36 @@ public class SocketCanAdapter : ICommsAdapter
 
     public event DataReceivedHandler? DataReceived;
 
-    public bool IsConnected => RxTimeDelta < TimeSpan.FromMilliseconds(500);
+    public bool IsConnected => _fd >= 0 && RxTimeDelta < TimeSpan.FromMilliseconds(500);
 
     public Task<bool> InitAsync(string iface, CanBitRate bitRate, CancellationToken ct)
     {
-        try
-        {
-            _ifName = iface;
-            _rxStopwatch = Stopwatch.StartNew();
-            return Task.FromResult(true);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return Task.FromResult(false);
-        }
+        _ifName = iface;
+        _rxStopwatch = Stopwatch.StartNew();
+        return Task.FromResult(true);
     }
 
     public Task<bool> StartAsync(CancellationToken ct)
     {
         try
         {
-            _socket = new Socket(AddressFamily.Can, SocketType.Raw, (ProtocolType)SocketCANProtocols.CAN_RAW);
+            _fd = Libc.socket(Libc.AF_CAN, Libc.SOCK_RAW, Libc.CAN_RAW);
+            if (_fd < 0)
+                return Task.FromResult(false);
 
-            int ifIndex = GetInterfaceIndex(_ifName);
-            if (ifIndex < 0)
+            int ifIndex = Libc.if_nametoindex(_ifName);
+            if (ifIndex == 0)
                 return Task.FromResult(false);
 
             var addr = new SockAddrCan
             {
-                can_family = (ushort)AddressFamily.Can,
+                can_family = Libc.AF_CAN,
                 can_ifindex = ifIndex
             };
 
-            var addrBytes = StructureToBytes(addr);
-
-            _socket.Bind(new SockAddr(addrBytes));
+            int bindResult = Libc.bind(_fd, ref addr, Marshal.SizeOf<SockAddrCan>());
+            if (bindResult < 0)
+                return Task.FromResult(false);
 
             _running = true;
             _rxThread = new Thread(ReceiveLoop) { IsBackground = true };
@@ -68,68 +60,60 @@ public class SocketCanAdapter : ICommsAdapter
 
             return Task.FromResult(true);
         }
-        catch (Exception e)
+        catch
         {
-            Console.WriteLine(e);
             return Task.FromResult(false);
         }
     }
 
     public Task<bool> StopAsync()
     {
-        try
+        _running = false;
+
+        if (_fd >= 0)
         {
-            _running = false;
-            _socket?.Close();
-            return Task.FromResult(true);
+            Libc.close(_fd);
+            _fd = -1;
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return Task.FromResult(false);
-        }
+
+        return Task.FromResult(true);
     }
 
     public Task<bool> WriteAsync(CanFrame frame, CancellationToken ct)
     {
-        if (_socket == null) return Task.FromResult(false);
-
-        try
-        {
-            var can = new CanFrameRaw
-            {
-                can_id = (uint)frame.Id,
-                can_dlc = (byte)frame.Len,
-                data = new byte[8]
-            };
-
-            Array.Copy(frame.Payload, can.data, frame.Len);
-
-            var bytes = StructureToBytes(can);
-            _socket.Send(bytes);
-
-            return Task.FromResult(true);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
+        if (_fd < 0)
             return Task.FromResult(false);
-        }
+
+        var raw = new CanFrameRaw
+        {
+            can_id = (uint)frame.Id,
+            can_dlc = (byte)frame.Len
+        };
+
+        Array.Copy(frame.Payload, raw.data, frame.Len);
+
+        int size = Marshal.SizeOf<CanFrameRaw>();
+        IntPtr ptr = Marshal.AllocHGlobal(size);
+        Marshal.StructureToPtr(raw, ptr, false);
+
+        int written = Libc.write(_fd, ptr, size);
+
+        Marshal.FreeHGlobal(ptr);
+
+        return Task.FromResult(written == size);
     }
 
     private void ReceiveLoop()
     {
-        var buf = new byte[Marshal.SizeOf<CanFrameRaw>()];
+        int size = Marshal.SizeOf<CanFrameRaw>();
+        IntPtr ptr = Marshal.AllocHGlobal(size);
 
-        while (_running && _socket != null)
+        while (_running && _fd >= 0)
         {
-            try
+            int read = Libc.read(_fd, ptr, size);
+            if (read == size)
             {
-                int read = _socket.Receive(buf);
-                if (read < Marshal.SizeOf<CanFrameRaw>())
-                    continue;
-
-                var raw = BytesToStructure<CanFrameRaw>(buf);
+                var raw = Marshal.PtrToStructure<CanFrameRaw>(ptr)!;
 
                 if (_rxStopwatch != null)
                 {
@@ -143,54 +127,9 @@ public class SocketCanAdapter : ICommsAdapter
                 var frame = new CanFrame((int)raw.can_id, raw.can_dlc, payload);
                 DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
             }
-            catch
-            {
-                // ignore transient socket errors
-            }
         }
-    }
 
-    // -----------------------------
-    // Linux SocketCAN Interop
-    // -----------------------------
-
-    private static int GetInterfaceIndex(string ifName)
-    {
-        var ifreq = new Ifreq
-        {
-            ifr_name = new byte[16]
-        };
-
-        Encoding.ASCII.GetBytes(ifName).CopyTo(ifreq.ifr_name, 0);
-
-        int fd = Libc.socket((int)AddressFamily.Unix, (int)SocketType.Dgram, 0);
-        if (fd < 0) return -1;
-
-        int result = Libc.ioctl(fd, Libc.SIOCGIFINDEX, ref ifreq);
-        Libc.close(fd);
-
-        return result < 0 ? -1 : ifreq.ifr_ifindex;
-    }
-
-    private static byte[] StructureToBytes<T>(T str)
-    {
-        int size = Marshal.SizeOf<T>();
-        byte[] arr = new byte[size];
-        IntPtr ptr = Marshal.AllocHGlobal(size);
-        Marshal.StructureToPtr(str, ptr, true);
-        Marshal.Copy(ptr, arr, 0, size);
         Marshal.FreeHGlobal(ptr);
-        return arr;
-    }
-
-    private static T BytesToStructure<T>(byte[] arr)
-    {
-        int size = Marshal.SizeOf<T>();
-        IntPtr ptr = Marshal.AllocHGlobal(size);
-        Marshal.Copy(arr, 0, ptr, size);
-        T str = Marshal.PtrToStructure<T>(ptr)!;
-        Marshal.FreeHGlobal(ptr);
-        return str;
     }
 }
 
@@ -217,60 +156,31 @@ public struct CanFrameRaw
     public byte[] data;
 }
 
-[StructLayout(LayoutKind.Sequential)]
-public struct Ifreq
-{
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public byte[] ifr_name;
-
-    public int ifr_ifindex;
-}
-
-public static class SocketCANProtocols
-{
-    public const int CAN_RAW = 1;
-}
+// -----------------------------
+// Native Linux syscalls
+// -----------------------------
 
 public static class Libc
 {
-    public const int SIOCGIFINDEX = 0x8933;
+    public const int AF_CAN = 29;
+    public const int SOCK_RAW = 3;
+    public const int CAN_RAW = 1;
 
     [DllImport("libc", SetLastError = true)]
     public static extern int socket(int domain, int type, int protocol);
 
     [DllImport("libc", SetLastError = true)]
-    public static extern int ioctl(int fd, int request, ref Ifreq ifreq);
+    public static extern int bind(int sockfd, ref SockAddrCan addr, int addrlen);
+
+    [DllImport("libc", SetLastError = true)]
+    public static extern int read(int fd, IntPtr buf, int count);
+
+    [DllImport("libc", SetLastError = true)]
+    public static extern int write(int fd, IntPtr buf, int count);
 
     [DllImport("libc", SetLastError = true)]
     public static extern int close(int fd);
+
+    [DllImport("libc", SetLastError = true)]
+    public static extern int if_nametoindex(string ifname);
 }
-
-// -----------------------------
-// Required SockAddr wrapper
-// -----------------------------
-
-public class SockAddr : EndPoint
-{
-    private readonly byte[] _addr;
-
-    public SockAddr(byte[] addr)
-    {
-        _addr = addr;
-    }
-
-    public override SocketAddress Serialize()
-    {
-        var sa = new SocketAddress(AddressFamily.Can, _addr.Length);
-        for (int i = 0; i < _addr.Length; i++)
-            sa[i] = _addr[i];
-        return sa;
-    }
-
-    public override EndPoint Create(SocketAddress socketAddress)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-#endif
-
