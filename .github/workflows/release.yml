@@ -78,13 +78,13 @@ jobs:
             --self-contained true \
             -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-x64
 
-      - name: Build Linux ARM32
+      - name: Build Linux ARM
         run: |
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-arm \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm32
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm
 
       - name: Build Linux ARM64
         run: |
@@ -99,7 +99,7 @@ jobs:
           cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
 
           zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm32/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm/
           zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
 
           cd ../..
@@ -111,7 +111,7 @@ jobs:
           tag_name: v${{ needs.check-version.outputs.version }}
           files: |
             publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
-            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm32.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip
             publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
