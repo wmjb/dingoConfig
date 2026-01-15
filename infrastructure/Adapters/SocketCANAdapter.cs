@@ -1,3 +1,5 @@
+#if LINUX
+
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
@@ -269,3 +271,6 @@ public class SockAddr : EndPoint
         throw new NotImplementedException();
     }
 }
+
+#endif
+
