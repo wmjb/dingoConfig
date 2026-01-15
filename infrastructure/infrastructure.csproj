@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-<PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
-</PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\domain\domain.csproj" />
     <ProjectReference Include="..\application\application.csproj" />
