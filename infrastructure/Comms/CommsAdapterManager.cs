@@ -24,7 +24,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     public (string[] adapters, string[] ports) GetAvailable()
     {
         var serialPorts = SerialPort.GetPortNames();
-    
+
         // Discover CAN interfaces (Linux only)
         string[] canIfaces = [];
         try
@@ -36,15 +36,21 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         }
         catch
         {
-            // Ignore on Windows
+            // Windows: ignore
         }
 
+        // Adapter list with platform guard
+        var adapters = new List<string> { "USB", "SLCAN", "PCAN", "Sim" };
+
+#if LINUX
+        adapters.Add("SocketCAN");
+#endif
+
         return (
-            adapters: ["USB", "SLCAN", "PCAN", "SocketCAN", "Sim"],
+            adapters: adapters.ToArray(),
             ports: serialPorts.Concat(canIfaces).ToArray()
         );
     }
-
 
     public (bool isConnected, string? activeAdapter, string? activePort) GetStatus()
     {
@@ -62,7 +68,11 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
             "USB" => serviceProvider.GetRequiredService<UsbAdapter>(),
             "SLCAN" => serviceProvider.GetRequiredService<SlcanAdapter>(),
             "PCAN" => serviceProvider.GetRequiredService<PcanAdapter>(),
+
+#if LINUX
             "SocketCAN" => serviceProvider.GetRequiredService<SocketCanAdapter>(),
+#endif
+
             "Sim" => serviceProvider.GetRequiredService<SimAdapter>(),
             _ => throw new ArgumentException($"Unknown adapter type: {adapterName}")
         };
