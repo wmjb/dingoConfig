@@ -1,5 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+<PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-arm64'">
+    <DefineConstants>LINUX</DefineConstants>
+</PropertyGroup>
+
+
   <ItemGroup>
     <ProjectReference Include="..\domain\domain.csproj" />
     <ProjectReference Include="..\application\application.csproj" />
