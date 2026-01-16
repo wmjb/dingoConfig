@@ -1,4 +1,10 @@
 <Project>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SetRuntimeIdentifier>true</SetRuntimeIdentifier>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SetRuntimeIdentifier)' == 'true'">
+    <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(SelfContained)' == 'true' 
                            AND '$(RuntimeIdentifier)' != '' 
                            AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
