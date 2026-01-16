@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <Target Name="DumpInfraProps" BeforeBuild>
-    <Message Text="INFRA: RID='$(RuntimeIdentifier)' TFM='$(TargetFramework)' SC='$(SelfContained)' OS='$(OS)' Platform='$(Platform)' DefineConstants='$(DefineConstants)'" Importance="High" />
+    <Message Text="INFRA: RID=&apos;$(RuntimeIdentifier)&apos; TFM=&apos;$(TargetFramework)&apos; SC=&apos;$(SelfContained)&apos; OS=&apos;$(OS)&apos; Platform=&apos;$(Platform)&apos; DefineConstants=&apos;$(DefineConstants)&apos;" Importance="High" />
   </Target>
 
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
