@@ -51,6 +51,10 @@
     <!-- Console window is hidden programmatically in Program.cs for Windows -->
   </PropertyGroup>
 
+<PropertyGroup>
+  <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
+</PropertyGroup>
+
 <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
   <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
 </PropertyGroup>
