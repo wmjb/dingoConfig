@@ -43,6 +43,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         var adapters = new List<string> { "USB", "SLCAN", "PCAN", "Sim" };
 
 #if LINUX
+#warning Building with LINUX define enabled
         adapters.Add("SocketCAN");
 #endif
 
@@ -70,6 +71,7 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
             "PCAN" => serviceProvider.GetRequiredService<PcanAdapter>(),
 
 #if LINUX
+#warning Building with LINUX define enabled
             "SocketCAN" => serviceProvider.GetRequiredService<SocketCanAdapter>(),
 #endif
 
