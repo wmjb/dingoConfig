@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+</Project>
