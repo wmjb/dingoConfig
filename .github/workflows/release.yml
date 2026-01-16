@@ -132,8 +132,8 @@ jobs:
               apt-get update &&
               apt-get install -y wget ca-certificates tar gzip &&
 
-              # Download .NET 10 SDK tarball (x64 SDK works for cross-publishing)
-              wget https://download.visualstudio.microsoft.com/download/pr/7d1b6d6e-0e3d-4e8b-9c8a-7e0f3b8e3f4d/0f6e2a3f4b6a4a1f8e6f3b0e/dotnet-sdk-10.0.100-linux-x64.tar.gz -O dotnet-sdk.tar.gz &&
+              # Download .NET 10 SDK tarball (permanent URL)
+              wget https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz -O dotnet-sdk.tar.gz &&
 
               mkdir -p /usr/share/dotnet &&
               tar -xzf dotnet-sdk.tar.gz -C /usr/share/dotnet &&
