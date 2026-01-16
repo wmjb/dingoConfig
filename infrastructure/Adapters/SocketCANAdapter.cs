@@ -1,3 +1,5 @@
+#if LINUX
+
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -183,3 +185,4 @@ public static class Libc
     [DllImport("libc", SetLastError = true)]
     public static extern int if_nametoindex(string ifname);
 }
+#endif
