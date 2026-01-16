@@ -48,8 +48,11 @@
     <Version>0.1.3.2</Version>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <PackageIcon>wwwroot\icon.png</PackageIcon>
-    <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
     <!-- Console window is hidden programmatically in Program.cs for Windows -->
   </PropertyGroup>
+
+<PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
+  <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
+</PropertyGroup>
 
 </Project>
