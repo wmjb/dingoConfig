@@ -17,8 +17,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-<PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-arm64' OR '$(RuntimeIdentifier)' == 'linux-arm'">
-    <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
-  </PropertyGroup>
+<PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'linux'">
+  <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
+</PropertyGroup>
 
 </Project>
