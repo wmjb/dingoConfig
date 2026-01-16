@@ -16,6 +16,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <Target Name="DumpInfra" BeforeBuild>
+    <Message Text="INFRA RID=$(RuntimeIdentifier)" Importance="High" />
+  </Target>
+
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
    <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
  </PropertyGroup>
