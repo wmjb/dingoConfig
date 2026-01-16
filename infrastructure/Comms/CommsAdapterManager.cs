@@ -49,6 +49,12 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
         adapters.Add("SocketCAN");
         #endif
 
+        return (
+            adapters: adapters.ToArray(),
+            ports: serialPorts.Concat(canIfaces).ToArray()
+        );
+    }        
+
     public (bool isConnected, string? activeAdapter, string? activePort) GetStatus()
     {
         return (
