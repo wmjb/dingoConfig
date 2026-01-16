@@ -1,5 +1,7 @@
 <Project>
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+  <PropertyGroup Condition="'$(SelfContained)' == 'true' 
+                           AND '$(RuntimeIdentifier)' != '' 
+                           AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
     <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 </Project>
