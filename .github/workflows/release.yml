@@ -30,10 +30,8 @@ jobs:
           echo "Current version: $CURRENT_VERSION"
 
           if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
-            echo "Release tag v$CURRENT_VERSION already exists"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
-            echo "Release tag v$CURRENT_VERSION does not exist - will create new release"
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           fi
@@ -62,15 +60,19 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}
-
       - name: Build Linux x64
         run: |
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-x64 \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-x64
+            -o linux-x64
+
+      - name: Upload x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: linux-x64
 
   build-arm64:
     name: Build Linux ARM64
@@ -84,15 +86,19 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}
-
       - name: Build Linux ARM64
         run: |
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-arm64 \
             --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64
+            -o linux-arm64
+
+      - name: Upload ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: linux-arm64
 
   build-arm32:
     name: Build Linux ARM (glibc-compatible via container)
@@ -101,25 +107,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Create output directory
-      run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm
+      - name: Build Linux ARM inside .NET 10 SDK container
+        run: |
+          docker run --rm \
+            -v $PWD:/src \
+            -w /src \
+            mcr.microsoft.com/dotnet/sdk:10.0 \
+            dotnet publish api/api.csproj \
+              -c Release \
+              -r linux-arm \
+              --self-contained true \
+              -o linux-arm
 
-    - name: Build Linux ARM inside .NET 10 SDK container
-      run: |
-        docker run --rm \
-          -v $PWD:/src \
-          -w /src \
-          mcr.microsoft.com/dotnet/sdk:10.0 \
-          dotnet publish api/api.csproj \
-            -c Release \
-            -r linux-arm \
-            --self-contained true \
-            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm
-
-
-
+      - name: Upload ARM32 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm
+          path: linux-arm
 
   package-and-upload:
     name: Package and Upload Release Assets
@@ -128,23 +134,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: publish/dingoConfig-${{ needs.check-version.outputs.version }}
 
-    - name: Zip artifacts
-      run: |
-        cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
-        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
-        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip linux-arm/
-        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
+      - name: Zip artifacts
+        run: |
+          cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip linux-arm/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
 
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ needs.check-version.outputs.version }}
-        files: |
-          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
-          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip
-          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          files: |
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
