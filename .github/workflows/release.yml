@@ -123,26 +123,28 @@ jobs:
 
   package-and-upload:
     name: Package and Upload Release Assets
-    needs: [build-x64, build-arm64, build-arm32]
+    needs: [check-version, build-x64, build-arm64, build-arm32]
+    if: needs.check-version.outputs.version_changed == 'true'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Zip artifacts
-        run: |
-          cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip linux-arm/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
+    - name: Zip artifacts
+      run: |
+        cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
+        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
+        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip linux-arm/
+        zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ needs.check-version.outputs.version }}
-          files: |
-            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
-            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip
-            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.check-version.outputs.version }}
+        files: |
+          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
+          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip
+          publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
