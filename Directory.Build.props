@@ -1,7 +1,5 @@
 <Project>
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or
-                            '$(RuntimeIdentifier)' == 'linux-arm64' Or
-                            '$(RuntimeIdentifier)' == 'linux-arm'">
+  <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'linux'">
     <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 </Project>
