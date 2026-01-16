@@ -94,22 +94,24 @@ jobs:
             --self-contained true \
             -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64
 
-  build-arm32:
-    name: Build Linux ARM (glibc 2.31)
-    needs: check-version
-    if: needs.check-version.outputs.version_changed == 'true'
-    runs-on: ubuntu-20.04   # ← ARM32 uses older glibc
+build-arm32:
+  name: Build Linux ARM (glibc 2.31 via container)
+  needs: check-version
+  if: needs.check-version.outputs.version_changed == 'true'
+  runs-on: ubuntu-latest   # ← no more queue
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+  steps:
+    - uses: actions/checkout@v4
 
-      - run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}
+    - name: Create output directory
+      run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm
 
-      - name: Build Linux ARM
-        run: |
+    - name: Build Linux ARM inside Debian 11 container
+      run: |
+        docker run --rm \
+          -v $PWD:/src \
+          -w /src \
+          mcr.microsoft.com/dotnet/sdk:8.0-debian11 \
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-arm \
