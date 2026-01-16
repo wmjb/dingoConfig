@@ -18,10 +18,14 @@
   </PropertyGroup>
 
   <Target Name="DumpInfra" BeforeBuild>
-    <Message Text="INFRA RID=$(RuntimeIdentifier)" Importance="High" />
+    <Message Importance="High">
+      <![CDATA[
+INFRA RID=$(RuntimeIdentifier)
+      ]]>
+    </Message>
   </Target>
 
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-arm64'">
     <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
