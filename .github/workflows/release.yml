@@ -118,46 +118,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Build ARM32 inside Debian 11 with .NET 10 SDK tarball
-        run: |
-          docker run --rm \
-            -v $PWD:/src \
-            -w /src \
-            debian:11 \
-            bash -c "
-              set -e
+    - name: Build ARM32 inside Debian 11 with .NET 10 SDK tarball
+      run: |
+        docker run --rm \
+          -v $PWD:/src \
+          -w /src \
+          debian:11 \
+          bash -c "
+            set -e
 
-              apt-get update &&
-              apt-get install -y wget ca-certificates tar gzip &&
+            apt-get update &&
+            apt-get install -y wget ca-certificates tar gzip \
+                               libicu67 libssl1.1 libstdc++6 tzdata &&
 
-              # Download .NET 10 SDK tarball (permanent URL)
-              wget https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz -O dotnet-sdk.tar.gz &&
+            # Download .NET 10 SDK tarball (permanent URL)
+            wget https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz -O dotnet-sdk.tar.gz &&
 
-              mkdir -p /usr/share/dotnet &&
-              tar -xzf dotnet-sdk.tar.gz -C /usr/share/dotnet &&
-              ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet &&
+            mkdir -p /usr/share/dotnet &&
+            tar -xzf dotnet-sdk.tar.gz -C /usr/share/dotnet &&
+            ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet &&
 
-              # Build self-contained
-              dotnet publish api/api.csproj \
-                -c Release \
-                -r linux-arm \
-                --self-contained true \
-                -o linux-arm/self-contained &&
+            # Build self-contained
+            dotnet publish api/api.csproj \
+              -c Release \
+              -r linux-arm \
+              --self-contained true \
+              -o linux-arm/self-contained &&
 
-              # Build framework-dependent
-              dotnet publish api/api.csproj \
-                -c Release \
-                -r linux-arm \
-                --self-contained false \
-                -o linux-arm/framework
-            "
+            # Build framework-dependent
+            dotnet publish api/api.csproj \
+              -c Release \
+              -r linux-arm \
+              --self-contained false \
+              -o linux-arm/framework
+          "
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm
-          path: linux-arm
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux-arm
+        path: linux-arm
+
 
   package-and-upload:
     name: Package and Upload Release Assets
