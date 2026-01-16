@@ -112,7 +112,7 @@ jobs:
           path: linux-arm64
 
   build-arm32:
-    name: Build Linux ARM (via container)
+    name: Build Linux ARM (Debian 11 + .NET 10 SDK)
     needs: check-version
     if: needs.check-version.outputs.version_changed == 'true'
     runs-on: ubuntu-latest
@@ -120,29 +120,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build self-contained (container)
+      - name: Build self-contained (Debian 11)
         run: |
           docker run --rm \
             -v $PWD:/src \
             -w /src \
-            mcr.microsoft.com/dotnet/sdk:10.0 \
-            dotnet publish api/api.csproj \
-              -c Release \
-              -r linux-arm \
-              --self-contained true \
-              -o linux-arm/self-contained
+            debian:11 \
+            bash -c "
+              apt-get update &&
+              apt-get install -y wget ca-certificates apt-transport-https gnupg &&
+              wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb &&
+              dpkg -i packages-microsoft-prod.deb &&
+              apt-get update &&
+              apt-get install -y dotnet-sdk-10.0 &&
+              dotnet publish api/api.csproj \
+                -c Release \
+                -r linux-arm \
+                --self-contained true \
+                -o linux-arm/self-contained
+            "
 
-      - name: Build framework-dependent (container)
+      - name: Build framework-dependent (Debian 11)
         run: |
           docker run --rm \
             -v $PWD:/src \
             -w /src \
-            mcr.microsoft.com/dotnet/sdk:10.0 \
-            dotnet publish api/api.csproj \
-              -c Release \
-              -r linux-arm \
-              --self-contained false \
-              -o linux-arm/framework
+            debian:11 \
+            bash -c "
+              apt-get update &&
+              apt-get install -y wget ca-certificates apt-transport-https gnupg &&
+              wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb &&
+              dpkg -i packages-microsoft-prod.deb &&
+              apt-get update &&
+              apt-get install -y dotnet-sdk-10.0 &&
+              dotnet publish api/api.csproj \
+                -c Release \
+                -r linux-arm \
+                --self-contained false \
+                -o linux-arm/framework
+            "
 
       - uses: actions/upload-artifact@v4
         with:
