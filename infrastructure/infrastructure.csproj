@@ -16,12 +16,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-<Message Importance="High">
-  <![CDATA[
-    INFRA: RID='$(RuntimeIdentifier)' TFM='$(TargetFramework)' SC='$(SelfContained)' OS='$(OS)' Platform='$(Platform)' DefineConstants='$(DefineConstants)'
-  ]]>
-</Message>
-
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
    <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
  </PropertyGroup>
