@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+<Target Name="DumpInfraProps" BeforeBuild>
+  <Message Text="INFRA: RID='$(RuntimeIdentifier)' TFM='$(TargetFramework)' SC='$(SelfContained)' OS='$(OS)' Platform='$(Platform)' DefineConstants='$(DefineConstants)'" Importance="High" />
+</Target>
+
   <ItemGroup>
     <ProjectReference Include="..\domain\domain.csproj" />
     <ProjectReference Include="..\application\application.csproj" />
