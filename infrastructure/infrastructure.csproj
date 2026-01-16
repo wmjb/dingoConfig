@@ -16,9 +16,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <Target Name="DumpInfraProps" BeforeBuild>
-    <Message Text="INFRA: RID=&apos;$(RuntimeIdentifier)&apos; TFM=&apos;$(TargetFramework)&apos; SC=&apos;$(SelfContained)&apos; OS=&apos;$(OS)&apos; Platform=&apos;$(Platform)&apos; DefineConstants=&apos;$(DefineConstants)&apos;" Importance="High" />
-  </Target>
+<Message Importance="High">
+  <![CDATA[
+    INFRA: RID='$(RuntimeIdentifier)' TFM='$(TargetFramework)' SC='$(SelfContained)' OS='$(OS)' Platform='$(Platform)' DefineConstants='$(DefineConstants)'
+  ]]>
+</Message>
 
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != '' AND $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">
    <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
