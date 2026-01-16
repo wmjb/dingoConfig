@@ -1,5 +1,5 @@
 <Project>
-  <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'linux'">
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
     <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 </Project>
