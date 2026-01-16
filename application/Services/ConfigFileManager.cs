@@ -90,12 +90,12 @@ public class ConfigFileManager(ILogger<ConfigFileManager> logger)
 
         try
         {
-            var config = new ConfigFile
+            var config = new ConfigFile()
             {
-                PdmDevices = devices.OfType<PdmDevice>().ToList(),
-                PdmMaxDevices = devices.OfType<PdmMaxDevice>().ToList(),
-                CanboardDevices = devices.OfType<CanboardDevice>().ToList(),
-                DbcDevices = devices.OfType<DbcDevice>().ToList()
+                PdmDevices = devices.Where(d => d.GetType() == typeof(PdmDevice)).Cast<PdmDevice>().ToList(),
+                PdmMaxDevices = devices.Where(d => d.GetType() == typeof(PdmMaxDevice)).Cast<PdmMaxDevice>().ToList(),
+                CanboardDevices = devices.Where(d => d.GetType() == typeof(CanboardDevice)).Cast<CanboardDevice>().ToList(),
+                DbcDevices = devices.Where(d => d.GetType() == typeof(DbcDevice)).Cast<DbcDevice>().ToList()
             };
 
             var jsonString = JsonSerializer.Serialize(config, _options);
