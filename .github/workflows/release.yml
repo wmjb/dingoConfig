@@ -18,19 +18,24 @@ jobs:
       version: ${{ steps.check_version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Fetch all history and tags
 
       - name: Check if version release exists
         id: check_version
         run: |
+          # Extract current version from api.csproj
           CURRENT_VERSION=$(grep -oP '(?<=<Version>)[^<]+' api/api.csproj)
           echo "Current version: $CURRENT_VERSION"
 
+          # Check if a tag with this version already exists
           if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
+            echo "Release tag v$CURRENT_VERSION already exists"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
+            echo "Release tag v$CURRENT_VERSION does not exist - will create new release"
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           fi
@@ -41,156 +46,115 @@ jobs:
         with:
           tag_name: v${{ steps.check_version.outputs.version }}
           name: v${{ steps.check_version.outputs.version }}
+          draft: false
+          prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-x64:
-    name: Build Linux x64
+  build:
+    name: Build Release Assets
     needs: check-version
     if: needs.check-version.outputs.version_changed == 'true'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: Build self-contained
+      - name: Create output directory
+        run: mkdir -p publish/dingoConfig-${{ needs.check-version.outputs.version }}
+
+      - name: Build Windows x64
+        run: |
+          dotnet publish api/api.csproj \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/win-x64
+
+      - name: Build Windows ARM64
+        run: |
+          dotnet publish api/api.csproj \
+            -c Release \
+            -r win-arm64 \
+            --self-contained true \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/win-arm64
+
+      - name: Build Linux x64
         run: |
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-x64 \
             --self-contained true \
-            -o linux-x64/self-contained
+            /p:DefineConstants="LINUX" \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-x64
 
-      - name: Build framework-dependent
+      - name: Build Linux ARM32
         run: |
           dotnet publish api/api.csproj \
             -c Release \
-            -r linux-x64 \
-            --self-contained false \
-            -o linux-x64/framework
+            -r linux-arm \
+            --self-contained true \
+            /p:DefineConstants="LINUX" \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm32
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: linux-x64
-
-  build-arm64:
-    name: Build Linux ARM64
-    needs: check-version
-    if: needs.check-version.outputs.version_changed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Build self-contained
+      - name: Build Linux ARM64
         run: |
           dotnet publish api/api.csproj \
             -c Release \
             -r linux-arm64 \
             --self-contained true \
-            -o linux-arm64/self-contained
+            /p:DefineConstants="LINUX" \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/linux-arm64
 
-      - name: Build framework-dependent
+      - name: Build macOS x64
         run: |
           dotnet publish api/api.csproj \
             -c Release \
-            -r linux-arm64 \
-            --self-contained false \
-            -o linux-arm64/framework
+            -r osx-x64 \
+            --self-contained true \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/osx-x64
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64
-          path: linux-arm64
+      - name: Build macOS ARM64
+        run: |
+          dotnet publish api/api.csproj \
+            -c Release \
+            -r osx-arm64 \
+            --self-contained true \
+            -o publish/dingoConfig-${{ needs.check-version.outputs.version }}/osx-arm64
 
-  build-arm32:
-    name: Build Linux ARM (Debian 11 + .NET 10 SDK tarball)
-    needs: check-version
-    if: needs.check-version.outputs.version_changed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Build ARM32 inside Debian 11 with .NET 10 SDK tarball
-      run: |
-        docker run --rm \
-          -v $PWD:/src \
-          -w /src \
-          debian:11 \
-          bash -c "
-            set -e
-
-            apt-get update &&
-            apt-get install -y wget ca-certificates tar gzip \
-                               libicu67 libssl1.1 libstdc++6 tzdata &&
-
-            # Download .NET 10 SDK tarball (permanent URL)
-            wget https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz -O dotnet-sdk.tar.gz &&
-
-            mkdir -p /usr/share/dotnet &&
-            tar -xzf dotnet-sdk.tar.gz -C /usr/share/dotnet &&
-            ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet &&
-
-            # Build self-contained
-            dotnet publish api/api.csproj \
-              -c Release \
-              -r linux-arm \
-              --self-contained true \
-              -o linux-arm/self-contained &&
-
-            # Build framework-dependent
-            dotnet publish api/api.csproj \
-              -c Release \
-              -r linux-arm \
-              --self-contained false \
-              -o linux-arm/framework
-          "
-
-    - uses: actions/upload-artifact@v4
-      with:
-        name: linux-arm
-        path: linux-arm
-
-
-  package-and-upload:
-    name: Package and Upload Release Assets
-    needs: [check-version, build-x64, build-arm64, build-arm32]
-    if: needs.check-version.outputs.version_changed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: publish/dingoConfig-${{ needs.check-version.outputs.version }}
-
-      - name: Zip artifacts
+      - name: Create zip archives
         run: |
           cd publish/dingoConfig-${{ needs.check-version.outputs.version }}
 
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/self-contained/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64-framework.zip linux-x64/framework/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-win-x64.zip win-x64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-win-arm64.zip win-arm64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip linux-x64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm32.zip linux-arm32/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-osx-x64.zip osx-x64/
+          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-osx-arm64.zip osx-arm64/
 
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm.zip linux-arm/self-contained/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm-framework.zip linux-arm/framework/
-
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip linux-arm64/self-contained/
-          zip -r dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64-framework.zip linux-arm64/framework/
+          cd ../..
+          ls -lh publish/dingoConfig-${{ needs.check-version.outputs.version }}/*.zip
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.check-version.outputs.version }}
           files: |
-            publish/dingoConfig-${{ needs.check-version.outputs.version }}/*.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-win-x64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-win-arm64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-x64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm32.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-linux-arm64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-osx-x64.zip
+            publish/dingoConfig-${{ needs.check-version.outputs.version }}/dingoConfig-${{ needs.check-version.outputs.version }}-osx-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
