@@ -17,15 +17,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <Target Name="DumpInfra" BeforeBuild>
-    <Message Importance="High">
-      <![CDATA[
-INFRA RID=$(RuntimeIdentifier)
-      ]]>
-    </Message>
-  </Target>
-
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-arm64'">
+<PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-arm64' OR '$(RuntimeIdentifier)' == 'linux-arm'">
     <DefineConstants>LINUX;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
